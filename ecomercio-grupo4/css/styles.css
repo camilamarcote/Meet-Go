@@ -1,0 +1,403 @@
+/* ======================= */
+/* Estilos generales INDEX */
+/* ======================= */
+
+body {
+  background-color: rgb(255, 255, 255);
+  color: rgb(6, 6, 6);
+  font-family: 'Arial, Helvetica', sans-serif;
+}
+.logo-MeetGo {
+  display: flex;              /* NECESARIO */
+  justify-content: center;    /* Centra horizontal */
+  align-items: center;        /* Centra vertical */
+  text-align: center;
+  margin-top: 20px;           /* opcional */
+}
+
+.logo-MeetGo img {  /* ajustá si querés */
+  height: auto;
+}
+
+.subtitulo-bienvenida {
+  font-family: "Montserrat Alternates", sans-serif;
+  font-weight: 300; /* Fino */
+  font-size: 2rem;
+  text-align: center;
+  letter-spacing: 0.5px;
+}
+
+
+
+.album {
+  padding-top: 1rem;   /* antes era 3rem */
+  padding-bottom: 2rem;
+}
+
+
+/* Aparición suave */
+@keyframes fadeSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .titulo-noto {
+    font-size: 2.5rem;
+  }
+}
+
+
+
+.jumbotron,
+.card-body,
+.container,
+.site-header {
+  font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif!important;
+}
+
+.jumbotron .display-4 {
+  font-weight: bold;
+}
+
+nav a {
+  text-decoration: none;
+}
+
+.bd-placeholder-img {
+  font-size: 1.125rem;
+  text-anchor: middle;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+@media (min-width: 768px) {
+  .bd-placeholder-img-lg {
+    font-size: 3.5rem;
+  }
+  .jumbotron {
+    padding-top: 6rem;
+    padding-bottom: 6rem;
+  }
+}
+
+.jumbotron p:last-child {
+  margin-bottom: 0;
+}
+
+.jumbotron-heading {
+  font-weight: 300;
+}
+
+.jumbotron .container {
+  max-width: 40rem;
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 10px;
+  text-shadow: 1px 1px 2px grey;
+}
+
+.jumbotron .lead {
+  font-size: 38px;
+}
+
+footer {
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+}
+
+footer p {
+  margin-bottom: .25rem;
+}
+
+.site-header a {
+  color: black;
+  transition: ease-in-out color .15s;
+}
+
+.site-header .dropdown-menu a {
+  color: black;
+}
+
+.dropzone {
+  border: 2px dashed #ac33ac;
+  border-radius: 5px;
+  background: white;
+}
+
+.img-fit {
+  max-height: 100%;
+}
+
+.alert {
+  position: fixed;
+  top: 80px;
+  width: 50%;
+  left: 50%;
+  transform: translate(-50%, 0);
+}
+
+.lds-ring {
+  display: inline-block;
+  position: relative;
+  width: 64px;
+  height: 64px;
+  top: 50%;
+  left: 50%;
+}
+
+.cursor-active {
+  cursor: pointer;
+}
+
+.left {
+  float: left;
+  padding: 4px;
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.lds-ring div {
+  box-sizing: border-box;
+  display: block;
+  position: absolute;
+  width: 51px;
+  height: 51px;
+  margin: 6px;
+  border: 6px solid #fff;
+  border-radius: 50%;
+  animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  border-color: #fff transparent transparent transparent;
+}
+
+#avatar, #profilePicPreview {
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+#profilePicPreview {
+  width: 180px;
+  height: 180px;
+  display: none;
+}
+
+@keyframes lds-ring {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.signin {
+  width: 100%;
+  max-width: 330px;
+  padding: 15px;
+  margin: auto;
+}
+
+#spinner-wrapper {
+  position: fixed;
+  background-color: rgba(0, 0, 0, 0.5);
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  z-index: 1021;
+  display: none;
+}
+
+main {
+  min-height: auto;  /* o elimina la propiedad */
+  padding-top: 1rem; /* espacio pequeño antes del contenido */
+}
+
+
+a.custom-card,
+a.custom-card:hover {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+.checked {
+  color: orange;
+}
+
+#button-background-index {
+  width: 100%;      /* ocupa todo el contenedor */
+  max-width: 400px; /* opcional, para que no sea demasiado grande */
+  margin: 1.5rem auto; /* centrado y separación */
+  background-color: #0000009c !important;
+  color: aliceblue;
+}
+
+/* NAVBAR MODERNA */
+.modern-navbar {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  border-bottom: 1.5px solid #e6e6e6;
+  padding: 12px 20px;
+}
+
+/* LOGO */
+.logo-img {
+  height: 42px;
+}
+.logo-text {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #333;
+}
+
+/* LINKS */
+.main-links .nav-link {
+  font-size: 1.05rem;
+  margin: 0 10px;
+  color: #444;
+  transition: 0.2s ease;
+}
+
+.main-links .nav-link:hover {
+  color: #5a4ff3;
+  transform: translateY(-2px);
+}
+
+/* PERFIL */
+.profile-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #5a4ff3;
+  transition: 0.3s ease;
+}
+
+.profile-avatar:hover {
+  transform: scale(1.07);
+}
+
+/* USERNAME */
+.username-text {
+  color: #333;
+  font-size: 1rem;
+}
+
+/* TOGGLER */
+.custom-toggler {
+  border: none;
+}
+
+.custom-toggler:focus {
+  box-shadow: none;
+}
+
+
+/* ======================= */
+/*      CARDS MODERNAS     */
+/* ======================= */
+
+.custom-card {
+  border: none;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #ffffff;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  cursor: pointer;
+}
+
+/* Imagen más estética */
+.custom-card img {
+  height: 220px;
+  width: 100%;
+  object-fit: cover;
+  filter: brightness(0.9);
+  transition: filter 0.25s ease, transform 0.25s ease;
+}
+
+/* Título */
+.custom-card h3 {
+  font-family: "Montserrat Alternates", sans-serif;
+  font-size: 1.3rem;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 0;
+}
+
+/* Texto */
+.custom-card .card-text {
+  font-size: 0.95rem;
+  color: #555;
+  line-height: 1.4;
+}
+
+/* Hover con efecto moderno */
+.custom-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+}
+
+.custom-card:hover img {
+  filter: brightness(1);
+  transform: scale(1.05);
+}
+
+/* Espaciado entre cards cuando se apilan */
+@media (max-width: 768px) {
+  .custom-card {
+    margin-bottom: 20px;
+  }
+}
+
+
+/* ======== FIX PARA MÓVILES ======== */
+
+/* Fondo del menú móvil */
+@media (max-width: 992px) {
+  .navbar-collapse {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 15px;
+    border-radius: 12px;
+    margin-top: 12px;
+  }
+
+  /* Hacer visibles los enlaces en móvil */
+  .main-links .nav-link,
+  .dropdown-item {
+    color: #222 !important;
+    font-size: 1.1rem;
+  }
+
+  /* Dropdown dentro del menú móvil */
+  .dropdown-menu {
+    position: static !important;
+    float: none;
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 8px 0;
+    width: 100%;
+    box-shadow: none;
+  }
+
+  /* Avatar centrado en móvil */
+  .profile-zone {
+    margin-top: 15px;
+  }
+}
+
+/* ======== FIX PARA EL ICONO DEL TOGGLER ======== */
+.navbar-toggler {
+  border: none !important;
+}
+.navbar-light .navbar-toggler-icon {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(0,0,0,0.75)' stroke-width='3' stroke-linecap='round' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+
+.navbar-toggler:focus {
+  box-shadow: none !important;
+}
+

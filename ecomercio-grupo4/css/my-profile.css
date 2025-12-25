@@ -1,0 +1,186 @@
+/* ================================
+   ESTILO GENERAL
+================================= */
+body {
+  font-family: "Montserrat", sans-serif;
+  background: #fafafa;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ================================
+   TITULO
+================================= */
+.title {
+  margin-top: 30px;
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #333;
+  text-align: center;
+}
+
+/* ================================
+   CONTENEDOR
+================================= */
+.profile-container {
+  background: #fff;
+  width: 90%;
+  max-width: 600px;
+  padding: 30px;
+  border-radius: 20px;
+  margin-top: 25px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+}
+
+/* ================================
+   FOTO DE PERFIL
+================================= */
+.profile-image-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.profile-img {
+  width: 140px;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 4px solid #ddd;
+}
+
+.file-label {
+  margin-top: 10px;
+  background: #5a4ff3;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.file-label:hover {
+  background: #433fde;
+}
+
+/* ================================
+   FORMULARIO
+================================= */
+#profileForm {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+label {
+  font-weight: 600;
+  color: #444;
+  margin-bottom: -3px;
+  margin-top: 15px; /* MÁS ESPACIO ENTRE TÍTULOS */
+}
+
+/* espacio extra específico para intereses */
+label.interests-title {
+  margin-top: 25px;
+}
+
+/* espacio extra para biografía */
+#bio {
+  margin-top: 10px;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1.5px solid #ccc;
+  font-size: 1rem;
+  transition: 0.2s;
+  background: #fefefe;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #5a4ff3;
+  box-shadow: 0 0 4px rgba(90, 79, 243, 0.4);
+  outline: none;
+}
+
+/* RADIO GROUP */
+.radio-group {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.radio-group label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ================================
+   CHECKBOX GROUP (NUEVA VERSIÓN)
+================================= */
+.checkbox-group {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2 columnas */
+  gap: 10px 15px;
+  margin-top: 8px;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;  /* ALINEA CHECK Y TEXTO */
+  gap: 10px;
+  line-height: 1.2; /* evita saltos raros */
+}
+
+.checkbox-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  transform: translateY(1px); /* ajuste fino */
+}
+
+/* ================================
+   BOTÓN
+================================= */
+.btn-primary {
+  background: #5a4ff3;
+  color: white;
+  padding: 15px;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  margin-top: 20px; /* más separación con el formulario */
+  transition: 0.2s;
+}
+
+.btn-primary:hover {
+  background: #433fde;
+  transform: translateY(-2px);
+}
+
+/* ================================
+   RESPONSIVE
+================================= */
+@media (max-width: 480px) {
+  .profile-container {
+    padding: 20px;
+  }
+
+  .radio-group {
+    flex-direction: column;
+    gap: 5px;
+  }
+}

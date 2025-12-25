@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meet&Go</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Hebrew:wght@400;700&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap CSS -->
+  <link href="css/bootstrap.min.css" rel="stylesheet">
+  <!-- Tu hoja de estilos -->
+  <link href="css/styles.css" rel="stylesheet">
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- AOS CSS -->
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat+Alternates:wght@200;300;400;500&display=swap" rel="stylesheet">
+<!-- Favicon básico -->
+<link rel="icon" type="image/x-icon" href="img/favicon/favicon.ico">
+
+<!-- Favicons PNG -->
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="img/favicon/favicon-16x16.png">
+
+<!-- Apple Touch (iPhone/iPad) -->
+<link rel="apple-touch-icon" sizes="180x180" href="img/favicon/apple-touch-icon.png">
+
+<!-- Manifest (opcional pero recomendado) -->
+<link rel="manifest" href="img/favicon/site.webmanifest">
+
+
+</head>
+
+<body>
+  <div id="navbar-container"></div>
+
+
+  <main>
+    <div data-aos="zoom-in">
+      <div class="logo-MeetGo">
+         <img src="img/LOGO (1).svg" alt="Logo">
+         </div>
+          <h2 class="subtitulo-bienvenida">Tu espacio para conocer gente</h2>
+    </div>
+
+    <div class="album">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+            <div class="card mb-4 shadow-sm custom-card cursor-active" id="gastronomia">
+              <img class="bd-placeholder-img card-img-top"
+                src="https://st2.depositphotos.com/3591429/11682/i/950/depositphotos_116826138-stock-photo-friends-drinking-coffee.jpg"
+                alt="Planes gastronómicos">
+              <h3 class="m-3">Planes gastronómicos</h3>
+              <div class="card-body">
+                <p class="card-text">Ten un momento agradable en un café o restaurant.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+            <div class="card mb-4 shadow-sm custom-card cursor-active" id="naturaleza">
+              <img class="bd-placeholder-img card-img-top"
+                src="https://media.puntadelesteinternacional.com/wp-content/uploads/2016/04/01022450/lussich-arboretum...jpg"
+                alt="Explora naturaleza">
+              <h3 class="m-3">Explora naturaleza</h3>
+              <div class="card-body">
+                <p class="card-text">Conecta con la naturaleza mientras conoces personas nuevas.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
+            <div class="card mb-4 shadow-sm custom-card cursor-active" id="cultural">
+              <img class="bd-placeholder-img card-img-top"
+                src="https://www.shutterstock.com/image-photo/montevideo-uruguay-december-22-2022-600nw-2260865107.jpg"
+                alt="Salidas culturales">
+              <h3 class="m-3">Salidas culturales</h3>
+              <div class="card-body">
+                <p class="card-text">Accede a talleres y actividades culturales variadas.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botón actualizado -->
+        <div class="row" data-aos="fade-up" data-aos-delay="400">
+          <a id="button-background-index" class="btn btn-light btn-lg btn-block" href="explorar.html">
+            Explorar eventos mensuales
+          </a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+
+  <!-- Scripts -->
+  <script src="js/bootstrap.bundle.min.js"></script>
+   <script src="js/init.js"></script>
+  <script src="js/index.js"></script>
+
+  <!-- AOS JS -->
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <script>
+    AOS.init({
+      duration: 1200,
+      easing: 'ease-out-cubic',
+      once: true
+    });
+  </script>
+</body>
+
+</html>

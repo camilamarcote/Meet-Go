@@ -1,0 +1,15 @@
+.card-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 3; /* muestra máximo 3 líneas */
+  -webkit-box-orient: vertical;  
+  overflow: hidden;
+}
+.card-img-top {
+  height: 180px;      /* altura uniforme */
+  object-fit: cover;  /* recortar la imagen si no encaja */
+}
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.2);
+  transition: all 0.3s ease-in-out;
+}

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mi Perfil</title>
+  <link rel="stylesheet" href="css/my-profile.css">
+  <!-- Favicon básico -->
+<link rel="icon" type="image/x-icon" href="img/favicon/favicon.ico">
+
+<!-- Favicons PNG -->
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="img/favicon/favicon-16x16.png">
+
+<!-- Apple Touch (iPhone/iPad) -->
+<link rel="apple-touch-icon" sizes="180x180" href="img/favicon/apple-touch-icon.png">
+
+<!-- Manifest (opcional pero recomendado) -->
+<link rel="manifest" href="img/favicon/site.webmanifest">
+
+</head>
+
+<body>
+
+
+<h1 class="title">Mi Perfil</h1>
+
+<div class="profile-container">
+
+  <!-- ======== FOTO DE PERFIL ======== -->
+  <div class="profile-image-section">
+    <img id="currentProfileImage" src="img/default-user.png" alt="Foto de perfil" class="profile-img">
+
+    <label for="profileImage" class="file-label">Cambiar foto</label>
+    <input type="file" id="profileImage" accept="image/*" style="display:none">
+  </div>
+
+  <!-- ======== FORMULARIO ======== -->
+  <form id="profileForm">
+
+    <!-- Nombre -->
+    <label>Nombre</label>
+    <input type="text" id="firstName" required>
+
+    <label>Apellido</label>
+    <input type="text" id="lastName" required>
+
+    <label>Usuario</label>
+    <input type="text" id="username" required>
+
+    <label>Email</label>
+    <input type="email" id="email" required disabled>
+
+    <label>Edad</label>
+    <input type="number" id="age" min="18" required>
+
+    <label>Departamento</label>
+    <select id="department" required>
+      <option>Artigas</option>
+      <option>Canelones</option>
+      <option>Cerro Largo</option>
+      <option>Colonia</option>
+      <option>Durazno</option>
+      <option>Flores</option>
+      <option>Florida</option>
+      <option>Lavalleja</option>
+      <option>Maldonado</option>
+      <option>Montevideo</option>
+      <option>Paysandú</option>
+      <option>Río Negro</option>
+      <option>Rivera</option>
+      <option>Rocha</option>
+      <option>Salto</option>
+      <option>San José</option>
+      <option>Soriano</option>
+      <option>Tacuarembó</option>
+      <option>Treinta y Tres</option>
+    </select>
+
+    <!-- ===== PERSONALIDAD ===== -->
+    <label>Tipo de personalidad</label>
+    <input type="text" id="personality" placeholder="INFJ, ENTP, etc.">
+
+    <!-- ===== ESTILO ===== -->
+    <label>Estilo social</label>
+    <div class="radio-group">
+      <label><input type="radio" name="style" value="introvertido"> Introvertido</label>
+      <label><input type="radio" name="style" value="extrovertido"> Extrovertido</label>
+      <label><input type="radio" name="style" value="ambivertido"> Ambivertido</label>
+    </div>
+
+    <!-- ===== INTERESES ===== -->
+    <label>Intereses</label>
+    <div class="checkbox-group">
+  <div class="checkbox-item">
+  <input type="checkbox" id="musica" value="música">
+  <label for="musica">Música</label>
+</div>
+
+<div class="checkbox-item">
+  <input type="checkbox" id="cine" value="cine">
+  <label for="cine">Cine</label>
+</div>
+
+<div class="checkbox-item">
+  <input type="checkbox" id="lectura" value="lectura">
+  <label for="lectura">Lectura</label>
+</div>
+
+<div class="checkbox-item">
+  <input type="checkbox" id="deporte" value="deporte">
+  <label for="deporte">Deporte</label>
+</div>
+
+<div class="checkbox-item">
+  <input type="checkbox" id="viajes" value="viajes">
+  <label for="viajes">Viajes</label>
+</div>
+
+<div class="checkbox-item">
+  <input type="checkbox" id="arte" value="arte">
+  <label for="arte">Arte</label>
+</div>
+
+    </div>
+
+    <!-- BIO -->
+    <label>Biografía</label>
+    <textarea id="bio" rows="4"></textarea>
+
+    <button type="submit" class="btn-primary">Guardar Cambios</button>
+  </form>
+
+</div>
+
+<script src="js/my-profile.js"></script>
+</body>
+</html>

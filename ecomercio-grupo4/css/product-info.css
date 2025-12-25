@@ -1,0 +1,76 @@
+/* ========================= */
+/*     SECCIÓN ACERCA DE     */
+/* ========================= */
+
+.about-section {
+  width: 100%;
+  min-height: 100vh;             /* 🔥 Ocupa toda la pantalla */
+  padding: 60px 20px;
+  background-image: url("../img/flores.jpg");
+  background-size: cover;        
+  background-repeat: no-repeat;  
+  background-position: center;   
+  background-attachment: fixed;  
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+
+.about-content {
+  max-width: 700px;
+  text-align: center;
+  padding: 30px;
+  border-radius: 18px;
+  background: white;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  animation: fadeIn 1s ease;
+}
+
+.about-logo {
+  width: 150px;
+  height: auto;
+  margin-bottom: 20px;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.15));
+}
+
+.about-title {
+  font-family: "Montserrat", sans-serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: #222;
+}
+
+.about-text {
+  font-size: 1.15rem;
+  line-height: 1.7;
+  font-family: "Montserrat Alternates", sans-serif;
+  font-weight: 300;
+  color: #444;
+}
+
+/* ANIMACIÓN SUAVE */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .about-title {
+    font-size: 1.8rem;
+  }
+  .about-text {
+    font-size: 1.05rem;
+  }
+  .about-logo {
+    width: 120px;
+  }
+}

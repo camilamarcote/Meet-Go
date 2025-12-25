@@ -1,0 +1,110 @@
+body {
+  background: linear-gradient(180deg, #f9f9fb 0%, #f2f3f8 100%);
+  font-family: 'Noto Serif Hebrew', serif;
+  color: #333;
+  min-height: 100vh;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Título */
+.titulo-noto {
+  font-weight: 900;
+  font-size: 2.3rem;
+  letter-spacing: 1px;
+  color: #2b2b2b;
+  text-align: center;
+  margin-top: 50px;
+  margin-bottom: 35px;
+  position: relative;
+}
+
+.titulo-noto::after {
+  content: "";
+  display: block;
+  width: 70px;
+  height: 4px;
+  background: #5b72f2;
+  margin: 12px auto 0;
+  border-radius: 2px;
+}
+
+/* Contenedor */
+.categorias-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  padding: 40px 60px;
+  width: 100%;
+  justify-items: stretch; /* Hace que cada card ocupe todo el espacio del grid */
+  align-items: stretch;
+}
+
+/* Card */
+.categoria-card {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  border: 2px solid transparent;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.categoria-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+  border-color: #5b72f2;
+}
+
+/* Imagen */
+.categoria-img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.categoria-card:hover .categoria-img {
+  transform: scale(1.05);
+}
+
+/* Texto */
+.categoria-body {
+  padding: 20px;
+  text-align: center;
+}
+
+.categoria-body h3 {
+  font-weight: 800;
+  color: #2b2b2b;
+  margin-bottom: 10px;
+  font-size: 1.25rem;
+}
+
+.categoria-body p {
+  color: #666;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+/* Animación */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.categoria-card {
+  animation: fadeUp 0.6s ease both;
+}

@@ -1,0 +1,23 @@
+.login-bg {
+  background: linear-gradient(rgba(204, 0, 255, 0.225), rgba(255, 153, 0, 0.225));
+  background-size: cover;
+}
+
+.login-card {
+  max-width: 370px;
+  width: 100%;
+  border-radius: 15px;
+  background-color: #ffffffd9;
+  backdrop-filter: blur(6px);
+}
+
+.login-card h2 {
+  font-family:sans-serif;
+  letter-spacing: 1px;
+}
+
+button {
+  background-color: rgba(255, 253, 253, 0.411) !important;
+  color: black !important;
+  font-weight: bold !important;
+}

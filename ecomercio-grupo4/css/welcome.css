@@ -1,0 +1,52 @@
+/* ----- GENERAL ----- */
+body {
+  margin: 0;
+  height: 100vh;
+  width: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-size: cover;
+  background-position: center;
+  text-align: center;
+  background-color: #ffffff; /* suave y cálido */
+}
+
+.logo-escrito {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.logo-escrito img {
+  display: block;   /* ← elimina el espacio fantasma del inline */  /* ajustá aquí */
+  margin-bottom: 0;
+  height: 300px;
+}
+
+
+.subtitulo-welcome {
+  margin-top: 0;           /* elimina espacio arriba */
+  font-family: sans-serif;
+  font-weight: 300;
+  font-size: 1.8rem;
+  color: #000000;
+}
+
+/* ----- BOTONES ----- */
+.btn-primary {
+  background-color: #000000 !important; /* color principal */
+  border-color: #ffffff !important;
+}
+
+.btn-outline-primary {
+  color: #000000 !important;
+  border-color: #000000 !important;
+}
+
+.btn-outline-primary:hover {
+  background-color: #000000 !important;
+  color: white !important;
+}
