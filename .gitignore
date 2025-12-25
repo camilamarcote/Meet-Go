@@ -5,6 +5,7 @@ backend/node_modules/
 # variables de entorno
 .env
 backend/.env
+backend/uploads/
 
 # logs
 npm-debug.log*
