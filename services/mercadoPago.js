@@ -31,13 +31,17 @@ export async function createPaymentPreference({ event, user, ticketId }) {
           email: user.email
         },
 
+        // 🔁 URLs DEL FRONT (NO API)
         back_urls: {
-          success: "http://localhost:5000/api/payments/success",
-          failure: "http://localhost:5000/api/payments/failure",
-          pending: "http://localhost:5000/api/payments/pending"
+          success: "https://tudominio.com/payment-success.html",
+          failure: "https://tudominio.com/payment-failure.html",
+          pending: "https://tudominio.com/payment-pending.html"
         },
 
         auto_return: "approved",
+
+        // 🔔 Webhook (MUY IMPORTANTE)
+        notification_url: "https://tudominio.com/api/payments/webhook",
 
         metadata: {
           ticketId: ticketId.toString(),
@@ -45,6 +49,11 @@ export async function createPaymentPreference({ event, user, ticketId }) {
           userId: user._id.toString()
         }
       }
+    });
+
+    console.log("🧾 Preferencia MP creada:", {
+      id: preference.id,
+      init_point: preference.init_point
     });
 
     return preference;

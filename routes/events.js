@@ -1,6 +1,6 @@
 import express from "express";
 import multer from "multer";
-import Event from "../models/event.js";
+import Event from "../../models/event.js";
 
 const router = express.Router();
 

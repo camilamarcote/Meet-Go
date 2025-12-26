@@ -6,7 +6,7 @@ import QRCode from "qrcode";
 import Event from "../models/event.js";
 import User from "../models/user.js";
 import EventTicket from "../models/eventTicket.js";
-import { sendTicketMail } from "../utils/mailer.js";
+import { sendTicketMail } from "../backend/utils/mailer.js";
 
 const router = express.Router();
 
