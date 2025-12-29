@@ -1,6 +1,6 @@
 import express from "express";
 import EventTicket from "../models/eventTicket.js";
-import { createPaymentPreference } from "../backend/services/mercadoPago.js";
+import { createPaymentPreference } from "../services/mercadoPago.js";
 
 const router = express.Router();
 
