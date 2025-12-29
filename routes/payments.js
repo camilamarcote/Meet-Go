@@ -1,6 +1,9 @@
 import express from "express";
 import EventTicket from "../models/eventTicket.js";
 import { createPaymentPreference } from "../services/mercadoPago.js";
+import { sendTicketMail } from "../utils/mailer.js";
+
+import { Payment, MercadoPagoConfig } from "mercadopago";
 
 const router = express.Router();
 
@@ -29,7 +32,6 @@ router.post("/payments/create/:ticketId", async (req, res) => {
       ticketId: ticket._id
     });
 
-    // 🔁 DEVOLVER URL REAL DE MERCADO PAGO
     res.json({
       init_point: preference.init_point
     });
@@ -40,16 +42,13 @@ router.post("/payments/create/:ticketId", async (req, res) => {
   }
 });
 
-import { Payment } from "mercadopago";
-import { MercadoPagoConfig } from "mercadopago";
-
+// =============================
+// 🔔 Webhook Mercado Pago
+// =============================
 const mpClient = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN
 });
 
-// =============================
-// 🔔 Webhook Mercado Pago
-// =============================
 router.post("/payments/webhook", async (req, res) => {
   try {
     const { type, data } = req.body;
@@ -64,15 +63,31 @@ router.post("/payments/webhook", async (req, res) => {
     if (payment.status === "approved") {
       const ticketId = payment.metadata.ticketId;
 
-      await EventTicket.findByIdAndUpdate(ticketId, {
-        payment: {
-          status: "approved",
-          paymentId: payment.id,
-          paidAt: new Date()
-        }
-      });
+      const ticket = await EventTicket.findByIdAndUpdate(
+        ticketId,
+        {
+          payment: {
+            status: "approved",
+            paymentId: payment.id,
+            paidAt: new Date()
+          }
+        },
+        { new: true }
+      )
+        .populate("user")
+        .populate("event");
 
-      console.log("✅ Pago aprobado:", payment.id);
+      // 📧 ENVIAR MAIL SOLO CUANDO EL PAGO ES REAL
+      if (ticket?.user?.email) {
+        await sendTicketMail({
+          to: ticket.user.email,
+          user: ticket.user,
+          event: ticket.event,
+          ticket
+        });
+      }
+
+      console.log("✅ Pago aprobado y mail enviado:", payment.id);
     }
 
     res.sendStatus(200);
@@ -82,6 +97,5 @@ router.post("/payments/webhook", async (req, res) => {
     res.sendStatus(500);
   }
 });
-
 
 export default router;

@@ -6,19 +6,17 @@ import QRCode from "qrcode";
 import Event from "../models/event.js";
 import User from "../models/user.js";
 import EventTicket from "../models/eventTicket.js";
-import { sendTicketMail } from "../utils/mailer.js";
 
 const router = express.Router();
 
 // =============================
-// 🎟️ CREAR TICKET
+// 🎟️ CREAR TICKET (SIN MAIL)
 // =============================
 router.post("/events/:eventId/tickets", async (req, res) => {
   try {
     const { userId } = req.body;
     const { eventId } = req.params;
 
-    // 🛑 Validaciones
     if (
       !mongoose.Types.ObjectId.isValid(userId) ||
       !mongoose.Types.ObjectId.isValid(eventId)
@@ -84,73 +82,15 @@ router.post("/events/:eventId/tickets", async (req, res) => {
     });
 
     await ticket.save();
-    console.log("🎟️ Ticket guardado correctamente");
-
-    // =============================
-    // 📧 ENVIAR MAIL CON QR
-    // =============================
-    if (user.email) {
-      try {
-        console.log("📨 Enviando mail a:", user.email);
-
-        await sendTicketMail({
-          to: user.email,
-          user,
-          event,
-          ticket
-        });
-
-        console.log("✅ Mail enviado");
-      } catch (mailError) {
-        console.error("⚠️ Error enviando mail:", mailError);
-        // ⚠️ NO cortamos el flujo si el mail falla
-      }
-    } else {
-      console.warn("⚠️ El usuario no tiene email, no se envía mail");
-    }
 
     res.status(201).json({
-      message: "🎟️ Ticket creado con éxito",
+      message: "🎟️ Ticket creado (pago pendiente)",
       ticket
     });
 
   } catch (error) {
     console.error("❌ Error al crear ticket:", error);
     res.status(500).json({ message: "Error al crear ticket" });
-  }
-});
-
-// =============================
-// 🔎 CHECK SI YA TIENE TICKET
-// =============================
-router.get("/events/:eventId/tickets/check/:userId", async (req, res) => {
-  try {
-    const { eventId, userId } = req.params;
-
-    if (
-      !mongoose.Types.ObjectId.isValid(userId) ||
-      !mongoose.Types.ObjectId.isValid(eventId)
-    ) {
-      return res.status(400).json({ hasTicket: false });
-    }
-
-    const ticket = await EventTicket.findOne({
-      event: eventId,
-      user: userId
-    });
-
-    if (!ticket) {
-      return res.json({ hasTicket: false });
-    }
-
-    res.json({
-      hasTicket: true,
-      ticket
-    });
-
-  } catch (error) {
-    console.error("❌ Error al verificar ticket:", error);
-    res.status(500).json({ message: "Error al verificar ticket" });
   }
 });
 
