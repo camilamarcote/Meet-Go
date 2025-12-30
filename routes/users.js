@@ -6,9 +6,9 @@ import User from "../models/user.js";
 
 const router = express.Router();
 
-// =============================
-// 📂 MULTER CONFIG
-// =============================
+/* =============================
+   📂 MULTER CONFIG
+============================= */
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "uploads/");
@@ -22,10 +22,9 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-
-// =============================
-// 🟢 REGISTER (con imagen + bcrypt)
-// =============================
+/* =============================
+   🟢 REGISTER (bcrypt + imagen)
+============================= */
 router.post("/register", upload.single("profileImage"), async (req, res) => {
   try {
     console.log("📩 Datos recibidos (register):", req.body);
@@ -38,11 +37,11 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       password,
       age,
       department,
+      nationality,
       personality,
       style,
       bio,
       interests,
-      nationality,
       languages
     } = req.body;
 
@@ -52,11 +51,10 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
     // Imagen
     const profileImage = req.file ? `/uploads/${req.file.filename}` : "";
 
-    // Parsear intereses
+    // Parsear arrays
     const parsedInterests =
       typeof interests === "string" ? JSON.parse(interests) : interests;
 
-    // Parsear idiomas
     const parsedLanguages =
       typeof languages === "string" ? JSON.parse(languages) : languages;
 
@@ -68,20 +66,24 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       password: hashedPassword,
       age,
       department: department || "",
-      nationality,
-      languages: parsedLanguages || [],
-      personality,
-      style,
-      bio,
+      nationality: nationality || "",
       interests: parsedInterests || [],
-      profileImage,
+      languages: parsedLanguages || [],
+      personality: personality || "",
+      style: style || "",
+      bio: bio || "",
+      profileImage
     });
 
     await newUser.save();
 
     res.status(201).json({
       message: "Usuario registrado con éxito",
-      user: newUser,
+      user: {
+        id: newUser._id,
+        username: newUser.username,
+        email: newUser.email
+      }
     });
 
   } catch (error) {
@@ -89,7 +91,7 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
 
     if (error.code === 11000) {
       return res.status(400).json({
-        message: "El usuario o email ya existe",
+        message: "El usuario o el email ya existe"
       });
     }
 
@@ -97,10 +99,9 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
   }
 });
 
-
-// =============================
-// 🟡 LOGIN (email o username + bcrypt)
-// =============================
+/* =============================
+   🟡 LOGIN (email o username)
+============================= */
 router.post("/login", async (req, res) => {
   try {
     const { user, password } = req.body;
@@ -110,7 +111,7 @@ router.post("/login", async (req, res) => {
     }
 
     const foundUser = await User.findOne({
-      $or: [{ email: user }, { username: user }],
+      $or: [{ email: user }, { username: user }]
     });
 
     if (!foundUser) {
@@ -125,7 +126,14 @@ router.post("/login", async (req, res) => {
 
     res.json({
       message: "Login exitoso",
-      user: foundUser,
+      user: {
+        id: foundUser._id,
+        username: foundUser.username,
+        email: foundUser.email,
+        roles: foundUser.roles,
+        isOrganizer: foundUser.isOrganizer,
+        profileImage: foundUser.profileImage
+      }
     });
 
   } catch (error) {
@@ -134,16 +142,18 @@ router.post("/login", async (req, res) => {
   }
 });
 
-
-// =============================
-// 🔵 GET USER BY ID
-// =============================
+/* =============================
+   🔵 GET USER BY ID
+============================= */
 router.get("/:id", async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    const user = await User
+      .findById(req.params.id)
+      .select("-password"); // ⛔ ocultar password
 
-    if (!user)
+    if (!user) {
       return res.status(404).json({ message: "Usuario no encontrado" });
+    }
 
     res.json(user);
 
@@ -153,48 +163,49 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-
-// =============================
-// 🟣 UPDATE PROFILE (con imagen)
-// =============================
+/* =============================
+   🟣 UPDATE PROFILE
+============================= */
 router.put("/:id", upload.single("profileImage"), async (req, res) => {
   try {
     console.log("📩 Datos recibidos (update):", req.body);
 
     const updates = { ...req.body };
 
-    // Imagen nueva
+    // Imagen
     if (req.file) {
       updates.profileImage = `/uploads/${req.file.filename}`;
     }
 
-    // Intereses
+    // Parsear arrays
     if (updates.interests && typeof updates.interests === "string") {
       updates.interests = JSON.parse(updates.interests);
     }
 
-    // Idiomas
     if (updates.languages && typeof updates.languages === "string") {
       updates.languages = JSON.parse(updates.languages);
     }
 
-    // 🔐 Si se cambia la contraseña
+    // 🔐 Si se cambia contraseña
     if (updates.password) {
       updates.password = await bcrypt.hash(updates.password, 10);
+    } else {
+      delete updates.password;
     }
 
     const updatedUser = await User.findByIdAndUpdate(
       req.params.id,
       updates,
       { new: true }
-    );
+    ).select("-password");
 
-    if (!updatedUser)
+    if (!updatedUser) {
       return res.status(404).json({ message: "Usuario no encontrado" });
+    }
 
     res.json({
       message: "Perfil actualizado",
-      user: updatedUser,
+      user: updatedUser
     });
 
   } catch (error) {
