@@ -1,5 +1,7 @@
 console.log("myprofile.js cargado");
 
+const API_URL = "https://meetgo-backend.onrender.com";
+
 document.addEventListener("DOMContentLoaded", async () => {
 
   /* =====================================================
@@ -18,8 +20,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const profileImageInput = document.getElementById("profileImage");
   const profileImagePreview = document.getElementById("currentProfileImage");
 
-
-
   /* =====================================================
      1) PREVIEW DE IMAGEN
   ===================================================== */
@@ -30,20 +30,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-
-
   /* =====================================================
      2) CARGAR DATOS DEL USUARIO
   ===================================================== */
   try {
-    const res = await fetch(`http://localhost:5000/api/users/${userId}`);
+    const res = await fetch(`${API_URL}/api/users/${userId}`);
+
     if (!res.ok) {
       alert("Error al cargar los datos del usuario");
       return;
     }
 
     const user = await res.json();
-
 
     // Rellenar campos
     form.firstName.value = user.firstName || "";
@@ -55,13 +53,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     form.personality.value = user.personality || "";
     form.bio.value = user.bio || "";
 
-    // Estilo (radios)
+    // Estilo
     if (user.style) {
-      const radio = document.querySelector(`input[name="style"][value="${user.style}"]`);
+      const radio = document.querySelector(
+        `input[name="style"][value="${user.style}"]`
+      );
       if (radio) radio.checked = true;
     }
 
-    // Intereses (checkboxes)
+    // Intereses
     if (Array.isArray(user.interests)) {
       user.interests.forEach((interest) => {
         const checkbox = document.querySelector(
@@ -73,7 +73,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Imagen actual
     profileImagePreview.src = user.profileImage
-      ? `http://localhost:5000${user.profileImage}`
+      ? `${API_URL}${user.profileImage}`
       : "img/default-user.png";
 
   } catch (error) {
@@ -81,14 +81,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     alert("Error al cargar perfil");
   }
 
-
-
   /* =====================================================
      3) SUBMIT — ACTUALIZAR PERFIL
   ===================================================== */
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    console.log("👉 SUBMIT DISPARADO");
 
     const formData = new FormData();
 
@@ -116,19 +113,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       formData.append("profileImage", profileImageInput.files[0]);
     }
 
-
-
-    /* =====================================================
-       4) PETICIÓN PUT PARA ACTUALIZAR
-    ===================================================== */
     try {
-      const updateRes = await fetch(`http://localhost:5000/api/users/${userId}`, {
+      const updateRes = await fetch(`${API_URL}/api/users/${userId}`, {
         method: "PUT",
         body: formData
       });
 
       const updateData = await updateRes.json();
-      console.log("📦 Respuesta del servidor:", updateData);
 
       if (!updateRes.ok) {
         return alert(updateData.message || "Error al actualizar");
@@ -136,10 +127,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       alert("Perfil actualizado correctamente");
 
-
-      /* ==============================
-         5) ACTUALIZAR LOCALSTORAGE
-      ============================== */
+      // Actualizar localStorage
       const updatedSmallUser = {
         id: updateData.user._id,
         username: updateData.user.username,
@@ -150,10 +138,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       localStorage.setItem("currentUser", JSON.stringify(updatedSmallUser));
 
-
-      /* ==============================
-         6) REDIRIGIR A HOME
-      ============================== */
+      // Redirigir
       window.location.href = "index.html";
 
     } catch (error) {

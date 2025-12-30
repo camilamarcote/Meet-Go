@@ -1,4 +1,9 @@
 // =============================
+// 🌐 API BASE
+// =============================
+const API_URL = "https://meetgo-backend.onrender.com";
+
+// =============================
 // 📌 Obtener ID del evento
 // =============================
 const params = new URLSearchParams(window.location.search);
@@ -27,13 +32,13 @@ async function loadEventInfo() {
   try {
     if (!eventId) throw new Error("ID inexistente");
 
-    const res = await fetch(`http://localhost:5000/events/${eventId}`);
+    const res = await fetch(`${API_URL}/events/${eventId}`);
     if (!res.ok) throw new Error("Evento no encontrado");
 
     const event = await res.json();
 
     const image = event.image?.trim()
-      ? event.image
+      ? `${API_URL}${event.image}`
       : getRandomCategoryImage(event.category);
 
     const price = Number(event.price) || 0;
@@ -45,16 +50,14 @@ async function loadEventInfo() {
         <p class="text-muted">Iniciá sesión para obtener tu entrada</p>
         <a href="login.html" class="btn btn-outline-primary">Iniciar sesión</a>
       `;
-    } 
-    else if (price === 0) {
+    } else if (price === 0) {
       actionSection = `
         <button class="btn btn-success"
           onclick="getFreeTicket('${event._id}')">
           🎟️ Obtener entrada gratis
         </button>
       `;
-    } 
-    else {
+    } else {
       actionSection = `
         <button class="btn btn-primary"
           onclick="payEvent('${event._id}')">
@@ -94,7 +97,7 @@ loadEventInfo();
 // =============================
 window.getFreeTicket = async function (eventId) {
   const res = await fetch(
-    `http://localhost:5000/api/events/${eventId}/tickets`,
+    `${API_URL}/api/events/${eventId}/tickets`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -117,9 +120,9 @@ window.payEvent = async function (eventId) {
   try {
     let ticketId;
 
-    // 1️⃣ Intentar crear ticket
+    // 1️⃣ Crear ticket
     const ticketRes = await fetch(
-      `http://localhost:5000/api/events/${eventId}/tickets`,
+      `${API_URL}/api/events/${eventId}/tickets`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -130,21 +133,17 @@ window.payEvent = async function (eventId) {
     const ticketData = await ticketRes.json();
 
     if (ticketRes.ok) {
-      // ✅ Ticket creado correctamente
       ticketId = ticketData.ticket._id;
-
     } else if (ticketRes.status === 409 && ticketData.ticket) {
-      // ⚠️ Ya existe ticket → usarlo
       ticketId = ticketData.ticket._id;
-
     } else {
       alert(ticketData.message || "Error creando el ticket");
       return;
     }
 
-    // 2️⃣ Crear pago en Mercado Pago
+    // 2️⃣ Crear pago MP
     const payRes = await fetch(
-      `http://localhost:5000/api/payments/create/${ticketId}`,
+      `${API_URL}/api/payments/create/${ticketId}`,
       { method: "POST" }
     );
 
@@ -155,7 +154,7 @@ window.payEvent = async function (eventId) {
       return;
     }
 
-    // 3️⃣ Redirigir a Mercado Pago
+    // 3️⃣ Redirigir
     window.location.href = payData.init_point;
 
   } catch (error) {

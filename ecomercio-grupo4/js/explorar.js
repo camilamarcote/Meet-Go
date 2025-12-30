@@ -1,3 +1,5 @@
+const API_URL = "https://meetgo-backend.onrender.com";
+
 const eventsContainer = document.getElementById("eventsContainer");
 
 function getCategoryImage(category) {
@@ -12,13 +14,17 @@ function getCategoryImage(category) {
 
 async function loadEvents() {
   try {
-    const res = await fetch("http://localhost:5000/events");
-    const events = await res.json();
+    const res = await fetch(`${API_URL}/events`);
+    if (!res.ok) throw new Error("Error al obtener eventos");
 
+    const events = await res.json();
     eventsContainer.innerHTML = "";
 
     events.forEach(event => {
-      const img = event.image && event.image.trim() !== "" ? event.image : getCategoryImage(event.category);
+      const img =
+        event.image && event.image.trim() !== ""
+          ? `${API_URL}${event.image}`
+          : getCategoryImage(event.category);
 
       const card = `
         <div class="col-md-4 col-lg-3">
@@ -30,17 +36,22 @@ async function loadEvents() {
               <p><span class="badge bg-primary">${event.category}</span></p>
               <p class="text-muted">${event.date} ${event.time}</p>
               <div class="mt-auto d-grid gap-2">
-                <a href="eventinfo.html?id=${event._id}" class="btn btn-primary">Ver más información</a>
+                <a href="eventinfo.html?id=${event._id}" class="btn btn-primary">
+                  Ver más información
+                </a>
               </div>
             </div>
           </div>
         </div>
       `;
+
       eventsContainer.innerHTML += card;
     });
+
   } catch (err) {
-    console.error("Error al cargar eventos:", err);
+    console.error("❌ Error al cargar eventos:", err);
   }
 }
 
 loadEvents();
+

@@ -3,7 +3,10 @@ const eventId = params.get("id");
 const container = document.getElementById("participantsList");
 
 async function loadParticipants() {
-  const res = await fetch(`http://localhost:5000/events/${eventId}`);
+  const res = await fetch(
+  `https://meetgo-backend.onrender.com/events/${eventId}`
+);
+
   const event = await res.json();
 
   container.innerHTML = event.participants.map(p => `
