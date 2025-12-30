@@ -1,39 +1,34 @@
-import bcrypt from "bcryptjs";
-import { generateToken } from "../utils/jwt.js";
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
 
-router.post("/login", async (req, res) => {
+  const user = document.getElementById("loginUser").value;
+  const password = document.getElementById("loginPass").value;
+
   try {
-    const { user, password } = req.body;
-
-    const foundUser = await User.findOne({
-      $or: [{ email: user }, { username: user }]
+    const response = await fetch("https://meetgo-backend.onrender.com/api/users/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ user, password })
     });
 
-    if (!foundUser) {
-      return res.status(401).json({ message: "Credenciales incorrectas" });
+    const data = await response.json();
+
+    if (!response.ok) {
+      alert(data.message || "Error al iniciar sesión");
+      return;
     }
 
-    const isMatch = await bcrypt.compare(password, foundUser.password);
-    if (!isMatch) {
-      return res.status(401).json({ message: "Credenciales incorrectas" });
-    }
+    // 🔐 Guardar sesión
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("currentUser", JSON.stringify(data.user));
 
-    const token = generateToken(foundUser);
-
-    res.json({
-      message: "Login exitoso",
-      token,
-      user: {
-        id: foundUser._id,
-        username: foundUser.username,
-        email: foundUser.email,
-        roles: foundUser.roles,
-        isOrganizer: foundUser.isOrganizer,
-        profileImage: foundUser.profileImage
-      }
-    });
+    // 🚀 Redirigir
+    window.location.href = "index.html";
 
   } catch (error) {
-    res.status(500).json({ message: "Error en login" });
+    console.error("❌ Error en login frontend:", error);
+    alert("Error de conexión con el servidor");
   }
 });
