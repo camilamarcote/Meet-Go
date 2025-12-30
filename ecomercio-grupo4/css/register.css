@@ -1,4 +1,7 @@
-/* MOBILE FIRST – diseño base */
+/* ===============================
+   🌱 MOBILE FIRST – diseño base
+================================ */
+
 body {
   margin: 0;
   padding: 0;
@@ -11,6 +14,10 @@ body {
   margin: auto;
   padding: 20px;
 }
+
+/* ===============================
+   📝 TITULOS
+================================ */
 
 h2 {
   text-align: center;
@@ -25,6 +32,10 @@ h2 {
   font-size: 0.9rem;
 }
 
+/* ===============================
+   🧱 CARDS
+================================ */
+
 .card {
   background: white;
   padding: 18px;
@@ -33,13 +44,24 @@ h2 {
   box-shadow: 0 4px 10px rgba(0,0,0,0.06);
 }
 
+/* ===============================
+   🏷️ LABELS
+================================ */
+
 label {
   display: block;
   margin: 10px 0 5px;
   font-weight: 500;
 }
 
-input, select, textarea {
+/* ===============================
+   ✏️ INPUTS GENERALES
+   (excluye checkbox y radio)
+================================ */
+
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
   width: 100%;
   padding: 10px;
   border-radius: 8px;
@@ -48,11 +70,56 @@ input, select, textarea {
   box-sizing: border-box;
 }
 
+textarea {
+  resize: vertical;
+}
+
+/* ===============================
+   ☑️ CHECKBOXES
+================================ */
+
 .checkbox-card label {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
 }
+
+.checkbox-card label:hover {
+  background: #f3f4ff;
+}
+
+.checkbox-card input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #6c63ff;
+}
+
+/* ===============================
+   🔘 RADIOS
+================================ */
+
+.card label input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #6c63ff;
+  margin-right: 8px;
+}
+
+/* Alineación correcta de radios */
+.card label:has(input[type="radio"]) {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+/* ===============================
+   🔘 BOTONES
+================================ */
 
 button {
   width: 100%;
@@ -66,10 +133,12 @@ button {
 }
 
 /* Botones principales */
+
 .btn-primary {
   background: #6c63ff;
   color: white;
 }
+
 .btn-primary:hover {
   background: #5750e5;
 }
@@ -77,6 +146,7 @@ button {
 .btn-secondary {
   background: #ddd;
 }
+
 .btn-secondary:hover {
   background: #ccc;
 }
@@ -85,11 +155,15 @@ button {
   background: #2ecc71;
   color: white;
 }
+
 .btn-success:hover {
   background: #27ae60;
 }
 
-/* Ocultar pasos */
+/* ===============================
+   🧭 PASOS DEL FORM
+================================ */
+
 .form-step {
   display: none;
   animation: fade 0.4s ease;
@@ -104,29 +178,44 @@ button {
   gap: 10px;
 }
 
-/* EFECTO FADE */
+/* ===============================
+   🎬 ANIMACIÓN
+================================ */
+
 @keyframes fade {
-  from {opacity: 0; transform: translateY(10px);}
-  to {opacity: 1; transform: translateY(0);}
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-/* 📱 Tablets */
+/* ===============================
+   📱 TABLETS
+================================ */
+
 @media (min-width: 600px) {
   .app-container {
     max-width: 600px;
   }
 }
 
-/* 🖥️ Escritorio */
+/* ===============================
+   🖥️ ESCRITORIO
+================================ */
+
 @media (min-width: 900px) {
   .app-container {
     max-width: 700px;
   }
-  
+
   .card {
     padding: 25px;
   }
-  
+
   button {
     font-size: 18px;
   }

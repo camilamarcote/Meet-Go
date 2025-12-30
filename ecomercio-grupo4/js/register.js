@@ -43,17 +43,21 @@ document.addEventListener("DOMContentLoaded", () => {
     return true;
   }
 
-  // ======================
-  // SUBMIT FINAL REGISTRO
-  // ======================
+  /* ======================
+     SUBMIT REGISTRO
+  ====================== */
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     // Intereses
-    const interestChecks = [
+    const interests = [
       ...document.querySelectorAll("input[type='checkbox']:checked")
-    ];
-    const interests = interestChecks.map(i => i.value);
+    ].map(i => i.value);
+
+    // Idiomas
+    const languages = [
+      ...document.querySelectorAll("input[name='languages']:checked")
+    ].map(l => l.value);
 
     const formData = new FormData();
 
@@ -63,31 +67,35 @@ document.addEventListener("DOMContentLoaded", () => {
     formData.append("email", form.email.value);
     formData.append("password", form.password.value);
     formData.append("age", form.age.value);
-    formData.append("department", form.department.value);
+
+    // Opcionales / nuevos
+    formData.append("department", form.department?.value || "");
+    formData.append("nationality", form.nationality.value);
+    formData.append("languages", JSON.stringify(languages));
+
     formData.append("personality", form.personality.value);
-    formData.append("style", form.style.value);
+    formData.append("style", form.style?.value || "");
     formData.append("bio", form.bio.value);
 
-    // Intereses como JSON string
     formData.append("interests", JSON.stringify(interests));
 
-    // Imagen
     if (form.profileImage.files.length > 0) {
       formData.append("profileImage", form.profileImage.files[0]);
     }
 
     try {
-      const res = await fetch("https://meetgo-backend.onrender.com/api/users/register", {
-
-
-        method: "POST",
-        body: formData
-      });
+      const res = await fetch(
+        "https://meetgo-backend.onrender.com/api/users/register",
+        {
+          method: "POST",
+          body: formData
+        }
+      );
 
       const result = await res.json();
 
       if (!res.ok) {
-        alert(result.message);
+        alert(result.message || "Error en el registro");
         return;
       }
 
@@ -104,4 +112,3 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
 });
-

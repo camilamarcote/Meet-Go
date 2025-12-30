@@ -1,6 +1,7 @@
 import express from "express";
 import multer from "multer";
 import path from "path";
+import bcrypt from "bcrypt";
 import User from "../models/user.js";
 
 const router = express.Router();
@@ -10,7 +11,7 @@ const router = express.Router();
 // =============================
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/"); // carpeta donde se guardan las imágenes
+    cb(null, "uploads/");
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
@@ -23,7 +24,7 @@ const upload = multer({ storage });
 
 
 // =============================
-// 🟢 REGISTER (con imagen)
+// 🟢 REGISTER (con imagen + bcrypt)
 // =============================
 router.post("/register", upload.single("profileImage"), async (req, res) => {
   try {
@@ -41,23 +42,34 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       style,
       bio,
       interests,
+      nationality,
+      languages
     } = req.body;
 
-    // Imagen si existe
+    // 🔐 Hashear contraseña
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Imagen
     const profileImage = req.file ? `/uploads/${req.file.filename}` : "";
 
     // Parsear intereses
     const parsedInterests =
       typeof interests === "string" ? JSON.parse(interests) : interests;
 
+    // Parsear idiomas
+    const parsedLanguages =
+      typeof languages === "string" ? JSON.parse(languages) : languages;
+
     const newUser = new User({
       firstName,
       lastName,
       username,
       email,
-      password,
+      password: hashedPassword,
       age,
-      department,
+      department: department || "",
+      nationality,
+      languages: parsedLanguages || [],
       personality,
       style,
       bio,
@@ -74,32 +86,40 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
 
   } catch (error) {
     console.error("❌ Error en register:", error);
+
+    if (error.code === 11000) {
+      return res.status(400).json({
+        message: "El usuario o email ya existe",
+      });
+    }
+
     res.status(500).json({ message: "Error al registrar usuario" });
   }
 });
 
 
 // =============================
-// 🟡 LOGIN
-// =============================
-// =============================
-// 🟡 LOGIN (email o username)
+// 🟡 LOGIN (email o username + bcrypt)
 // =============================
 router.post("/login", async (req, res) => {
   try {
-    const { user, password } = req.body; // <-- lo que SI envía tu frontend
+    const { user, password } = req.body;
 
     if (!user || !password) {
       return res.status(400).json({ message: "Faltan datos" });
     }
 
-    // Buscar por email O username
     const foundUser = await User.findOne({
       $or: [{ email: user }, { username: user }],
-      password
     });
 
     if (!foundUser) {
+      return res.status(401).json({ message: "Credenciales incorrectas" });
+    }
+
+    const isMatch = await bcrypt.compare(password, foundUser.password);
+
+    if (!isMatch) {
       return res.status(401).json({ message: "Credenciales incorrectas" });
     }
 
@@ -143,14 +163,24 @@ router.put("/:id", upload.single("profileImage"), async (req, res) => {
 
     const updates = { ...req.body };
 
-    // Si viene nueva imagen
+    // Imagen nueva
     if (req.file) {
       updates.profileImage = `/uploads/${req.file.filename}`;
     }
 
-    // intereses enviados como JSON string
+    // Intereses
     if (updates.interests && typeof updates.interests === "string") {
       updates.interests = JSON.parse(updates.interests);
+    }
+
+    // Idiomas
+    if (updates.languages && typeof updates.languages === "string") {
+      updates.languages = JSON.parse(updates.languages);
+    }
+
+    // 🔐 Si se cambia la contraseña
+    if (updates.password) {
+      updates.password = await bcrypt.hash(updates.password, 10);
     }
 
     const updatedUser = await User.findByIdAndUpdate(
@@ -172,6 +202,5 @@ router.put("/:id", upload.single("profileImage"), async (req, res) => {
     res.status(500).json({ message: "Error al actualizar perfil" });
   }
 });
-
 
 export default router;

@@ -1,44 +1,39 @@
-console.log("login.js cargado");
+import bcrypt from "bcryptjs";
+import { generateToken } from "../utils/jwt.js";
 
-const API_URL = "https://meetgo-backend.onrender.com";
-
-const loginForm = document.getElementById("loginForm");
-const loginUser = document.getElementById("loginUser");
-const loginPass = document.getElementById("loginPass");
-
-loginForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-
+router.post("/login", async (req, res) => {
   try {
-    const res = await fetch(`${API_URL}/api/users/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        user: loginUser.value,
-        password: loginPass.value
-      })
+    const { user, password } = req.body;
+
+    const foundUser = await User.findOne({
+      $or: [{ email: user }, { username: user }]
     });
 
-    const data = await res.json();
-
-    if (!res.ok) {
-      return alert(data.message || "Error al iniciar sesión");
+    if (!foundUser) {
+      return res.status(401).json({ message: "Credenciales incorrectas" });
     }
 
-    const smallUser = {
-      id: data.user._id,
-      username: data.user.username,
-      email: data.user.email,
-      profileImage: data.user.profileImage || "",
-      isOrganizer: data.user.isOrganizer === true
-    };
+    const isMatch = await bcrypt.compare(password, foundUser.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Credenciales incorrectas" });
+    }
 
-    localStorage.setItem("currentUser", JSON.stringify(smallUser));
+    const token = generateToken(foundUser);
 
-    window.location.href = "index.html";
+    res.json({
+      message: "Login exitoso",
+      token,
+      user: {
+        id: foundUser._id,
+        username: foundUser.username,
+        email: foundUser.email,
+        roles: foundUser.roles,
+        isOrganizer: foundUser.isOrganizer,
+        profileImage: foundUser.profileImage
+      }
+    });
 
   } catch (error) {
-    console.error("❌ Error login:", error);
-    alert("No se pudo conectar con el servidor");
+    res.status(500).json({ message: "Error en login" });
   }
 });

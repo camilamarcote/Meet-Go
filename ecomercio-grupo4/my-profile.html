@@ -4,41 +4,37 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mi Perfil</title>
+
   <link rel="stylesheet" href="css/my-profile.css">
-  <!-- Favicon básico -->
-<link rel="icon" type="image/x-icon" href="img/favicon/favicon.ico">
 
-<!-- Favicons PNG -->
-<link rel="icon" type="image/png" sizes="32x32" href="img/favicon/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="img/favicon/favicon-16x16.png">
-
-<!-- Apple Touch (iPhone/iPad) -->
-<link rel="apple-touch-icon" sizes="180x180" href="img/favicon/apple-touch-icon.png">
-
-<!-- Manifest (opcional pero recomendado) -->
-<link rel="manifest" href="img/favicon/site.webmanifest">
-
+  <!-- Favicons -->
+  <link rel="icon" type="image/x-icon" href="img/favicon/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="img/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="img/favicon/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="img/favicon/apple-touch-icon.png">
+  <link rel="manifest" href="img/favicon/site.webmanifest">
 </head>
 
 <body>
-
 
 <h1 class="title">Mi Perfil</h1>
 
 <div class="profile-container">
 
-  <!-- ======== FOTO DE PERFIL ======== -->
+  <!-- ===== FOTO DE PERFIL ===== -->
   <div class="profile-image-section">
-    <img id="currentProfileImage" src="img/default-user.png" alt="Foto de perfil" class="profile-img">
+    <img id="currentProfileImage"
+         src="img/default-user.png"
+         alt="Foto de perfil"
+         class="profile-img">
 
     <label for="profileImage" class="file-label">Cambiar foto</label>
     <input type="file" id="profileImage" accept="image/*" style="display:none">
   </div>
 
-  <!-- ======== FORMULARIO ======== -->
+  <!-- ===== FORMULARIO ===== -->
   <form id="profileForm">
 
-    <!-- Nombre -->
     <label>Nombre</label>
     <input type="text" id="firstName" required>
 
@@ -49,13 +45,38 @@
     <input type="text" id="username" required>
 
     <label>Email</label>
-    <input type="email" id="email" required disabled>
+    <input type="email" id="email" disabled>
 
     <label>Edad</label>
-    <input type="number" id="age" min="18" required>
+    <input type="number" id="age" min="18">
 
+    <!-- 🌎 NACIONALIDAD -->
+    <label>Nacionalidad *</label>
+    <select id="nationality" required>
+      <option value="">Seleccionar...</option>
+      <option>Uruguaya</option>
+      <option>Argentina</option>
+      <option>Brasileña</option>
+      <option>Chilena</option>
+      <option>Paraguaya</option>
+      <option>Boliviana</option>
+      <option>Peruana</option>
+      <option>Colombiana</option>
+      <option>Venezolana</option>
+      <option>Mexicana</option>
+      <option>Española</option>
+      <option>Italiana</option>
+      <option>Francesa</option>
+      <option>Alemana</option>
+      <option>Estadounidense</option>
+      <option>Canadiense</option>
+      <option>Otra</option>
+    </select>
+
+    <!-- 🏙️ DEPARTAMENTO (opcional) -->
     <label>Departamento</label>
-    <select id="department" required>
+    <select id="department">
+      <option value="">Seleccionar...</option>
       <option>Artigas</option>
       <option>Canelones</option>
       <option>Cerro Largo</option>
@@ -77,51 +98,44 @@
       <option>Treinta y Tres</option>
     </select>
 
-    <!-- ===== PERSONALIDAD ===== -->
-    <label>Tipo de personalidad</label>
-    <input type="text" id="personality" placeholder="INFJ, ENTP, etc.">
+    <!-- PERSONALIDAD -->
+    <label>Temperamento</label>
+    <select id="personality">
+      <option value="">Seleccionar...</option>
+      <option>Introvertido/a</option>
+      <option>Ambivertido/a</option>
+      <option>Extrovertido/a</option>
+    </select>
 
-    <!-- ===== ESTILO ===== -->
+    <!-- ESTILO SOCIAL -->
     <label>Estilo social</label>
     <div class="radio-group">
-      <label><input type="radio" name="style" value="introvertido"> Introvertido</label>
-      <label><input type="radio" name="style" value="extrovertido"> Extrovertido</label>
-      <label><input type="radio" name="style" value="ambivertido"> Ambivertido</label>
+      <label><input type="radio" name="style" value="grupos"> Grupos grandes</label>
+      <label><input type="radio" name="style" value="pequenos"> Grupos pequeños</label>
+      <label><input type="radio" name="style" value="uno"> 1 a 1</label>
     </div>
 
-    <!-- ===== INTERESES ===== -->
+    <!-- 🗣️ IDIOMAS -->
+    <label>Idiomas que hablás</label>
+    <div class="checkbox-group">
+      <label><input type="checkbox" value="espanol"> Español</label>
+      <label><input type="checkbox" value="ingles"> Inglés</label>
+      <label><input type="checkbox" value="portugues"> Portugués</label>
+      <label><input type="checkbox" value="frances"> Francés</label>
+      <label><input type="checkbox" value="italiano"> Italiano</label>
+      <label><input type="checkbox" value="aleman"> Alemán</label>
+      <label><input type="checkbox" value="otro"> Otro</label>
+    </div>
+
+    <!-- INTERESES -->
     <label>Intereses</label>
     <div class="checkbox-group">
-  <div class="checkbox-item">
-  <input type="checkbox" id="musica" value="música">
-  <label for="musica">Música</label>
-</div>
-
-<div class="checkbox-item">
-  <input type="checkbox" id="cine" value="cine">
-  <label for="cine">Cine</label>
-</div>
-
-<div class="checkbox-item">
-  <input type="checkbox" id="lectura" value="lectura">
-  <label for="lectura">Lectura</label>
-</div>
-
-<div class="checkbox-item">
-  <input type="checkbox" id="deporte" value="deporte">
-  <label for="deporte">Deporte</label>
-</div>
-
-<div class="checkbox-item">
-  <input type="checkbox" id="viajes" value="viajes">
-  <label for="viajes">Viajes</label>
-</div>
-
-<div class="checkbox-item">
-  <input type="checkbox" id="arte" value="arte">
-  <label for="arte">Arte</label>
-</div>
-
+      <label><input type="checkbox" value="musica"> Música</label>
+      <label><input type="checkbox" value="cine"> Cine</label>
+      <label><input type="checkbox" value="lectura"> Lectura</label>
+      <label><input type="checkbox" value="deporte"> Deporte</label>
+      <label><input type="checkbox" value="viajes"> Viajes</label>
+      <label><input type="checkbox" value="arte"> Arte</label>
     </div>
 
     <!-- BIO -->
