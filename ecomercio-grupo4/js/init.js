@@ -8,11 +8,11 @@ document.addEventListener("DOMContentLoaded", () => {
   <div class="container-fluid">
 
     <!-- LOGO -->
-    <a class="navbar-brand d-flex align-items-center gap-2" href="index.html">
+    <a class="navbar-brand d-flex align-items-center" href="index.html">
       <img src="img/LOGO (1).svg" class="logo-img" alt="Logo">
     </a>
 
-    <button class="navbar-toggler custom-toggler" type="button"
+    <button class="navbar-toggler" type="button"
       data-bs-toggle="collapse" data-bs-target="#navbarNav">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
     <div class="collapse navbar-collapse" id="navbarNav">
 
       <!-- LINKS IZQUIERDA -->
-      <ul class="navbar-nav main-links">
+      <ul class="navbar-nav">
         <li class="nav-item">
           <a class="nav-link" href="explorar.html">Explorar</a>
         </li>
@@ -46,16 +46,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
         <!-- LOGUEADO -->
         <div id="auth-zone" class="d-flex align-items-center gap-3" style="display:none">
-          <span id="username" class="fw-semibold username-text"></span>
+          <span id="username" class="fw-semibold"></span>
 
           <div class="dropdown">
-            <a href="#" data-bs-toggle="dropdown">
+            <a href="#" data-bs-toggle="dropdown" aria-expanded="false">
               <img id="avatar-nav"
                    src="img/default-user.png"
                    class="profile-avatar"
                    alt="avatar">
             </a>
-            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+            <ul class="dropdown-menu dropdown-menu-end">
               <li>
                 <a class="dropdown-item" href="my-profile.html">Mi perfil</a>
               </li>
@@ -76,25 +76,33 @@ document.addEventListener("DOMContentLoaded", () => {
   if (navbarContainer) navbarContainer.innerHTML = navbarHTML;
 
   /* ============================
-     2. USUARIO
+     2. ESTADO DE AUTENTICACIÓN
   ============================ */
-  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+  let currentUser = null;
 
-  const authZone = document.getElementById("auth-zone");
+  try {
+    currentUser = JSON.parse(localStorage.getItem("currentUser"));
+  } catch (e) {
+    localStorage.removeItem("currentUser");
+  }
+
   const guestZone = document.getElementById("guest-zone");
+  const authZone = document.getElementById("auth-zone");
 
-  if (!currentUser) {
-    guestZone.style.display = "flex";
-    authZone.style.display = "none";
+  // FORZAR ESTADO VISUAL
+  guestZone.style.display = "flex";
+  authZone.style.display = "none";
+
+  if (!currentUser || !currentUser.username) {
     return;
   }
 
+  /* ============================
+     3. USUARIO LOGUEADO
+  ============================ */
   guestZone.style.display = "none";
   authZone.style.display = "flex";
 
-  /* ============================
-     3. DATOS + PERMISOS
-  ============================ */
   document.getElementById("username").textContent = currentUser.username;
 
   document.getElementById("avatar-nav").src = currentUser.profileImage
