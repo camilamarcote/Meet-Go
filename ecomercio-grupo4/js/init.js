@@ -1,13 +1,12 @@
 document.addEventListener("DOMContentLoaded", () => {
 
   /* ============================
-     1. INSERTAR NAVBAR DINÁMICA
+     1. INSERTAR NAVBAR
   ============================= */
   const navbarHTML = `
 <nav class="navbar navbar-expand-lg navbar-light modern-navbar">
   <div class="container-fluid">
 
-    <!-- LOGO -->
     <a class="navbar-brand d-flex align-items-center gap-2" href="index.html">
       <img src="img/LOGO (1).svg" class="logo-img" alt="Logo">
     </a>
@@ -27,13 +26,16 @@ document.addEventListener("DOMContentLoaded", () => {
         <li class="nav-item">
           <a class="nav-link" href="aboutus.html">Sobre la App</a>
         </li>
+        <li class="nav-item" id="nav-my-events" style="display:none">
+          <a class="nav-link" href="myevents.html">Mis eventos</a>
+        </li>
         <li class="nav-item" id="nav-create-event" style="display:none">
           <a class="nav-link" href="createevent.html">Crear Evento</a>
         </li>
       </ul>
 
-      <!-- PERFIL -->
-      <div class="profile-zone d-flex align-items-center gap-3">
+      <!-- AUTH ZONE -->
+      <div class="profile-zone d-flex align-items-center gap-3" id="auth-zone">
         <span id="username" class="fw-semibold username-text"></span>
 
         <div class="dropdown">
@@ -48,6 +50,11 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       </div>
 
+      <div id="guest-zone" class="d-flex gap-2">
+        <a href="login.html" class="btn btn-outline-primary btn-sm">Login</a>
+        <a href="register.html" class="btn btn-primary btn-sm">Registro</a>
+      </div>
+
     </div>
   </div>
 </nav>
@@ -57,63 +64,45 @@ document.addEventListener("DOMContentLoaded", () => {
   if (navbarContainer) navbarContainer.innerHTML = navbarHTML;
 
   /* ============================
-        2. AUTENTICACIÓN
+        2. USUARIO
   ============================= */
   const currentUser = JSON.parse(localStorage.getItem("currentUser"));
-  const currentPage = window.location.pathname.split("/").pop();
 
-  const pagesWithoutLogin = [
-    "welcome.html",
-    "login.html",
-    "register.html",
-    "index.html"
-  ];
+  const authZone = document.getElementById("auth-zone");
+  const guestZone = document.getElementById("guest-zone");
 
-  if (!currentUser && !pagesWithoutLogin.includes(currentPage)) {
-    window.location.href = "login.html";
+  if (!currentUser) {
+    authZone.style.display = "none";
     return;
   }
 
+  guestZone.style.display = "none";
+
   /* ============================
-     3. MOSTRAR DATOS + PERMISOS
+     3. DATOS + PERMISOS
   ============================= */
-  if (currentUser) {
-    const usernameSpan = document.getElementById("username");
-    const avatarImg = document.getElementById("avatar-nav");
-    const navCreateEvent = document.getElementById("nav-create-event");
+  document.getElementById("username").textContent = currentUser.username;
 
-    if (usernameSpan) {
-      usernameSpan.textContent = currentUser.username;
-    }
+  document.getElementById("avatar-nav").src = currentUser.profileImage
+    ? `http://localhost:5000${currentUser.profileImage}`
+    : "img/default-user.png";
 
-    if (avatarImg) {
-      avatarImg.src = currentUser.profileImage
-        ? `http://localhost:5000${currentUser.profileImage}`
-        : "img/default-user.png";
-    }
+  document.getElementById("nav-my-events").style.display = "block";
 
-    // ✅ MOSTRAR "CREAR EVENTO" SI ES ORGANIZADOR O ADMIN
-    if (
-      navCreateEvent &&
-      (
-        currentUser.isOrganizer === true ||
-        currentUser.role === "organizer" ||
-        currentUser.role === "admin"
-      )
-    ) {
-      navCreateEvent.style.display = "block";
-    }
+  if (
+    currentUser.isOrganizer === true ||
+    currentUser.role === "organizer" ||
+    currentUser.role === "admin"
+  ) {
+    document.getElementById("nav-create-event").style.display = "block";
   }
 
   /* ============================
      4. LOGOUT
   ============================= */
-  const logoutLink = document.getElementById("logoutLink");
-  if (logoutLink) {
-    logoutLink.addEventListener("click", () => {
-      localStorage.removeItem("currentUser");
-      window.location.href = "welcome.html";
-    });
-  }
+  document.getElementById("logoutLink").addEventListener("click", () => {
+    localStorage.removeItem("currentUser");
+    window.location.href = "welcome.html";
+  });
 
 });

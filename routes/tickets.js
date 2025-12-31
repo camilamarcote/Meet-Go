@@ -94,4 +94,28 @@ router.post("/events/:eventId/tickets", async (req, res) => {
   }
 });
 
+// =============================
+// 📋 MIS EVENTOS (POR USUARIO)
+// =============================
+router.get("/my/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: "ID inválido" });
+    }
+
+    const tickets = await EventTicket.find({ user: userId })
+      .populate("event")
+      .sort({ createdAt: -1 });
+
+    res.json(tickets);
+
+  } catch (error) {
+    console.error("❌ Error al obtener mis eventos:", error);
+    res.status(500).json({ message: "Error al obtener mis eventos" });
+  }
+});
+
+
 export default router;

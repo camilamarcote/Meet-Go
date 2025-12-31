@@ -29,7 +29,7 @@ export async function sendTicketMail({ to, user, event, ticket }) {
       <p>
         Tu entrada para el evento
         <strong>${event.name}</strong>
-        fue generada correctamente.
+        fue generada correctamente 🎉
       </p>
 
       <hr>
@@ -44,10 +44,31 @@ export async function sendTicketMail({ to, user, event, ticket }) {
       ${
         event.whatsappLink
           ? `
+        <hr>
+
+        <h3>💬 Grupo de WhatsApp del evento</h3>
+
         <p>
-          💬 <strong>Grupo de WhatsApp:</strong><br>
-          <a href="${event.whatsappLink}" target="_blank">
-            Unirme al grupo
+          Unite al grupo de WhatsApp del evento para no perderte
+          ninguna novedad, coordinar con el grupo y recibir toda la
+          información importante antes del encuentro.
+        </p>
+
+        <p style="text-align:center; margin:20px 0">
+          <a
+            href="${event.whatsappLink}"
+            target="_blank"
+            style="
+              background:#25D366;
+              color:#ffffff;
+              padding:12px 20px;
+              text-decoration:none;
+              border-radius:6px;
+              font-weight:bold;
+              display:inline-block;
+            "
+          >
+            👉 Unirme al grupo de WhatsApp
           </a>
         </p>
       `
@@ -74,7 +95,7 @@ export async function sendTicketMail({ to, user, event, ticket }) {
       </p>
 
       <p style="font-size:12px; color:#777; text-align:center; margin-top:30px">
-        Meet&Go · Entrada digital<br>
+        Meet&Go · Encuentros reales, conexiones genuinas<br>
         No respondas este correo
       </p>
 
