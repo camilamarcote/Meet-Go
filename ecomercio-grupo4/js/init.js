@@ -2,11 +2,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* ============================
      1. INSERTAR NAVBAR
-  ============================= */
+  ============================ */
   const navbarHTML = `
 <nav class="navbar navbar-expand-lg navbar-light modern-navbar">
   <div class="container-fluid">
 
+    <!-- LOGO -->
     <a class="navbar-brand d-flex align-items-center gap-2" href="index.html">
       <img src="img/LOGO (1).svg" class="logo-img" alt="Logo">
     </a>
@@ -16,9 +17,9 @@ document.addEventListener("DOMContentLoaded", () => {
       <span class="navbar-toggler-icon"></span>
     </button>
 
-    <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
+    <div class="collapse navbar-collapse" id="navbarNav">
 
-      <!-- LINKS -->
+      <!-- LINKS IZQUIERDA -->
       <ul class="navbar-nav main-links">
         <li class="nav-item">
           <a class="nav-link" href="explorar.html">Explorar</a>
@@ -34,28 +35,38 @@ document.addEventListener("DOMContentLoaded", () => {
         </li>
       </ul>
 
-      <!-- ZONA NO LOGUEADO -->
-      <div id="guest-zone" class="d-flex gap-2">
-        <a href="login.html" class="btn btn-outline-primary btn-sm">Login</a>
-        <a href="register.html" class="btn btn-primary btn-sm">Registro</a>
-      </div>
+      <!-- DERECHA -->
+      <div class="ms-auto d-flex align-items-center gap-2">
 
-      <!-- ZONA LOGUEADO -->
-      <div id="auth-zone" class="profile-zone d-flex align-items-center gap-3" style="display:none">
-        <span id="username" class="fw-semibold username-text"></span>
-
-        <div class="dropdown">
-          <a class="d-flex align-items-center" href="#" data-bs-toggle="dropdown">
-            <img id="avatar-nav" src="img/default-user.png"
-                 class="profile-avatar" alt="avatar">
-          </a>
-          <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-            <li><a class="dropdown-item" href="my-profile.html">Mi perfil</a></li>
-            <li><a class="dropdown-item" href="#" id="logoutLink">Cerrar sesión</a></li>
-          </ul>
+        <!-- NO LOGUEADO -->
+        <div id="guest-zone" class="d-flex gap-2">
+          <a href="login.html" class="btn btn-outline-primary btn-sm">Login</a>
+          <a href="register.html" class="btn btn-primary btn-sm">Registro</a>
         </div>
-      </div>
 
+        <!-- LOGUEADO -->
+        <div id="auth-zone" class="d-flex align-items-center gap-3" style="display:none">
+          <span id="username" class="fw-semibold username-text"></span>
+
+          <div class="dropdown">
+            <a href="#" data-bs-toggle="dropdown">
+              <img id="avatar-nav"
+                   src="img/default-user.png"
+                   class="profile-avatar"
+                   alt="avatar">
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+              <li>
+                <a class="dropdown-item" href="my-profile.html">Mi perfil</a>
+              </li>
+              <li>
+                <a class="dropdown-item" href="#" id="logoutLink">Cerrar sesión</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
     </div>
   </div>
 </nav>
@@ -66,24 +77,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* ============================
      2. USUARIO
-  ============================= */
+  ============================ */
   const currentUser = JSON.parse(localStorage.getItem("currentUser"));
 
   const authZone = document.getElementById("auth-zone");
   const guestZone = document.getElementById("guest-zone");
 
   if (!currentUser) {
-    authZone.style.display = "none";
     guestZone.style.display = "flex";
+    authZone.style.display = "none";
     return;
   }
 
-  authZone.style.display = "flex";
   guestZone.style.display = "none";
+  authZone.style.display = "flex";
 
   /* ============================
      3. DATOS + PERMISOS
-  ============================= */
+  ============================ */
   document.getElementById("username").textContent = currentUser.username;
 
   document.getElementById("avatar-nav").src = currentUser.profileImage
@@ -102,7 +113,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* ============================
      4. LOGOUT
-  ============================= */
+  ============================ */
   document.getElementById("logoutLink").addEventListener("click", () => {
     localStorage.removeItem("currentUser");
     window.location.href = "welcome.html";
