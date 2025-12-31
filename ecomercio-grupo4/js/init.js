@@ -34,8 +34,14 @@ document.addEventListener("DOMContentLoaded", () => {
         </li>
       </ul>
 
-      <!-- AUTH ZONE -->
-      <div class="profile-zone d-flex align-items-center gap-3" id="auth-zone">
+      <!-- ZONA NO LOGUEADO -->
+      <div id="guest-zone" class="d-flex gap-2">
+        <a href="login.html" class="btn btn-outline-primary btn-sm">Login</a>
+        <a href="register.html" class="btn btn-primary btn-sm">Registro</a>
+      </div>
+
+      <!-- ZONA LOGUEADO -->
+      <div id="auth-zone" class="profile-zone d-flex align-items-center gap-3" style="display:none">
         <span id="username" class="fw-semibold username-text"></span>
 
         <div class="dropdown">
@@ -50,11 +56,6 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       </div>
 
-      <div id="guest-zone" class="d-flex gap-2">
-        <a href="login.html" class="btn btn-outline-primary btn-sm">Login</a>
-        <a href="register.html" class="btn btn-primary btn-sm">Registro</a>
-      </div>
-
     </div>
   </div>
 </nav>
@@ -64,7 +65,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (navbarContainer) navbarContainer.innerHTML = navbarHTML;
 
   /* ============================
-        2. USUARIO
+     2. USUARIO
   ============================= */
   const currentUser = JSON.parse(localStorage.getItem("currentUser"));
 
@@ -73,9 +74,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (!currentUser) {
     authZone.style.display = "none";
+    guestZone.style.display = "flex";
     return;
   }
 
+  authZone.style.display = "flex";
   guestZone.style.display = "none";
 
   /* ============================
