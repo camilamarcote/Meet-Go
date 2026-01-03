@@ -53,42 +53,59 @@ router.post("/payments/webhook", async (req, res) => {
   try {
     const { type, data } = req.body;
 
-    if (type !== "payment") {
+    // MP manda muchos eventos, solo nos interesa payment
+    if (type !== "payment" || !data?.id) {
       return res.sendStatus(200);
     }
 
     const paymentClient = new Payment(mpClient);
     const payment = await paymentClient.get({ id: data.id });
 
-    if (payment.status === "approved") {
-      const ticketId = payment.metadata.ticketId;
-
-      const ticket = await EventTicket.findByIdAndUpdate(
-        ticketId,
-        {
-          payment: {
-            status: "approved",
-            paymentId: payment.id,
-            paidAt: new Date()
-          }
-        },
-        { new: true }
-      )
-        .populate("user")
-        .populate("event");
-
-      // 📧 ENVIAR MAIL SOLO CUANDO EL PAGO ES REAL
-      if (ticket?.user?.email) {
-        await sendTicketMail({
-          to: ticket.user.email,
-          user: ticket.user,
-          event: ticket.event,
-          ticket
-        });
-      }
-
-      console.log("✅ Pago aprobado y mail enviado:", payment.id);
+    if (payment.status !== "approved") {
+      return res.sendStatus(200);
     }
+
+    const ticketId = payment.metadata?.ticketId;
+
+    if (!ticketId) {
+      console.warn("⚠️ Pago aprobado sin ticketId en metadata:", payment.id);
+      return res.sendStatus(200);
+    }
+
+    const ticket = await EventTicket.findById(ticketId)
+      .populate("user")
+      .populate("event");
+
+    if (!ticket) {
+      console.warn("⚠️ Ticket no encontrado para pago:", payment.id);
+      return res.sendStatus(200);
+    }
+
+    // Evitar duplicados
+    if (ticket.payment?.status === "approved") {
+      return res.sendStatus(200);
+    }
+
+    ticket.payment = {
+      status: "approved",
+      paymentId: payment.id,
+      paidAt: new Date(),
+      amount: payment.transaction_amount
+    };
+
+    await ticket.save();
+
+    // 📧 Enviar mail con QR
+    if (ticket.user?.email) {
+      await sendTicketMail({
+        to: ticket.user.email,
+        user: ticket.user,
+        event: ticket.event,
+        ticket
+      });
+    }
+
+    console.log("✅ Pago aprobado, ticket actualizado y mail enviado:", payment.id);
 
     res.sendStatus(200);
 
