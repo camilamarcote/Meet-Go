@@ -21,81 +21,50 @@
   <form id="registerForm">
 
     <!-- ================= PASO 1 ================= -->
-    <div class="form-step active">
+    <div class="form-step">
       <h2>👋 ¡Vamos a conocerte!</h2>
       <p class="subtitle">Completá tus datos básicos</p>
 
       <div class="card">
         <label>Nombre*</label>
-        <input type="text" id="firstName" name="firstName" required>
+        <input type="text" name="firstName" required>
 
         <label>Apellido*</label>
-        <input type="text" id="lastName" name="lastName" required>
+        <input type="text" name="lastName" required>
 
         <label>Nombre de usuario*</label>
-        <input type="text" id="username" name="username" required>
+        <input type="text" name="username" required>
 
         <label>Email*</label>
-        <input type="email" id="email" name="email" required>
+        <input type="email" name="email" required>
 
         <label>Contraseña*</label>
-        <input type="password" id="password" name="password" required>
+        <input type="password" name="password" required>
 
         <label>Edad*</label>
-        <input type="number" id="age" name="age" min="18" required>
+        <input type="number" name="age" min="18" required>
 
-        <!-- 🌎 Nacionalidad OBLIGATORIA -->
         <label>Nacionalidad*</label>
-        <select id="nationality" name="nationality" required>
+        <select name="nationality" required>
           <option value="">Seleccionar...</option>
           <option>Uruguaya</option>
           <option>Argentina</option>
           <option>Brasileña</option>
           <option>Chilena</option>
-          <option>Paraguaya</option>
-          <option>Boliviana</option>
-          <option>Peruana</option>
-          <option>Colombiana</option>
-          <option>Venezolana</option>
-          <option>Mexicana</option>
-          <option>Española</option>
-          <option>Italiana</option>
-          <option>Francesa</option>
-          <option>Alemana</option>
-          <option>Estadounidense</option>
-          <option>Canadiense</option>
-          <option>India</option>
           <option>Otra</option>
         </select>
 
-        <!-- 🏙️ Departamento (opcional) -->
         <label>Departamento</label>
-        <select id="department" name="department">
+        <select name="department">
           <option value="">Seleccionar...</option>
-          <option>Artigas</option>
-          <option>Canelones</option>
-          <option>Cerro Largo</option>
-          <option>Colonia</option>
-          <option>Durazno</option>
-          <option>Flores</option>
-          <option>Florida</option>
-          <option>Lavalleja</option>
-          <option>Maldonado</option>
           <option>Montevideo</option>
-          <option>Paysandú</option>
-          <option>Río Negro</option>
-          <option>Rivera</option>
-          <option>Rocha</option>
-          <option>Salto</option>
-          <option>San José</option>
-          <option>Soriano</option>
-          <option>Tacuarembó</option>
-          <option>Treinta y Tres</option>
+          <option>Canelones</option>
+          <option>Maldonado</option>
         </select>
       </div>
 
-      <label for="profileImage">Foto de perfil</label>
-      <input type="file" id="profileImage" name="profileImage" accept="image/*">
+      <label>Foto de perfil</label>
+      <input type="file" name="profileImage" accept="image/*">
 
       <button type="button" class="next-step btn-primary">Siguiente</button>
     </div>
@@ -103,17 +72,12 @@
     <!-- ================= PASO 2 ================= -->
     <div class="form-step">
       <h2>✨ Tus intereses</h2>
-      <p class="subtitle">Seleccioná las actividades que te definen</p>
 
       <div class="card checkbox-card">
         <label><input type="checkbox" value="senderismo"> Senderismo</label>
-        <label><input type="checkbox" value="cafe"> Café / charlas</label>
-        <label><input type="checkbox" value="museos"> Arte y museos</label>
-        <label><input type="checkbox" value="cine"> Cine / Series</label>
-        <label><input type="checkbox" value="juegos"> Juegos de mesa</label>
-        <label><input type="checkbox" value="musica"> Música en vivo</label>
-        <label><input type="checkbox" value="deportes"> Deportes</label>
-        <label><input type="checkbox" value="salir"> Salir a tomar algo</label>
+        <label><input type="checkbox" value="cafe"> Café</label>
+        <label><input type="checkbox" value="cine"> Cine</label>
+        <label><input type="checkbox" value="musica"> Música</label>
       </div>
 
       <div class="button-row">
@@ -125,11 +89,10 @@
     <!-- ================= PASO 3 ================= -->
     <div class="form-step">
       <h2>🌿 Tu personalidad</h2>
-      <p class="subtitle">Elegí lo que mejor te describe</p>
 
       <div class="card">
         <label>Temperamento</label>
-        <select id="personality" name="personality">
+        <select name="personality">
           <option value="">Seleccionar...</option>
           <option>Introvertido/a</option>
           <option>Ambivertido/a</option>
@@ -137,24 +100,19 @@
         </select>
 
         <label>Estilo social</label>
-        <label><input type="radio" name="style" value="grupos"> Grupos grandes</label>
-        <label><input type="radio" name="style" value="pequenos"> Grupos pequeños</label>
+        <label><input type="radio" name="style" value="grupos"> Grupos</label>
+        <label><input type="radio" name="style" value="pequenos"> Pequeños</label>
         <label><input type="radio" name="style" value="uno"> 1 a 1</label>
 
-        <!-- 🌍 Idiomas -->
-        <label>Idiomas que hablás</label>
+        <label>Idiomas</label>
         <div class="checkbox-card">
           <label><input type="checkbox" value="espanol"> Español</label>
           <label><input type="checkbox" value="ingles"> Inglés</label>
           <label><input type="checkbox" value="portugues"> Portugués</label>
-          <label><input type="checkbox" value="frances"> Francés</label>
-          <label><input type="checkbox" value="italiano"> Italiano</label>
-          <label><input type="checkbox" value="aleman"> Alemán</label>
-          <label><input type="checkbox" value="otro"> Otro</label>
         </div>
 
         <label>Biografía</label>
-        <textarea id="bio" name="bio" rows="4" placeholder="Contanos sobre vos..."></textarea>
+        <textarea name="bio"></textarea>
       </div>
 
       <button type="submit" class="btn-primary">Finalizar registro</button>

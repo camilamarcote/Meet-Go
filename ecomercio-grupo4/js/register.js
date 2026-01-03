@@ -49,14 +49,18 @@ document.addEventListener("DOMContentLoaded", () => {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    // Intereses
+    // 🟣 Intereses (solo paso 2)
     const interests = [
-      ...document.querySelectorAll("input[type='checkbox']:checked")
+      ...document.querySelectorAll(
+        ".form-step:nth-of-type(2) input[type='checkbox']:checked"
+      )
     ].map(i => i.value);
 
-    // Idiomas
+    // 🟢 Idiomas (solo los de idiomas)
     const languages = [
-      ...document.querySelectorAll("input[name='languages']:checked")
+      ...document.querySelectorAll(
+        ".form-step:nth-of-type(3) .checkbox-card input[type='checkbox']:checked"
+      )
     ].map(l => l.value);
 
     const formData = new FormData();
@@ -68,15 +72,14 @@ document.addEventListener("DOMContentLoaded", () => {
     formData.append("password", form.password.value);
     formData.append("age", form.age.value);
 
-    // Opcionales / nuevos
-    formData.append("department", form.department?.value || "");
     formData.append("nationality", form.nationality.value);
-    formData.append("languages", JSON.stringify(languages));
+    formData.append("department", form.department?.value || "");
 
     formData.append("personality", form.personality.value);
     formData.append("style", form.style?.value || "");
     formData.append("bio", form.bio.value);
 
+    formData.append("languages", JSON.stringify(languages));
     formData.append("interests", JSON.stringify(interests));
 
     if (form.profileImage.files.length > 0) {
