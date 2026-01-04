@@ -1,30 +1,20 @@
 import express from "express";
 import multer from "multer";
-import path from "path";
 import bcrypt from "bcrypt";
 import User from "../models/user.js";
 
 const router = express.Router();
 
 /* =============================
-   📂 MULTER CONFIG
+   📂 MULTER (SIN DISK STORAGE)
+   Evita crash en Render
 ============================= */
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/");
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `${Date.now()}${ext}`);
-  }
-});
-
-const upload = multer({ storage });
+const upload = multer().single("profileImage");
 
 /* =============================
-   🟢 REGISTER (CORREGIDO)
+   🟢 REGISTER
 ============================= */
-router.post("/register", upload.single("profileImage"), async (req, res) => {
+router.post("/register", upload, async (req, res) => {
   try {
     const {
       firstName,
@@ -43,14 +33,24 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
     } = req.body;
 
     // 🛑 Validaciones mínimas
-    if (!firstName || !lastName || !username || !email || !password || !age || !nationality) {
-      return res.status(400).json({ message: "Faltan campos obligatorios" });
+    if (
+      !firstName ||
+      !lastName ||
+      !username ||
+      !email ||
+      !password ||
+      !age ||
+      !nationality
+    ) {
+      return res.status(400).json({
+        message: "Faltan campos obligatorios"
+      });
     }
 
+    // 🔐 Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-    const profileImage = req.file ? `/uploads/${req.file.filename}` : "";
 
-    // 🛡️ Parseo SEGURO
+    // 🛡️ Parseo seguro de arrays
     const safeParseArray = (value) => {
       if (!value) return [];
       if (Array.isArray(value)) return value;
@@ -63,6 +63,9 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
 
     const parsedInterests = safeParseArray(interests);
     const parsedLanguages = safeParseArray(languages);
+
+    // ⚠️ Imagen desactivada temporalmente
+    const profileImage = "";
 
     const newUser = new User({
       firstName,
@@ -120,7 +123,7 @@ router.post("/login", async (req, res) => {
 
     const foundUser = await User.findOne({
       $or: [{ email: user }, { username: user }]
-    }).select("+password");
+    });
 
     if (!foundUser) {
       return res.status(401).json({ message: "Credenciales incorrectas" });
@@ -146,6 +149,7 @@ router.post("/login", async (req, res) => {
     });
 
   } catch (error) {
+    console.error("❌ Login error:", error);
     res.status(500).json({ message: "Error en login" });
   }
 });
