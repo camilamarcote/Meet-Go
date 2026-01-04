@@ -49,14 +49,12 @@ document.addEventListener("DOMContentLoaded", () => {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    // 🟣 Intereses (solo paso 2)
     const interests = [
       ...document.querySelectorAll(
         ".form-step:nth-of-type(2) input[type='checkbox']:checked"
       )
     ].map(i => i.value);
 
-    // 🟢 Idiomas (solo los de idiomas)
     const languages = [
       ...document.querySelectorAll(
         ".form-step:nth-of-type(3) .checkbox-card input[type='checkbox']:checked"
@@ -65,24 +63,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const formData = new FormData();
 
-    formData.append("firstName", form.firstName.value);
-    formData.append("lastName", form.lastName.value);
-    formData.append("username", form.username.value);
-    formData.append("email", form.email.value);
+    formData.append("firstName", form.firstName.value.trim());
+    formData.append("lastName", form.lastName.value.trim());
+    formData.append("username", form.username.value.trim());
+    formData.append("email", form.email.value.trim());
     formData.append("password", form.password.value);
     formData.append("age", form.age.value);
 
     formData.append("nationality", form.nationality.value);
     formData.append("department", form.department?.value || "");
 
-    formData.append("personality", form.personality.value);
+    formData.append("personality", form.personality?.value || "");
     formData.append("style", form.style?.value || "");
-    formData.append("bio", form.bio.value);
+    formData.append("bio", form.bio?.value || "");
 
-    formData.append("languages", JSON.stringify(languages));
-    formData.append("interests", JSON.stringify(interests));
+    // ✅ SIEMPRE arrays válidos
+    formData.append("languages", JSON.stringify(languages || []));
+    formData.append("interests", JSON.stringify(interests || []));
 
-    if (form.profileImage.files.length > 0) {
+    if (form.profileImage?.files?.length > 0) {
       formData.append("profileImage", form.profileImage.files[0]);
     }
 
@@ -95,14 +94,24 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       );
 
-      const result = await res.json();
+      // 👇 LEER COMO TEXTO PRIMERO
+      const text = await res.text();
+
+      let result;
+      try {
+        result = JSON.parse(text);
+      } catch {
+        console.error("Respuesta no JSON:", text);
+        alert("Error del servidor. Intenta nuevamente.");
+        return;
+      }
 
       if (!res.ok) {
         alert(result.message || "Error en el registro");
         return;
       }
 
-      alert("Registro completado con éxito");
+      alert("Registro completado con éxito 🎉");
 
       setTimeout(() => {
         window.location.href = "login.html";
@@ -110,7 +119,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     } catch (error) {
       console.error("❌ Error register:", error);
-      alert("Error del servidor");
+      alert("No se pudo conectar con el servidor");
     }
   });
 
