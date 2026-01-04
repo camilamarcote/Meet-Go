@@ -2,8 +2,17 @@ import mongoose from "mongoose";
 
 const UserSchema = new mongoose.Schema(
   {
-    firstName: { type: String, trim: true, required: true },
-    lastName: { type: String, trim: true, required: true },
+    firstName: {
+      type: String,
+      trim: true,
+      required: true,
+    },
+
+    lastName: {
+      type: String,
+      trim: true,
+      required: true,
+    },
 
     username: {
       type: String,
@@ -20,9 +29,17 @@ const UserSchema = new mongoose.Schema(
       lowercase: true,
     },
 
-    password: { type: String, required: true },
+    password: {
+      type: String,
+      required: true,
+      select: false, // 🔐 seguridad extra
+    },
 
-    age: { type: Number, min: 0, required: true },
+    age: {
+      type: Number,
+      min: 0,
+      required: true,
+    },
 
     department: {
       type: String,
@@ -41,30 +58,70 @@ const UserSchema = new mongoose.Schema(
       default: [],
     },
 
-    interests: { type: [String], default: [] },
-    personality: { type: String, trim: true, default: "" },
-    style: { type: String, trim: true, default: "" },
-    bio: { type: String, trim: true, default: "" },
+    interests: {
+      type: [String],
+      default: [],
+    },
 
-    profileImage: { type: String, default: "" },
+    personality: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    style: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    bio: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    profileImage: {
+      type: String,
+      default: "",
+    },
 
     // =========================
     // 🔐 SUSCRIPCIÓN
     // =========================
     subscription: {
-      isActive: { type: Boolean, default: false },
+      isActive: {
+        type: Boolean,
+        default: false,
+      },
       plan: {
         type: String,
         enum: ["monthly", "annual", null],
         default: null,
       },
-      startedAt: { type: Date },
-      validUntil: { type: Date },
-      canceledAt: { type: Date },
+      startedAt: {
+        type: Date,
+        default: null,
+      },
+      validUntil: {
+        type: Date,
+        default: null,
+      },
+      canceledAt: {
+        type: Date,
+        default: null,
+      },
     },
 
-    roles: { type: [String], default: ["user"] },
-    isOrganizer: { type: Boolean, default: false },
+    roles: {
+      type: [String],
+      default: ["user"],
+    },
+
+    isOrganizer: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

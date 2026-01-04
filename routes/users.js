@@ -15,15 +15,14 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
-    const fileName = Date.now() + ext;
-    cb(null, fileName);
+    cb(null, `${Date.now()}${ext}`);
   }
 });
 
 const upload = multer({ storage });
 
 /* =============================
-   🟢 REGISTER
+   🟢 REGISTER (CORREGIDO)
 ============================= */
 router.post("/register", upload.single("profileImage"), async (req, res) => {
   try {
@@ -43,15 +42,27 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       languages
     } = req.body;
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // 🛑 Validaciones mínimas
+    if (!firstName || !lastName || !username || !email || !password || !age || !nationality) {
+      return res.status(400).json({ message: "Faltan campos obligatorios" });
+    }
 
+    const hashedPassword = await bcrypt.hash(password, 10);
     const profileImage = req.file ? `/uploads/${req.file.filename}` : "";
 
-    const parsedInterests =
-      typeof interests === "string" ? JSON.parse(interests) : interests;
+    // 🛡️ Parseo SEGURO
+    const safeParseArray = (value) => {
+      if (!value) return [];
+      if (Array.isArray(value)) return value;
+      try {
+        return JSON.parse(value);
+      } catch {
+        return [];
+      }
+    };
 
-    const parsedLanguages =
-      typeof languages === "string" ? JSON.parse(languages) : languages;
+    const parsedInterests = safeParseArray(interests);
+    const parsedLanguages = safeParseArray(languages);
 
     const newUser = new User({
       firstName,
@@ -61,9 +72,9 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       password: hashedPassword,
       age,
       department: department || "",
-      nationality: nationality || "",
-      interests: parsedInterests || [],
-      languages: parsedLanguages || [],
+      nationality,
+      interests: parsedInterests,
+      languages: parsedLanguages,
       personality: personality || "",
       style: style || "",
       bio: bio || "",
@@ -82,18 +93,22 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
     });
 
   } catch (error) {
+    console.error("❌ Register error:", error);
+
     if (error.code === 11000) {
       return res.status(400).json({
         message: "El usuario o el email ya existe"
       });
     }
 
-    res.status(500).json({ message: "Error al registrar usuario" });
+    res.status(500).json({
+      message: "Error al registrar usuario"
+    });
   }
 });
 
 /* =============================
-   🟡 LOGIN (CORREGIDO)
+   🟡 LOGIN
 ============================= */
 router.post("/login", async (req, res) => {
   try {
@@ -105,7 +120,7 @@ router.post("/login", async (req, res) => {
 
     const foundUser = await User.findOne({
       $or: [{ email: user }, { username: user }]
-    });
+    }).select("+password");
 
     if (!foundUser) {
       return res.status(401).json({ message: "Credenciales incorrectas" });
@@ -126,8 +141,6 @@ router.post("/login", async (req, res) => {
         roles: foundUser.roles,
         isOrganizer: foundUser.isOrganizer,
         profileImage: foundUser.profileImage,
-
-        // ✅ CLAVE PARA SUSCRIPCIONES
         subscription: foundUser.subscription
       }
     });
@@ -137,70 +150,4 @@ router.post("/login", async (req, res) => {
   }
 });
 
-/* =============================
-   🔵 GET USER BY ID
-============================= */
-router.get("/:id", async (req, res) => {
-  try {
-    const user = await User
-      .findById(req.params.id)
-      .select("-password");
-
-    if (!user) {
-      return res.status(404).json({ message: "Usuario no encontrado" });
-    }
-
-    res.json(user);
-
-  } catch (error) {
-    res.status(500).json({ message: "Error al obtener usuario" });
-  }
-});
-
-/* =============================
-   🟣 UPDATE PROFILE
-============================= */
-router.put("/:id", upload.single("profileImage"), async (req, res) => {
-  try {
-    const updates = { ...req.body };
-
-    if (req.file) {
-      updates.profileImage = `/uploads/${req.file.filename}`;
-    }
-
-    if (updates.interests && typeof updates.interests === "string") {
-      updates.interests = JSON.parse(updates.interests);
-    }
-
-    if (updates.languages && typeof updates.languages === "string") {
-      updates.languages = JSON.parse(updates.languages);
-    }
-
-    if (updates.password) {
-      updates.password = await bcrypt.hash(updates.password, 10);
-    } else {
-      delete updates.password;
-    }
-
-    const updatedUser = await User.findByIdAndUpdate(
-      req.params.id,
-      updates,
-      { new: true }
-    ).select("-password");
-
-    if (!updatedUser) {
-      return res.status(404).json({ message: "Usuario no encontrado" });
-    }
-
-    res.json({
-      message: "Perfil actualizado",
-      user: updatedUser
-    });
-
-  } catch (error) {
-    res.status(500).json({ message: "Error al actualizar perfil" });
-  }
-});
-
 export default router;
-
