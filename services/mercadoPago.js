@@ -10,7 +10,7 @@ const client = new MercadoPagoConfig({
 const preferenceClient = new Preference(client);
 
 // =============================
-// 🧾 Crear preferencia de pago
+// 🧾 Crear preferencia de pago (EVENTOS)
 // =============================
 export async function createPaymentPreference({ event, user, ticketId }) {
   try {
@@ -27,7 +27,7 @@ export async function createPaymentPreference({ event, user, ticketId }) {
         ],
 
         payer: {
-          name: user.username || user.name,
+          name: user.username || user.firstName,
           email: user.email
         },
 
@@ -41,7 +41,9 @@ export async function createPaymentPreference({ event, user, ticketId }) {
 
         notification_url: `${process.env.BACKEND_URL}/api/payments/webhook`,
 
+        // 👇 CLAVE PARA DIFERENCIAR EVENTOS VS SUSCRIPCIONES
         metadata: {
+          type: "event",                 // ✅ agregado
           ticketId: ticketId.toString(),
           eventId: event._id.toString(),
           userId: user._id.toString()

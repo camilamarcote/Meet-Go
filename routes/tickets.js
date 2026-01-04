@@ -6,11 +6,12 @@ import QRCode from "qrcode";
 import Event from "../models/event.js";
 import User from "../models/user.js";
 import EventTicket from "../models/eventTicket.js";
+import { sendTicketMail } from "../utils/mailer.js";
 
 const router = express.Router();
 
 // =============================
-// 🎟️ CREAR TICKET (SIN MAIL)
+// 🎟️ CREAR TICKET
 // =============================
 router.post("/events/:eventId/tickets", async (req, res) => {
   try {
@@ -52,7 +53,7 @@ router.post("/events/:eventId/tickets", async (req, res) => {
     let paymentStatus = "pending";
     let amount = event.price || 0;
 
-    if (user.subscription?.active) {
+    if (user.subscription?.isActive) {
       accessType = "subscription";
       paymentStatus = "free";
       amount = 0;
@@ -73,7 +74,7 @@ router.post("/events/:eventId/tickets", async (req, res) => {
       payment: {
         status: paymentStatus,
         amount,
-        paidAt: null
+        paidAt: paymentStatus === "free" ? new Date() : null
       },
       qrCode,
       qrImage,
@@ -83,8 +84,23 @@ router.post("/events/:eventId/tickets", async (req, res) => {
 
     await ticket.save();
 
+    // =============================
+    // 📧 MAIL SOLO PARA SUSCRIPCIÓN
+    // =============================
+    if (accessType === "subscription" && user.email) {
+      await sendTicketMail({
+        to: user.email,
+        user,
+        event,
+        ticket
+      });
+    }
+
     res.status(201).json({
-      message: "🎟️ Ticket creado (pago pendiente)",
+      message:
+        accessType === "subscription"
+          ? "🎟️ Ticket generado por suscripción"
+          : "🎟️ Ticket creado (pago pendiente)",
       ticket
     });
 
@@ -95,7 +111,7 @@ router.post("/events/:eventId/tickets", async (req, res) => {
 });
 
 // =============================
-// 📋 MIS EVENTOS (POR USUARIO)
+// 📋 MIS EVENTOS
 // =============================
 router.get("/my/:userId", async (req, res) => {
   try {
@@ -116,6 +132,5 @@ router.get("/my/:userId", async (req, res) => {
     res.status(500).json({ message: "Error al obtener mis eventos" });
   }
 });
-
 
 export default router;

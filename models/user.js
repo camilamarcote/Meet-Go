@@ -24,27 +24,23 @@ const UserSchema = new mongoose.Schema(
 
     age: { type: Number, min: 0, required: true },
 
-    // 📍 Ahora opcional
     department: {
       type: String,
       trim: true,
       default: "",
     },
 
-    // 🌍 NUEVO — obligatorio
     nationality: {
       type: String,
       trim: true,
       required: true,
     },
 
-    // 🗣️ NUEVO — múltiples idiomas
     languages: {
       type: [String],
       default: [],
     },
 
-    // 💡 Perfil
     interests: { type: [String], default: [] },
     personality: { type: String, trim: true, default: "" },
     style: { type: String, trim: true, default: "" },
@@ -57,24 +53,18 @@ const UserSchema = new mongoose.Schema(
     // =========================
     subscription: {
       isActive: { type: Boolean, default: false },
-
       plan: {
         type: String,
         enum: ["monthly", "annual", null],
         default: null,
       },
-
       startedAt: { type: Date },
       validUntil: { type: Date },
       canceledAt: { type: Date },
     },
 
-    // =========================
-    // 🎟️ ROLES
-    // =========================
     roles: { type: [String], default: ["user"] },
     isOrganizer: { type: Boolean, default: false },
-
   },
   { timestamps: true }
 );

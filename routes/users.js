@@ -23,12 +23,10 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 /* =============================
-   🟢 REGISTER (bcrypt + imagen)
+   🟢 REGISTER
 ============================= */
 router.post("/register", upload.single("profileImage"), async (req, res) => {
   try {
-    console.log("📩 Datos recibidos (register):", req.body);
-
     const {
       firstName,
       lastName,
@@ -45,13 +43,10 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       languages
     } = req.body;
 
-    // 🔐 Hashear contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Imagen
     const profileImage = req.file ? `/uploads/${req.file.filename}` : "";
 
-    // Parsear arrays
     const parsedInterests =
       typeof interests === "string" ? JSON.parse(interests) : interests;
 
@@ -87,8 +82,6 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ Error en register:", error);
-
     if (error.code === 11000) {
       return res.status(400).json({
         message: "El usuario o el email ya existe"
@@ -100,7 +93,7 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
 });
 
 /* =============================
-   🟡 LOGIN (email o username)
+   🟡 LOGIN (CORREGIDO)
 ============================= */
 router.post("/login", async (req, res) => {
   try {
@@ -132,12 +125,14 @@ router.post("/login", async (req, res) => {
         email: foundUser.email,
         roles: foundUser.roles,
         isOrganizer: foundUser.isOrganizer,
-        profileImage: foundUser.profileImage
+        profileImage: foundUser.profileImage,
+
+        // ✅ CLAVE PARA SUSCRIPCIONES
+        subscription: foundUser.subscription
       }
     });
 
   } catch (error) {
-    console.error("❌ Error en login:", error);
     res.status(500).json({ message: "Error en login" });
   }
 });
@@ -149,7 +144,7 @@ router.get("/:id", async (req, res) => {
   try {
     const user = await User
       .findById(req.params.id)
-      .select("-password"); // ⛔ ocultar password
+      .select("-password");
 
     if (!user) {
       return res.status(404).json({ message: "Usuario no encontrado" });
@@ -158,7 +153,6 @@ router.get("/:id", async (req, res) => {
     res.json(user);
 
   } catch (error) {
-    console.error("❌ Error al obtener usuario:", error);
     res.status(500).json({ message: "Error al obtener usuario" });
   }
 });
@@ -168,16 +162,12 @@ router.get("/:id", async (req, res) => {
 ============================= */
 router.put("/:id", upload.single("profileImage"), async (req, res) => {
   try {
-    console.log("📩 Datos recibidos (update):", req.body);
-
     const updates = { ...req.body };
 
-    // Imagen
     if (req.file) {
       updates.profileImage = `/uploads/${req.file.filename}`;
     }
 
-    // Parsear arrays
     if (updates.interests && typeof updates.interests === "string") {
       updates.interests = JSON.parse(updates.interests);
     }
@@ -186,7 +176,6 @@ router.put("/:id", upload.single("profileImage"), async (req, res) => {
       updates.languages = JSON.parse(updates.languages);
     }
 
-    // 🔐 Si se cambia contraseña
     if (updates.password) {
       updates.password = await bcrypt.hash(updates.password, 10);
     } else {
@@ -209,9 +198,9 @@ router.put("/:id", upload.single("profileImage"), async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ Error al actualizar:", error);
     res.status(500).json({ message: "Error al actualizar perfil" });
   }
 });
 
 export default router;
+
