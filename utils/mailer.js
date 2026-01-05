@@ -9,13 +9,11 @@ const transporter = nodemailer.createTransport({
 });
 
 export async function sendTicketMail({ to, user, event, ticket }) {
-  console.log("📧 Intentando enviar mail a:", to);
+  console.log("📧 Enviando mail a:", to);
 
   const paymentText =
     ticket.payment.status === "approved"
       ? "✅ Pago aprobado"
-      : ticket.payment.status === "free"
-      ? "🎁 Entrada incluida por suscripción"
       : "⏳ Pago pendiente";
 
   const html = `
@@ -45,15 +43,11 @@ export async function sendTicketMail({ to, user, event, ticket }) {
         event.whatsappLink
           ? `
         <hr>
-
         <h3>💬 Grupo de WhatsApp del evento</h3>
-
         <p>
-          Unite al grupo de WhatsApp del evento para no perderte
-          ninguna novedad, coordinar con el grupo y recibir toda la
-          información importante antes del encuentro.
+          Unite al grupo oficial del evento para recibir novedades
+          y coordinar con los asistentes.
         </p>
-
         <p style="text-align:center; margin:20px 0">
           <a
             href="${event.whatsappLink}"
@@ -90,8 +84,7 @@ export async function sendTicketMail({ to, user, event, ticket }) {
       <hr>
 
       <p>
-        💳 <strong>Estado del pago:</strong> ${paymentText}<br>
-        🎫 <strong>Tipo de acceso:</strong> ${ticket.accessType}
+        💳 <strong>Estado del pago:</strong> ${paymentText}
       </p>
 
       <p style="font-size:12px; color:#777; text-align:center; margin-top:30px">

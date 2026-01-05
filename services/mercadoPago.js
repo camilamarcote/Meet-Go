@@ -10,10 +10,16 @@ const client = new MercadoPagoConfig({
 const preferenceClient = new Preference(client);
 
 // =============================
-// 🧾 Crear preferencia de pago (EVENTOS)
+// 🧾 Crear preferencia de pago
 // =============================
 export async function createPaymentPreference({ event, user, ticketId }) {
   try {
+    const price = Number(event.price);
+
+    if (!price || price <= 0) {
+      throw new Error("Precio del evento inválido");
+    }
+
     const preference = await preferenceClient.create({
       body: {
         items: [
@@ -22,12 +28,12 @@ export async function createPaymentPreference({ event, user, ticketId }) {
             description: `Entrada para ${event.name}`,
             quantity: 1,
             currency_id: "UYU",
-            unit_price: Number(event.price)
+            unit_price: price
           }
         ],
 
         payer: {
-          name: user.username || user.firstName,
+          name: user.username || "Usuario",
           email: user.email
         },
 
@@ -41,9 +47,7 @@ export async function createPaymentPreference({ event, user, ticketId }) {
 
         notification_url: `${process.env.BACKEND_URL}/api/payments/webhook`,
 
-        // 👇 CLAVE PARA DIFERENCIAR EVENTOS VS SUSCRIPCIONES
         metadata: {
-          type: "event",                 // ✅ agregado
           ticketId: ticketId.toString(),
           eventId: event._id.toString(),
           userId: user._id.toString()
@@ -54,7 +58,7 @@ export async function createPaymentPreference({ event, user, ticketId }) {
     return preference;
 
   } catch (error) {
-    console.error("❌ Error creando preferencia MP:", error);
+    console.error("❌ Error creando preferencia MP:", error.message);
     throw error;
   }
 }
