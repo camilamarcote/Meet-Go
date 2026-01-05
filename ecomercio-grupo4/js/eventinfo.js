@@ -6,6 +6,9 @@ const eventDetails = document.getElementById("eventDetails");
 
 const authUser = JSON.parse(localStorage.getItem("currentUser")) || null;
 
+/* =============================
+   🖼️ Imagen por categoría
+============================= */
 function getCategoryImage(category) {
   const images = {
     Cultural: "img/default_cultural.jpg",
@@ -16,6 +19,61 @@ function getCategoryImage(category) {
   return images[category] || "img/default_event.jpg";
 }
 
+/* =============================
+   🎟️ Comprar evento
+============================= */
+async function payEvent(eventId) {
+  if (!authUser) {
+    window.location.href = "login.html";
+    return;
+  }
+
+  try {
+    // 1️⃣ Crear ticket
+    const ticketRes = await fetch(
+      `${API_URL}/events/${eventId}/tickets`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          userId: authUser.id
+        })
+      }
+    );
+
+    const ticketData = await ticketRes.json();
+
+    if (!ticketRes.ok) {
+      alert(ticketData.message || "Error al generar ticket");
+      return;
+    }
+
+    // 2️⃣ Crear pago
+    const paymentRes = await fetch(
+      `${API_URL}/api/payments/create/${ticketData.ticket._id}`
+    );
+
+    const paymentData = await paymentRes.json();
+
+    if (!paymentRes.ok) {
+      alert("Error iniciando pago");
+      return;
+    }
+
+    // 3️⃣ Redirigir a Mercado Pago
+    window.location.href = paymentData.init_point;
+
+  } catch (error) {
+    console.error("❌ Error en payEvent:", error);
+    alert("Error al procesar el pago");
+  }
+}
+
+/* =============================
+   📄 Cargar evento
+============================= */
 async function loadEventInfo() {
   try {
     const res = await fetch(`${API_URL}/events/${eventId}`);
@@ -29,9 +87,6 @@ async function loadEventInfo() {
 
     let actionSection = "";
 
-    // =============================
-    // ACCIONES
-    // =============================
     if (!authUser) {
       actionSection = `
         <div class="alert alert-info mt-3">
@@ -43,10 +98,9 @@ async function loadEventInfo() {
       `;
     } else if (price === 0) {
       actionSection = `
-        <button class="btn btn-success mt-3"
-          onclick="getFreeTicket('${event._id}')">
-          🎟️ Obtener entrada
-        </button>
+        <span class="badge bg-success mt-3">
+          🎉 Evento gratuito
+        </span>
       `;
     } else {
       actionSection = `
@@ -55,19 +109,16 @@ async function loadEventInfo() {
           💳 Comprar entrada ($${price})
         </button>
 
-        <div class="alert alert-warning mt-3" style="font-size:14px">
-          ⭐ Si sos suscriptor, no pagás los eventos.
-        </div>
-
-        <button class="btn btn-outline-warning btn-sm">
+        <button class="btn btn-outline-warning btn-sm ms-3 mt-3">
           Suscribite
         </button>
+
+        <p class="text-muted mt-2" style="font-size:14px">
+          ⭐ Si sos suscriptor, no pagás este evento
+        </p>
       `;
     }
 
-    // =============================
-    // RENDER
-    // =============================
     eventDetails.innerHTML = `
       <div class="row g-4">
         <div class="col-md-6">
@@ -83,10 +134,7 @@ async function loadEventInfo() {
             <li>📅 ${event.date}</li>
             <li>⏰ ${event.time}</li>
             <li>🎯 ${event.category}</li>
-            <li>
-              💰 Precio:
-              ${price === 0 ? "Evento gratuito" : `$${price}`}
-            </li>
+            <li>💰 Precio: ${price === 0 ? "Gratis" : `$${price}`}</li>
           </ul>
 
           <hr>
