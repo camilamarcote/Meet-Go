@@ -29,16 +29,16 @@ async function payEvent(eventId) {
   }
 
   try {
-    // 1️⃣ Crear ticket
+    // 1️⃣ Crear ticket (RUTA CORRECTA)
     const ticketRes = await fetch(
-      `${API_URL}/events/${eventId}/tickets`,
+      `${API_URL}/events/${eventId}`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          userId: authUser.id
+          userId: authUser._id   // ✅ FIX
         })
       }
     );
@@ -50,7 +50,7 @@ async function payEvent(eventId) {
       return;
     }
 
-    // 2️⃣ Crear pago
+    // 2️⃣ Crear pago Mercado Pago
     const paymentRes = await fetch(
       `${API_URL}/api/payments/create/${ticketData.ticket._id}`
     );

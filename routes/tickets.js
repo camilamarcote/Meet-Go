@@ -10,9 +10,9 @@ import EventTicket from "../models/eventTicket.js";
 const router = express.Router();
 
 // =============================
-// 🎟️ CREAR TICKET (EVENTO PUNTUAL)
+// 🎟️ CREAR TICKET PARA EVENTO
 // =============================
-router.post("/events/:eventId/tickets", async (req, res) => {
+router.post("/:eventId", async (req, res) => {
   try {
     const { userId } = req.body;
     const { eventId } = req.params;

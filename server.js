@@ -25,22 +25,32 @@ const io = new Server(server, {
 });
 
 // =============================
-// 🧩 Middlewares (ORDEN CORRECTO)
+// 🧩 Middlewares
 // =============================
 app.use(cors());
 
-// 👇 SOLO JSON — NO rompe multipart/form-data
-app.use(express.json({
-  limit: "10mb",
-  type: "application/json"
-}));
+// ⚠️ SOLO JSON (no rompe multer)
+app.use(
+  express.json({
+    limit: "10mb",
+    type: "application/json"
+  })
+);
 
 // =============================
-// 🛣️ Rutas API
+// 🛣️ Rutas API (ORDEN CORRECTO)
 // =============================
+
+// Eventos
 app.use("/events", eventsRouter);
+
+// Tickets (POST /events/:eventId)
+app.use("/events", ticketRoutes);
+
+// Usuarios
 app.use("/api/users", usersRoutes);
-app.use("/api", ticketRoutes);
+
+// Pagos Mercado Pago
 app.use("/api", paymentsRoutes);
 
 // =============================
@@ -48,6 +58,10 @@ app.use("/api", paymentsRoutes);
 // =============================
 io.on("connection", (socket) => {
   console.log("🟢 Usuario conectado:", socket.id);
+
+  socket.on("disconnect", () => {
+    console.log("🔴 Usuario desconectado:", socket.id);
+  });
 });
 
 // =============================
