@@ -111,29 +111,39 @@ router.post("/register", upload, async (req, res) => {
 });
 
 /* =============================
-   🟡 LOGIN
+   🟡 LOGIN (CORREGIDO)
 ============================= */
 router.post("/login", async (req, res) => {
   try {
     const { user, password } = req.body;
 
     if (!user || !password) {
-      return res.status(400).json({ message: "Faltan datos" });
+      return res.status(400).json({
+        message: "Faltan datos"
+      });
     }
 
+    // 🔑 IMPORTANTE: traer password explícitamente
     const foundUser = await User.findOne({
       $or: [{ email: user }, { username: user }]
-    });
+    }).select("+password");
 
     if (!foundUser) {
-      return res.status(401).json({ message: "Credenciales incorrectas" });
+      return res.status(401).json({
+        message: "Credenciales incorrectas"
+      });
     }
 
     const isMatch = await bcrypt.compare(password, foundUser.password);
 
     if (!isMatch) {
-      return res.status(401).json({ message: "Credenciales incorrectas" });
+      return res.status(401).json({
+        message: "Credenciales incorrectas"
+      });
     }
+
+    // 🧼 Nunca devolver password
+    foundUser.password = undefined;
 
     res.json({
       message: "Login exitoso",
@@ -150,7 +160,9 @@ router.post("/login", async (req, res) => {
 
   } catch (error) {
     console.error("❌ Login error:", error);
-    res.status(500).json({ message: "Error en login" });
+    res.status(500).json({
+      message: "Error en login"
+    });
   }
 });
 

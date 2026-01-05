@@ -1,18 +1,15 @@
-/* =========================
-   👁️ MOSTRAR / OCULTAR PASSWORD
-========================= */
 const passwordInput = document.getElementById("loginPass");
 const togglePasswordBtn = document.getElementById("togglePassword");
+const eyeIcon = togglePasswordBtn.querySelector("i");
 
+/* 👁️ Mostrar / ocultar password */
 togglePasswordBtn.addEventListener("click", () => {
-  const isPassword = passwordInput.type === "password";
-  passwordInput.type = isPassword ? "text" : "password";
-  togglePasswordBtn.textContent = isPassword ? "🙈" : "👁️";
+  const isHidden = passwordInput.type === "password";
+  passwordInput.type = isHidden ? "text" : "password";
+  eyeIcon.className = isHidden ? "bi bi-eye-slash" : "bi bi-eye";
 });
 
-/* =========================
-   🔐 LOGIN
-========================= */
+/* 🔐 LOGIN */
 document.getElementById("loginForm").addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -24,9 +21,7 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
       "https://meetgo-backend.onrender.com/api/users/login",
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user, password })
       }
     );
@@ -38,10 +33,7 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
       return;
     }
 
-    // 🔐 Guardar sesión
     localStorage.setItem("currentUser", JSON.stringify(data.user));
-
-    // 🚀 Redirigir
     window.location.href = "index.html";
 
   } catch (error) {
