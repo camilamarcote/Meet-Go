@@ -6,36 +6,58 @@
   <title>Iniciar Sesión</title>
 
   <!-- MDBootstrap -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/7.2.0/mdb.min.css" rel="stylesheet"/>
+  <link
+    href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/7.2.0/mdb.min.css"
+    rel="stylesheet"
+  />
 
   <!-- CSS personalizado -->
   <link rel="stylesheet" href="css/login.css">
-  <!-- Favicon básico -->
-<link rel="icon" type="image/x-icon" href="img/favicon/favicon.ico">
 
-<!-- Favicons PNG -->
-<link rel="icon" type="image/png" sizes="32x32" href="img/favicon/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="img/favicon/favicon-16x16.png">
-
-<!-- Apple Touch (iPhone/iPad) -->
-<link rel="apple-touch-icon" sizes="180x180" href="img/favicon/apple-touch-icon.png">
-
-<!-- Manifest (opcional pero recomendado) -->
-<link rel="manifest" href="img/favicon/site.webmanifest">
-
+  <!-- Favicons -->
+  <link rel="icon" type="image/x-icon" href="img/favicon/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="img/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="img/favicon/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="img/favicon/apple-touch-icon.png">
+  <link rel="manifest" href="img/favicon/site.webmanifest">
 </head>
+
 <body class="login-bg d-flex align-items-center justify-content-center vh-100">
 
   <div class="card p-4 shadow-lg login-card">
-    <img src="img/LOGO (1).svg" alt="">
+    <img src="img/LOGO (1).svg" alt="Meet&Go Logo" class="mb-3">
 
     <form id="loginForm">
-      <div class="mb-3">
-        <input type="text" id="loginUser" placeholder="Email o Usuario" required class="form-control">
-      </div>
 
       <div class="mb-3">
-        <input type="password" id="loginPass" placeholder="Contraseña" required class="form-control">
+        <input
+          type="text"
+          id="loginUser"
+          placeholder="Email o Usuario"
+          required
+          class="form-control"
+        >
+      </div>
+
+      <!-- 🔐 PASSWORD CON PREVISUALIZACIÓN -->
+      <div class="mb-3 position-relative">
+        <input
+          type="password"
+          id="loginPass"
+          placeholder="Contraseña"
+          required
+          class="form-control pe-5"
+        >
+
+        <button
+          type="button"
+          id="togglePassword"
+          class="btn btn-link position-absolute top-50 end-0 translate-middle-y me-2"
+          style="text-decoration: none;"
+          aria-label="Mostrar contraseña"
+        >
+          👁️
+        </button>
       </div>
 
       <button class="btn btn-primary w-100">Ingresar</button>
@@ -47,6 +69,5 @@
 
   <!-- JS del login -->
   <script src="js/login.js"></script>
-
 </body>
 </html>

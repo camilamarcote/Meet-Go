@@ -1,17 +1,35 @@
+/* =========================
+   👁️ MOSTRAR / OCULTAR PASSWORD
+========================= */
+const passwordInput = document.getElementById("loginPass");
+const togglePasswordBtn = document.getElementById("togglePassword");
+
+togglePasswordBtn.addEventListener("click", () => {
+  const isPassword = passwordInput.type === "password";
+  passwordInput.type = isPassword ? "text" : "password";
+  togglePasswordBtn.textContent = isPassword ? "🙈" : "👁️";
+});
+
+/* =========================
+   🔐 LOGIN
+========================= */
 document.getElementById("loginForm").addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const user = document.getElementById("loginUser").value;
-  const password = document.getElementById("loginPass").value;
+  const user = document.getElementById("loginUser").value.trim();
+  const password = passwordInput.value;
 
   try {
-    const response = await fetch("https://meetgo-backend.onrender.com/api/users/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ user, password })
-    });
+    const response = await fetch(
+      "https://meetgo-backend.onrender.com/api/users/login",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ user, password })
+      }
+    );
 
     const data = await response.json();
 
@@ -21,7 +39,6 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
     }
 
     // 🔐 Guardar sesión
-    localStorage.setItem("token", data.token);
     localStorage.setItem("currentUser", JSON.stringify(data.user));
 
     // 🚀 Redirigir
