@@ -26,11 +26,12 @@ async function loadEventInfo() {
       : getCategoryImage(event.category);
 
     const price = Number(event.price) || 0;
-    const isSubscribed = authUser?.isSubscribed === true;
-    const discountedPrice = price * 0.5;
 
     let actionSection = "";
 
+    // =============================
+    // ACCIONES
+    // =============================
     if (!authUser) {
       actionSection = `
         <div class="alert alert-info mt-3">
@@ -49,28 +50,24 @@ async function loadEventInfo() {
       `;
     } else {
       actionSection = `
-        ${
-          isSubscribed
-            ? `
-              <button class="btn btn-success mt-3"
-                onclick="payEvent('${event._id}')">
-                ⭐ Comprar como suscriptor ($${discountedPrice})
-              </button>
-            `
-            : `
-              <button class="btn btn-primary mt-3"
-                onclick="payEvent('${event._id}')">
-                💳 Comprar entrada ($${price})
-              </button>
+        <button class="btn btn-primary mt-3"
+          onclick="payEvent('${event._id}')">
+          💳 Comprar entrada ($${price})
+        </button>
 
-              <p class="mt-2 text-muted" style="font-size:14px">
-                Suscribite y pagá 50% menos en este evento
-              </p>
-            `
-        }
+        <div class="alert alert-warning mt-3" style="font-size:14px">
+          ⭐ Si sos suscriptor, no pagás los eventos.
+        </div>
+
+        <button class="btn btn-outline-warning btn-sm">
+          Suscribite
+        </button>
       `;
     }
 
+    // =============================
+    // RENDER
+    // =============================
     eventDetails.innerHTML = `
       <div class="row g-4">
         <div class="col-md-6">
@@ -88,18 +85,7 @@ async function loadEventInfo() {
             <li>🎯 ${event.category}</li>
             <li>
               💰 Precio:
-              ${
-                price === 0
-                  ? "Incluido en la suscripción"
-                  : `
-                    <div>
-                      <span>$${price}</span><br>
-                      <span style="color:green;font-weight:600">
-                        ⭐ Suscriptores: $${discountedPrice}
-                      </span>
-                    </div>
-                  `
-              }
+              ${price === 0 ? "Evento gratuito" : `$${price}`}
             </li>
           </ul>
 
@@ -109,6 +95,7 @@ async function loadEventInfo() {
       </div>
     `;
   } catch (error) {
+    console.error(error);
     eventDetails.innerHTML = "<p>Error cargando evento</p>";
   }
 }
