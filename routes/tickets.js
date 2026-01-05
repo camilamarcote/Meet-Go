@@ -6,12 +6,11 @@ import QRCode from "qrcode";
 import Event from "../models/event.js";
 import User from "../models/user.js";
 import EventTicket from "../models/eventTicket.js";
-import { sendTicketMail } from "../utils/mailer.js";
 
 const router = express.Router();
 
 // =============================
-// 🎟️ CREAR TICKET
+// 🎟️ CREAR TICKET (EVENTO PUNTUAL)
 // =============================
 router.post("/events/:eventId/tickets", async (req, res) => {
   try {
@@ -34,7 +33,7 @@ router.post("/events/:eventId/tickets", async (req, res) => {
       });
     }
 
-    // 🚫 Evitar duplicados
+    // 🚫 Evitar ticket duplicado
     const existingTicket = await EventTicket.findOne({
       user: userId,
       event: eventId
@@ -47,34 +46,20 @@ router.post("/events/:eventId/tickets", async (req, res) => {
     }
 
     // =============================
-    // 🧠 LÓGICA DE ACCESO
-    // =============================
-    let accessType = "single-event";
-    let paymentStatus = "pending";
-    let amount = event.price || 0;
-
-    if (user.subscription?.isActive) {
-      accessType = "subscription";
-      paymentStatus = "free";
-      amount = 0;
-    }
-
-    // =============================
     // 🔐 GENERAR QR
     // =============================
     const qrCode = uuidv4();
     const qrImage = await QRCode.toDataURL(qrCode);
-
     const validUntil = new Date(`${event.date}T${event.time}`);
 
     const ticket = new EventTicket({
       user: user._id,
       event: event._id,
-      accessType,
+      accessType: "single-event",
       payment: {
-        status: paymentStatus,
-        amount,
-        paidAt: paymentStatus === "free" ? new Date() : null
+        status: "pending",
+        amount: event.price,
+        paidAt: null
       },
       qrCode,
       qrImage,
@@ -84,23 +69,8 @@ router.post("/events/:eventId/tickets", async (req, res) => {
 
     await ticket.save();
 
-    // =============================
-    // 📧 MAIL SOLO PARA SUSCRIPCIÓN
-    // =============================
-    if (accessType === "subscription" && user.email) {
-      await sendTicketMail({
-        to: user.email,
-        user,
-        event,
-        ticket
-      });
-    }
-
     res.status(201).json({
-      message:
-        accessType === "subscription"
-          ? "🎟️ Ticket generado por suscripción"
-          : "🎟️ Ticket creado (pago pendiente)",
+      message: "🎟️ Ticket creado (pendiente de pago)",
       ticket
     });
 
