@@ -29,7 +29,7 @@ async function payEvent(eventId) {
   }
 
   try {
-    // 1️⃣ Crear ticket (RUTA CORRECTA)
+    // 1️⃣ Crear ticket
     const ticketRes = await fetch(
       `${API_URL}/api/events/${eventId}/tickets`,
       {
@@ -55,9 +55,7 @@ async function payEvent(eventId) {
     // 2️⃣ Crear pago Mercado Pago
     const paymentRes = await fetch(
       `${API_URL}/api/payments/create/${ticketData.ticket._id}`,
-      {
-        method: "POST"
-      }
+      { method: "POST" }
     );
 
     if (!paymentRes.ok) {
@@ -83,7 +81,7 @@ async function payEvent(eventId) {
 ============================= */
 async function loadEventInfo() {
   try {
-    const res = await fetch(`${API_URL}/events/${eventId}`);
+    const res = await fetch(`${API_URL}/api/events/${eventId}`);
 
     if (!res.ok) {
       throw new Error("Evento no encontrado");
