@@ -14,7 +14,7 @@ function getCategoryImage(category) {
 
 async function loadEvents() {
   try {
-    const res = await fetch(`${API_URL}/events`);
+    const res = await fetch(`${API_URL}/api/events`);
     if (!res.ok) throw new Error("Error al obtener eventos");
 
     const events = await res.json();
@@ -32,8 +32,10 @@ async function loadEvents() {
             <img src="${img}" class="card-img-top" alt="Imagen del evento">
             <div class="card-body d-flex flex-column">
               <h5 class="card-title">${event.name}</h5>
-              <p class="card-text">${event.description}</p>
-              <p><span class="badge bg-primary">${event.category}</span></p>
+              <p class="card-text">${event.description || ""}</p>
+              <p>
+                <span class="badge bg-primary">${event.category}</span>
+              </p>
               <p class="text-muted">${event.date} ${event.time}</p>
               <div class="mt-auto d-grid gap-2">
                 <a href="eventinfo.html?id=${event._id}" class="btn btn-primary">
@@ -54,4 +56,3 @@ async function loadEvents() {
 }
 
 loadEvents();
-
