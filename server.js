@@ -38,14 +38,14 @@ app.use(
 );
 
 // =============================
-// 🛣️ Rutas API (ORDEN CORRECTO)
+// 🛣️ Rutas API
 // =============================
 
 // Eventos
-app.use("/events", eventsRouter);
+app.use("/api/events", eventsRouter);
 
-// Tickets (POST /events/:eventId)
-app.use("/events", ticketRoutes);
+// Tickets (POST /api/events/:eventId/tickets)
+app.use("/api/events", ticketRoutes);
 
 // Usuarios
 app.use("/api/users", usersRoutes);

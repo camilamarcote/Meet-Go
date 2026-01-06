@@ -11,11 +11,11 @@ const router = express.Router();
 
 console.log("✅ ticketRoutes cargado");
 
-
 // =============================
 // 🎟️ CREAR TICKET PARA EVENTO
+// POST /api/events/:eventId/tickets
 // =============================
-router.post("/:eventId", async (req, res) => {
+router.post("/:eventId/tickets", async (req, res) => {
   try {
     const { userId } = req.body;
     const { eventId } = req.params;
@@ -85,6 +85,7 @@ router.post("/:eventId", async (req, res) => {
 
 // =============================
 // 📋 MIS EVENTOS
+// GET /api/events/my/:userId
 // =============================
 router.get("/my/:userId", async (req, res) => {
   try {
