@@ -9,6 +9,9 @@ import EventTicket from "../models/eventTicket.js";
 
 const router = express.Router();
 
+console.log("✅ ticketRoutes cargado");
+
+
 // =============================
 // 🎟️ CREAR TICKET PARA EVENTO
 // =============================
