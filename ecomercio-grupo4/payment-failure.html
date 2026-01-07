@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Pago no completado | Meet&Go</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Bootstrap -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+
+  <link rel="icon" href="img/favicon/favicon.ico" />
+</head>
+
+<body class="bg-light">
+
+  <div class="container d-flex align-items-center justify-content-center min-vh-100">
+    <div class="card shadow-sm p-4 text-center" style="max-width: 480px; width: 100%;">
+
+      <div class="mb-3">
+        <span class="display-4">❌</span>
+      </div>
+
+      <h3 class="mb-3">No pudimos completar el pago</h3>
+
+      <p class="text-muted">
+        El pago fue rechazado o no pudo procesarse correctamente.
+        Esto puede ocurrir tanto al comprar una entrada como al suscribirse.
+      </p>
+
+      <hr>
+
+      <ul class="text-start text-muted small">
+        <li>Saldo insuficiente o no disponible</li>
+        <li>Rechazo del banco o del medio de pago</li>
+        <li>Cuenta de Mercado Pago con restricciones</li>
+        <li>Problemas temporales del servicio</li>
+      </ul>
+
+      <div class="alert alert-warning mt-3 small">
+        ⚠️ Mercado Pago puede rechazar un pago aunque tengas saldo disponible.
+        Si esto ocurre, probá con otro medio de pago o agregá más dinero a tu cuenta.
+      </div>
+
+      <div class="d-grid gap-2 mt-4">
+        <a href="explorar.html" class="btn btn-primary">
+          Volver a eventos
+        </a>
+
+        <a href="suscripcion.html" class="btn btn-outline-warning">
+          Ver planes de suscripción
+        </a>
+      </div>
+
+      <p class="text-muted mt-3 small">
+        Si el problema persiste, contactá a tu banco o a soporte de Mercado Pago.
+      </p>
+
+    </div>
+  </div>
+
+</body>
+</html>

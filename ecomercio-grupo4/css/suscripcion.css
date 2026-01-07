@@ -1,0 +1,76 @@
+/* =============================
+   🌟 Página Suscripción
+============================= */
+
+body.subscription-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1f1f1f, #2b2b2b);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Segoe UI", sans-serif;
+  color: #fff;
+}
+
+.subscription-container {
+  padding: 20px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.subscription-card {
+  background: #ffffff;
+  color: #333;
+  border-radius: 16px;
+  padding: 32px 28px;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+}
+
+.subscription-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.subscription-subtitle {
+  font-size: 0.95rem;
+  color: #666;
+  margin-bottom: 24px;
+}
+
+/* 💰 Precio */
+.price-box {
+  margin-bottom: 24px;
+}
+
+.price {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #f0ad4e;
+}
+
+.period {
+  font-size: 1rem;
+  color: #888;
+}
+
+/* ✅ Beneficios */
+.benefits {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px;
+  text-align: left;
+}
+
+.benefits li {
+  margin-bottom: 12px;
+  font-size: 0.95rem;
+}
+
+/* 🔒 Nota de pago */
+.payment-note {
+  font-size: 0.8rem;
+  color: #777;
+  margin-top: 12px;
+}

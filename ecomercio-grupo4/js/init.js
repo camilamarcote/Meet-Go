@@ -27,6 +27,9 @@ document.addEventListener("DOMContentLoaded", () => {
         <li class="nav-item" id="nav-create-event" style="display:none">
           <a class="nav-link" href="createevent.html">Crear Evento</a>
         </li>
+   <li class="nav-item" id="nav-suscripcion" style="display:none">
+          <a class="nav-link" href="suscripcion.html">Suscribite</a>
+        </li>
       </ul>
 
       <div class="ms-auto d-flex align-items-center gap-2" id="nav-right">
