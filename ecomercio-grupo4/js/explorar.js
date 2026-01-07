@@ -12,6 +12,7 @@ function getCategoryImage(category) {
   return images[category] || "img/default_event.jpg";
 }
 
+
 async function loadEvents() {
   try {
     const res = await fetch(`${API_URL}/api/events`);
