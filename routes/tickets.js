@@ -12,7 +12,7 @@ const router = express.Router();
 console.log("✅ ticketRoutes cargado");
 
 // =============================
-// 🎟️ CREAR TICKET PARA EVENTO
+// 🎟️ CREAR / REUTILIZAR TICKET
 // POST /api/events/:eventId/tickets
 // =============================
 router.post("/:eventId/tickets", async (req, res) => {
@@ -36,21 +36,29 @@ router.post("/:eventId/tickets", async (req, res) => {
       });
     }
 
-    // 🚫 Evitar duplicado SOLO si el ticket está PAGADO
-    const existingPaidTicket = await EventTicket.findOne({
+    // 🔎 Buscar ticket existente
+    const existingTicket = await EventTicket.findOne({
       user: userId,
-      event: eventId,
-      "payment.status": "approved"
+      event: eventId
     });
 
-    if (existingPaidTicket) {
-      return res.status(409).json({
-        message: "El usuario ya tiene un ticket pago para este evento"
+    if (existingTicket) {
+      // 🟢 Ya pagado → no permitir otro
+      if (existingTicket.payment?.status === "approved") {
+        return res.status(409).json({
+          message: "Ya tenés una entrada para este evento"
+        });
+      }
+
+      // 🟡 Pendiente → reutilizar
+      return res.status(200).json({
+        message: "Ticket pendiente reutilizado",
+        ticket: existingTicket
       });
     }
 
     // =============================
-    // 🔐 GENERAR QR
+    // 🆕 CREAR NUEVO TICKET
     // =============================
     const qrCode = uuidv4();
     const qrImage = await QRCode.toDataURL(qrCode);
@@ -60,13 +68,11 @@ router.post("/:eventId/tickets", async (req, res) => {
       user: user._id,
       event: event._id,
       accessType: "single-event",
-
       payment: {
         status: "pending",
         amount: event.price,
         paidAt: null
       },
-
       qrCode,
       qrImage,
       validUntil,
