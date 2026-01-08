@@ -30,14 +30,14 @@ export async function createPaymentPreference({ event, user, ticketId }) {
 
         items: [
           {
-            // ✅ Código interno del item (mejora aprobación)
+            // ✅ Código interno del item
             id: `event_${event._id}`,
 
             title: event.name,
             description: `Entrada para ${event.name}`,
 
-            // ✅ Categoría del item (muy importante)
-            category_id: "tickets",
+            // ✅ Categoría estándar MP (mejora aprobación)
+            category_id: "events",
 
             quantity: 1,
             currency_id: "UYU",
@@ -67,21 +67,26 @@ export async function createPaymentPreference({ event, user, ticketId }) {
         notification_url: `${process.env.BACKEND_URL}/api/payments/webhook`,
 
         // =============================
-        // 🧠 Metadata (clave para backend)
+        // 🧠 Metadata (backend)
         // =============================
         metadata: {
           ticketId: ticketId.toString(),
           eventId: event._id.toString(),
           userId: user._id.toString(),
           type: "event"
-        }
+        },
+
+        // =============================
+        // 💳 Descriptor en tarjeta (opcional)
+        // =============================
+        statement_descriptor: "MEET&GO"
       }
     });
 
     return preference;
 
   } catch (error) {
-    console.error("❌ Error creando preferencia MP:", error.message);
+    console.error("❌ Error creando preferencia MP:", error);
     throw error;
   }
 }
