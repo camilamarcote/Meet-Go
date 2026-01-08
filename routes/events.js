@@ -1,30 +1,16 @@
 import express from "express";
 import multer from "multer";
 import Event from "../models/event.js";
+import cloudinary from "../config/cloudinary.js";
 
 const router = express.Router();
 
 // =============================
-// 📂 MULTER
+// 📦 MULTER (MEMORIA, NO DISCO)
 // =============================
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, "uploads/"),
-  filename: (req, file, cb) =>
-    cb(null, Date.now() + "-" + file.originalname),
+const upload = multer({
+  storage: multer.memoryStorage()
 });
-
-const upload = multer({ storage });
-
-// =============================
-// 🖼️ IMÁGENES POR DEFECTO
-// =============================
-const defaultImages = {
-  Cultural: "/img/default_cultural.jpg",
-  Recreativa: "/img/default_recreativa.jpg",
-  Deportiva: "/img/default_deportiva.jpg",
-  Gastronómica: "/img/default_gastronomica.jpg",
-  default: "/img/default_event.jpg",
-};
 
 // =============================
 // 🟢 TODOS LOS EVENTOS
@@ -54,13 +40,13 @@ router.get("/:id", async (req, res) => {
 });
 
 // =============================
-// 🟣 CREAR EVENTO
+// 🟣 CREAR EVENTO (CLOUDINARY)
 // =============================
 router.post(
   "/",
   upload.fields([
     { name: "image", maxCount: 1 },
-    { name: "whatsappQR", maxCount: 1 },
+    { name: "whatsappQR", maxCount: 1 }
   ]),
   async (req, res) => {
     try {
@@ -73,17 +59,49 @@ router.post(
         time,
         price,
         whatsappLink,
-        groupMembersCount,
+        groupMembersCount
       } = req.body;
 
-      const imagePath = req.files?.image
-        ? `/uploads/${req.files.image[0].filename}`
-        : defaultImages[category] || defaultImages.default;
+      let imageUrl = "";
+      let qrUrl = "";
 
-      const qrPath = req.files?.whatsappQR
-        ? `/uploads/${req.files.whatsappQR[0].filename}`
-        : "";
+      // =============================
+      // 🖼️ SUBIR IMAGEN PRINCIPAL
+      // =============================
+      if (req.files?.image?.[0]) {
+        const imageUpload = await new Promise((resolve, reject) => {
+          cloudinary.uploader.upload_stream(
+            { folder: "events" },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          ).end(req.files.image[0].buffer);
+        });
 
+        imageUrl = imageUpload.secure_url;
+      }
+
+      // =============================
+      // 📲 SUBIR QR DE WHATSAPP
+      // =============================
+      if (req.files?.whatsappQR?.[0]) {
+        const qrUpload = await new Promise((resolve, reject) => {
+          cloudinary.uploader.upload_stream(
+            { folder: "whatsapp_qr" },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          ).end(req.files.whatsappQR[0].buffer);
+        });
+
+        qrUrl = qrUpload.secure_url;
+      }
+
+      // =============================
+      // 🧾 GUARDAR EVENTO
+      // =============================
       const newEvent = new Event({
         name,
         description,
@@ -92,18 +110,18 @@ router.post(
         date,
         time,
         price: Number(price) || 0,
-        image: imagePath,
+        image: imageUrl,
         whatsappLink,
-        whatsappQR: qrPath,
-        groupMembersCount: groupMembersCount || 0,
+        whatsappQR: qrUrl,
+        groupMembersCount: groupMembersCount || 0
       });
 
       const savedEvent = await newEvent.save();
       res.status(201).json(savedEvent);
 
-    } catch (err) {
-      console.error(err);
-      res.status(400).json({ message: err.message });
+    } catch (error) {
+      console.error("❌ Error creando evento:", error);
+      res.status(500).json({ message: "Error creando evento" });
     }
   }
 );

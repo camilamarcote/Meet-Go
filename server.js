@@ -1,5 +1,4 @@
 import "dotenv/config";
-
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
@@ -29,28 +28,18 @@ const io = new Server(server, {
 // =============================
 app.use(cors());
 
-// ⚠️ SOLO JSON (no rompe multer)
 app.use(
   express.json({
-    limit: "10mb",
-    type: "application/json"
+    limit: "10mb"
   })
 );
 
 // =============================
-// 🛣️ Rutas API
+// 🛣️ API
 // =============================
-
-// Eventos
 app.use("/api/events", eventsRouter);
-
-// Tickets (POST /api/events/:eventId/tickets)
 app.use("/api/events", ticketRoutes);
-
-// Usuarios
 app.use("/api/users", usersRoutes);
-
-// Pagos Mercado Pago
 app.use("/api", paymentsRoutes);
 
 // =============================
@@ -58,10 +47,6 @@ app.use("/api", paymentsRoutes);
 // =============================
 io.on("connection", (socket) => {
   console.log("🟢 Usuario conectado:", socket.id);
-
-  socket.on("disconnect", () => {
-    console.log("🔴 Usuario desconectado:", socket.id);
-  });
 });
 
 // =============================
@@ -71,12 +56,12 @@ const PORT = process.env.PORT || 5000;
 
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ Conectado a MongoDB Atlas"))
-  .catch((err) => console.error("❌ Error al conectar:", err));
+  .then(() => console.log("✅ MongoDB conectado"))
+  .catch((err) => console.error("❌ Mongo error:", err));
 
 // =============================
 // 🚀 Server
 // =============================
 server.listen(PORT, () => {
-  console.log(`🚀 Servidor escuchando en http://localhost:${PORT}`);
+  console.log(`🚀 Servidor en puerto ${PORT}`);
 });
