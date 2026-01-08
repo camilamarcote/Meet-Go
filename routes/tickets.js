@@ -12,7 +12,7 @@ const router = express.Router();
 console.log("✅ ticketRoutes cargado");
 
 // =============================
-// 🎟️ CREAR TICKET PARA EVENTO
+// 🎟️ CREAR / REUTILIZAR TICKET
 // POST /api/events/:eventId/tickets
 // =============================
 router.post("/:eventId/tickets", async (req, res) => {
@@ -36,20 +36,29 @@ router.post("/:eventId/tickets", async (req, res) => {
       });
     }
 
-    // 🚫 Evitar ticket duplicado
+    // 🔎 Buscar ticket existente
     const existingTicket = await EventTicket.findOne({
       user: userId,
       event: eventId
     });
 
     if (existingTicket) {
-      return res.status(409).json({
-        message: "El usuario ya tiene un ticket para este evento"
+      // 🟢 Ya pagado → no permitir otro
+      if (existingTicket.payment?.status === "approved") {
+        return res.status(409).json({
+          message: "Ya tenés una entrada para este evento"
+        });
+      }
+
+      // 🟡 Pendiente → reutilizar
+      return res.status(200).json({
+        message: "Ticket pendiente reutilizado",
+        ticket: existingTicket
       });
     }
 
     // =============================
-    // 🔐 GENERAR QR
+    // 🆕 CREAR NUEVO TICKET
     // =============================
     const qrCode = uuidv4();
     const qrImage = await QRCode.toDataURL(qrCode);
