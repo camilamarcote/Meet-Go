@@ -19,22 +19,31 @@ document.addEventListener("DOMContentLoaded", () => {
     <div class="collapse navbar-collapse" id="navbarNav">
 
       <ul class="navbar-nav">
-        <li class="nav-item"><a class="nav-link" href="explorar.html">Explorar</a></li>
-        <li class="nav-item"><a class="nav-link" href="aboutus.html">Sobre la App</a></li>
+        <li class="nav-item">
+          <a class="nav-link" href="explorar.html">Explorar</a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="aboutus.html">Sobre la App</a>
+        </li>
+
         <li class="nav-item" id="nav-my-events" style="display:none">
           <a class="nav-link" href="myevents.html">Mis eventos</a>
         </li>
+
         <li class="nav-item" id="nav-create-event" style="display:none">
           <a class="nav-link" href="createevent.html">Crear Evento</a>
         </li>
-   <li class="nav-item" id="nav-suscripcion" style="display:none">
-          <a class="nav-link" href="suscripcion.html">Suscribite</a>
+
+        <!-- ⭐ SUSCRIPCIÓN -->
+        <li class="nav-item" id="nav-suscripcion">
+          <a class="nav-link fw-semibold text-warning" href="suscripcion.html">
+            ⭐ Suscribite
+          </a>
         </li>
       </ul>
 
-      <div class="ms-auto d-flex align-items-center gap-2" id="nav-right">
-        <!-- Se completa por JS -->
-      </div>
+      <div class="ms-auto d-flex align-items-center gap-2" id="nav-right"></div>
 
     </div>
   </div>
@@ -51,11 +60,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const user = JSON.parse(localStorage.getItem("currentUser"));
   const rightZone = document.getElementById("nav-right");
 
-  // 🔴 LIMPIAMOS SIEMPRE
   rightZone.innerHTML = "";
 
+  // 🔓 NO LOGUEADO
   if (!user) {
-    // 👤 NO LOGUEADO
     rightZone.innerHTML = `
       <a href="login.html" class="btn btn-outline-primary btn-sm">Login</a>
       <a href="register.html" class="btn btn-primary btn-sm">Registro</a>
@@ -63,7 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  // 👤 LOGUEADO
+  // 🔐 LOGUEADO
   rightZone.innerHTML = `
     <span class="fw-semibold">${user.username}</span>
 
@@ -71,15 +79,18 @@ document.addEventListener("DOMContentLoaded", () => {
       <a href="#" data-bs-toggle="dropdown">
         <img src="${
           user.profileImage
-            ? `http://localhost:5000${user.profileImage}`
+            ? user.profileImage
             : "img/default-user.png"
-        }"
-        class="profile-avatar" />
+        }" class="profile-avatar" />
       </a>
 
       <ul class="dropdown-menu dropdown-menu-end">
-        <li><a class="dropdown-item" href="my-profile.html">Mi perfil</a></li>
-        <li><a class="dropdown-item" href="#" id="logoutLink">Cerrar sesión</a></li>
+        <li>
+          <a class="dropdown-item" href="my-profile.html">Mi perfil</a>
+        </li>
+        <li>
+          <a class="dropdown-item" href="#" id="logoutLink">Cerrar sesión</a>
+        </li>
       </ul>
     </div>
   `;
@@ -88,6 +99,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (user.role === "admin" || user.role === "organizer" || user.isOrganizer) {
     document.getElementById("nav-create-event").style.display = "block";
+  }
+
+  // 🚫 Si ya es suscriptor, ocultamos botón
+  if (user.isSubscriber) {
+    const subLink = document.getElementById("nav-suscripcion");
+    if (subLink) subLink.style.display = "none";
   }
 
   document.getElementById("logoutLink").addEventListener("click", () => {
