@@ -405,3 +405,20 @@ a.custom-card:hover {
   background-color: #ffe11fed;
 }
 
+.subscription-highlight {
+  margin-top: 5rem;
+  margin-bottom: 5rem;
+  padding: 4rem 1rem;
+  background: linear-gradient(135deg, #fff6d8, #ffe9a8);
+  border-radius: 20px;
+}
+
+.subscription-highlight h3 {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 800;
+}
+
+.subscription-highlight p {
+  font-size: 1.05rem;
+  color: #444;
+}
