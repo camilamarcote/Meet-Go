@@ -23,10 +23,22 @@ export async function createPaymentPreference({ event, user, ticketId }) {
 
     const preference = await preferenceClient.create({
       body: {
+        // =============================
+        // 🔗 Referencia externa (OBLIGATORIA)
+        // =============================
+        external_reference: `ticket_${ticketId}`,
+
         items: [
           {
+            // ✅ Código interno del item (mejora aprobación)
+            id: `event_${event._id}`,
+
             title: event.name,
             description: `Entrada para ${event.name}`,
+
+            // ✅ Categoría del item (muy importante)
+            category_id: "tickets",
+
             quantity: 1,
             currency_id: "UYU",
             unit_price: price
@@ -60,11 +72,9 @@ export async function createPaymentPreference({ event, user, ticketId }) {
         metadata: {
           ticketId: ticketId.toString(),
           eventId: event._id.toString(),
-          userId: user._id.toString()
-        },
-
-        // 🔎 Para rastrear pagos en MP
-        external_reference: ticketId.toString()
+          userId: user._id.toString(),
+          type: "event"
+        }
       }
     });
 
