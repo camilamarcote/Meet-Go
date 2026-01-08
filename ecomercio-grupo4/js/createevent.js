@@ -9,7 +9,10 @@ eventForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const user = JSON.parse(localStorage.getItem("currentUser"));
-  if (!user) return alert("Debes iniciar sesión");
+  if (!user) {
+    alert("Debes iniciar sesión");
+    return;
+  }
 
   const formData = new FormData();
 
@@ -34,20 +37,26 @@ eventForm.addEventListener("submit", async (e) => {
   }
 
   try {
-    const res = await fetch(`${API_URL}/events`, {
+    const res = await fetch(`${API_URL}/api/events`, {
       method: "POST",
       body: formData
+      // ❗ NO agregar headers Content-Type con FormData
     });
 
-    if (res.ok) {
-      alert("✅ Evento creado");
-      eventForm.reset();
-    } else {
-      const data = await res.json();
-      alert(data.message || "❌ Error creando evento");
+    if (!res.ok) {
+      const text = await res.text();
+      console.error("❌ Error backend:", text);
+      alert("❌ Error creando evento");
+      return;
     }
+
+    const data = await res.json();
+
+    alert("✅ Evento creado correctamente");
+    eventForm.reset();
+
   } catch (error) {
-    console.error("❌ Error creando evento:", error);
+    console.error("❌ Error de red:", error);
     alert("Error de conexión con el servidor");
   }
 });
