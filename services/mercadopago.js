@@ -1,8 +1,10 @@
-import {
+import mercadopago from "mercadopago";
+
+const {
   MercadoPagoConfig,
   Preference,
   Preapproval
-} from "mercadopago";
+} = mercadopago;
 
 // =============================
 // 🔐 Cliente base
@@ -57,7 +59,7 @@ export async function createPaymentPreference({ event, user, ticketId }) {
 }
 
 // =============================
-// 🔁 SUSCRIPCIÓN MENSUAL
+// 🔁 SUSCRIPCIÓN
 // =============================
 const preapprovalClient = new Preapproval(mpClient);
 
