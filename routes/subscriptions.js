@@ -4,17 +4,10 @@ import { createSubscription } from "../services/mercadopago.js";
 
 const router = express.Router();
 
-// =============================
-// 🔁 Crear suscripción
 // POST /api/subscriptions/create
-// =============================
 router.post("/create", async (req, res) => {
   try {
     const { userId } = req.body;
-
-    if (!userId) {
-      return res.status(400).json({ message: "userId es requerido" });
-    }
 
     const user = await User.findById(userId);
     if (!user) {

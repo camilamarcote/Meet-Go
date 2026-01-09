@@ -1,5 +1,5 @@
-import pkg from "mercadopago";
-const { MercadoPagoConfig, Preference, Preapproval } = pkg;
+import mercadopago from "mercadopago";
+import { MercadoPagoConfig, Preference } from "mercadopago";
 
 // =============================
 // 🔐 Configuración base
@@ -8,24 +8,20 @@ const mpClient = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN
 });
 
+mercadopago.configure({
+  access_token: process.env.MP_ACCESS_TOKEN
+});
+
 // =============================
-// Clientes
+// 🎟️ PAGO DE EVENTO
 // =============================
 const preferenceClient = new Preference(mpClient);
-const preapprovalClient = new Preapproval(mpClient);
 
-// ======================================================
-// 🎟️ PAGO DE EVENTO (mantiene compatibilidad)
-// ======================================================
-export async function createPaymentPreference({
-  event,
-  user,
-  ticketId
-}) {
+export async function createPaymentPreference({ event, user, ticketId }) {
   const price = Number(event.price);
 
   if (!price || price <= 0) {
-    throw new Error("Precio del evento inválido");
+    throw new Error("Precio inválido");
   }
 
   return preferenceClient.create({
@@ -33,7 +29,6 @@ export async function createPaymentPreference({
       external_reference: `ticket_${ticketId}`,
       items: [
         {
-          id: `event_${event._id}`,
           title: event.name,
           quantity: 1,
           currency_id: "UYU",
@@ -60,24 +55,24 @@ export async function createPaymentPreference({
   });
 }
 
-// ======================================================
+// =============================
 // 🔁 SUSCRIPCIÓN MENSUAL
-// ======================================================
+// =============================
 export async function createSubscription({ user }) {
-  return preapprovalClient.create({
-    body: {
-      reason: "Suscripción mensual Meet&Go",
-      external_reference: `subscription_${user._id}`,
-      payer_email: user.email,
-      auto_recurring: {
-        frequency: 1,
-        frequency_type: "months",
-        transaction_amount: 10,
-        currency_id: "USD"
-      },
-      back_url: `${process.env.FRONTEND_URL}/suscripcion-success.html`,
-      notification_url: `${process.env.BACKEND_URL}/api/subscriptions/webhook`,
-      status: "pending"
-    }
+  const response = await mercadopago.preapproval.create({
+    reason: "Suscripción mensual Meet&Go",
+    external_reference: `subscription_${user._id}`,
+    payer_email: user.email,
+    auto_recurring: {
+      frequency: 1,
+      frequency_type: "months",
+      transaction_amount: 10,
+      currency_id: "USD"
+    },
+    back_url: `${process.env.FRONTEND_URL}/suscripcion-success.html`,
+    notification_url: `${process.env.BACKEND_URL}/api/subscriptions/webhook`,
+    status: "pending"
   });
+
+  return response.body;
 }
