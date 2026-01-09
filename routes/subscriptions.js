@@ -1,32 +1,30 @@
 import express from "express";
-import mercadopago from "../config/mercadoPago.js";
+import User from "../models/user.js";
+import { createSubscription } from "../config/mercadopago.js";
 
 const router = express.Router();
 
+// =============================
+// 🔁 Crear suscripción
+// POST /api/subscriptions/create
+// =============================
 router.post("/create", async (req, res) => {
-  const { userId } = req.body;
-
   try {
-    const subscription = await mercadopago.preapproval.create({
-      reason: "Suscripción mensual Meet&Go",
-      external_reference: userId,
-      payer_email: "test_user_123@test.com", // ⚠️ luego usar email real
-      auto_recurring: {
-        frequency: 1,
-        frequency_type: "months",
-        transaction_amount: 10,
-        currency_id: "USD"
-      },
-      back_url: "https://meetandgof.netlify.app/suscripcion-success.html",
-      status: "pending"
-    });
+    const { userId } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    const subscription = await createSubscription({ user });
 
     res.json({
-      init_point: subscription.body.init_point
+      init_point: subscription.init_point
     });
 
   } catch (error) {
-    console.error("❌ Error Mercado Pago:", error);
+    console.error("❌ Error creando suscripción:", error);
     res.status(500).json({ message: "Error creando suscripción" });
   }
 });
