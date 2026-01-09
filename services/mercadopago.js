@@ -1,15 +1,14 @@
-import mercadopago from "mercadopago";
-import { MercadoPagoConfig, Preference } from "mercadopago";
+import {
+  MercadoPagoConfig,
+  Preference,
+  Preapproval
+} from "mercadopago";
 
 // =============================
-// 🔐 Configuración base
+// 🔐 Cliente base
 // =============================
 const mpClient = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN
-});
-
-mercadopago.configure({
-  access_token: process.env.MP_ACCESS_TOKEN
 });
 
 // =============================
@@ -24,7 +23,7 @@ export async function createPaymentPreference({ event, user, ticketId }) {
     throw new Error("Precio inválido");
   }
 
-  return preferenceClient.create({
+  const response = await preferenceClient.create({
     body: {
       external_reference: `ticket_${ticketId}`,
       items: [
@@ -53,26 +52,32 @@ export async function createPaymentPreference({ event, user, ticketId }) {
       }
     }
   });
+
+  return response;
 }
 
 // =============================
 // 🔁 SUSCRIPCIÓN MENSUAL
 // =============================
+const preapprovalClient = new Preapproval(mpClient);
+
 export async function createSubscription({ user }) {
-  const response = await mercadopago.preapproval.create({
-    reason: "Suscripción mensual Meet&Go",
-    external_reference: `subscription_${user._id}`,
-    payer_email: user.email,
-    auto_recurring: {
-      frequency: 1,
-      frequency_type: "months",
-      transaction_amount: 10,
-      currency_id: "USD"
-    },
-    back_url: `${process.env.FRONTEND_URL}/suscripcion-success.html`,
-    notification_url: `${process.env.BACKEND_URL}/api/subscriptions/webhook`,
-    status: "pending"
+  const response = await preapprovalClient.create({
+    body: {
+      reason: "Suscripción mensual Meet&Go",
+      external_reference: `subscription_${user._id}`,
+      payer_email: user.email,
+      auto_recurring: {
+        frequency: 1,
+        frequency_type: "months",
+        transaction_amount: 10,
+        currency_id: "USD"
+      },
+      back_url: `${process.env.FRONTEND_URL}/suscripcion-success.html`,
+      notification_url: `${process.env.BACKEND_URL}/api/subscriptions/webhook`,
+      status: "pending"
+    }
   });
 
-  return response.body;
+  return response;
 }
