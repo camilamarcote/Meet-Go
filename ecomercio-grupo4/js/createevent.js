@@ -17,8 +17,12 @@ const neighborhoodsByDepartment = {
     "Pocitos",
     "Punta Carretas",
     "Carrasco",
+    "Buceo",
     "Malvín",
-    "Ciudad Vieja"
+    "Ciudad Vieja",
+    "Prado",
+    "Sayago",
+    "Colón"
   ],
   Canelones: [
     "Las Piedras",

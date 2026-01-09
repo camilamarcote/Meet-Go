@@ -1,19 +1,30 @@
-import { MercadoPagoConfig, Preference } from "mercadopago";
+import { MercadoPagoConfig, Preference, Preapproval } from "mercadopago";
 
 // =============================
-// 🔐 Configuración Mercado Pago
+// 🔐 Configuración base
 // =============================
-const client = new MercadoPagoConfig({
+const mpClient = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN // APP_USR-...
 });
 
-const preferenceClient = new Preference(client);
+// =============================
+// 🎟️ Pago de eventos (Preference)
+// =============================
+const preferenceClient = new Preference(mpClient);
 
 // =============================
-// 🧾 Crear preferencia de pago
-// (Sirve para eventos y suscripciones)
+// 🔁 Suscripciones (Preapproval)
 // =============================
-export async function createPaymentPreference({ event, user, ticketId }) {
+const preapprovalClient = new Preapproval(mpClient);
+
+/* ======================================================
+   🎟️ CREAR PAGO DE EVENTO (ONE-TIME PAYMENT)
+====================================================== */
+export async function createEventPaymentPreference({
+  event,
+  user,
+  ticketId
+}) {
   try {
     const price = Number(event.price);
 
@@ -23,22 +34,14 @@ export async function createPaymentPreference({ event, user, ticketId }) {
 
     const preference = await preferenceClient.create({
       body: {
-        // =============================
-        // 🔗 Referencia externa (OBLIGATORIA)
-        // =============================
         external_reference: `ticket_${ticketId}`,
 
         items: [
           {
-            // ✅ Código interno del item
             id: `event_${event._id}`,
-
             title: event.name,
             description: `Entrada para ${event.name}`,
-
-            // ✅ Categoría estándar MP (mejora aprobación)
             category_id: "events",
-
             quantity: 1,
             currency_id: "UYU",
             unit_price: price
@@ -50,9 +53,6 @@ export async function createPaymentPreference({ event, user, ticketId }) {
           email: user.email
         },
 
-        // =============================
-        // 🔁 URLs de retorno
-        // =============================
         back_urls: {
           success: `${process.env.FRONTEND_URL}/payment-success.html`,
           failure: `${process.env.FRONTEND_URL}/payment-failure.html`,
@@ -61,14 +61,8 @@ export async function createPaymentPreference({ event, user, ticketId }) {
 
         auto_return: "approved",
 
-        // =============================
-        // 🔔 Webhook
-        // =============================
         notification_url: `${process.env.BACKEND_URL}/api/payments/webhook`,
 
-        // =============================
-        // 🧠 Metadata (backend)
-        // =============================
         metadata: {
           ticketId: ticketId.toString(),
           eventId: event._id.toString(),
@@ -76,9 +70,6 @@ export async function createPaymentPreference({ event, user, ticketId }) {
           type: "event"
         },
 
-        // =============================
-        // 💳 Descriptor en tarjeta (opcional)
-        // =============================
         statement_descriptor: "MEET&GO"
       }
     });
@@ -86,7 +77,43 @@ export async function createPaymentPreference({ event, user, ticketId }) {
     return preference;
 
   } catch (error) {
-    console.error("❌ Error creando preferencia MP:", error);
+    console.error("❌ Error creando preferencia de evento:", error);
+    throw error;
+  }
+}
+
+/* ======================================================
+   🔁 CREAR SUSCRIPCIÓN MENSUAL
+====================================================== */
+export async function createSubscription({ user }) {
+  try {
+    const subscription = await preapprovalClient.create({
+      body: {
+        reason: "Suscripción mensual Meet&Go",
+
+        external_reference: `subscription_${user._id}`,
+
+        payer_email: user.email,
+
+        auto_recurring: {
+          frequency: 1,
+          frequency_type: "months",
+          transaction_amount: 10,
+          currency_id: "USD"
+        },
+
+        back_url: `${process.env.FRONTEND_URL}/suscripcion-success.html`,
+
+        notification_url: `${process.env.BACKEND_URL}/api/subscriptions/webhook`,
+
+        status: "pending"
+      }
+    });
+
+    return subscription;
+
+  } catch (error) {
+    console.error("❌ Error creando suscripción MP:", error);
     throw error;
   }
 }

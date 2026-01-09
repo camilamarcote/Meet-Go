@@ -32,7 +32,6 @@ async function payEvent(eventId) {
   }
 
   try {
-    // 1️⃣ Crear ticket
     const ticketRes = await fetch(
       `${API_URL}/api/events/${eventId}/tickets`,
       {
@@ -53,7 +52,6 @@ async function payEvent(eventId) {
 
     const ticketData = await ticketRes.json();
 
-    // 2️⃣ Crear pago Mercado Pago
     const paymentRes = await fetch(
       `${API_URL}/api/payments/create/${ticketData.ticket._id}`,
       { method: "POST" }
@@ -67,8 +65,6 @@ async function payEvent(eventId) {
     }
 
     const paymentData = await paymentRes.json();
-
-    // 3️⃣ Redirigir a Mercado Pago
     window.location.href = paymentData.init_point;
 
   } catch (error) {
@@ -87,7 +83,6 @@ async function loadEventInfo() {
 
     const event = await res.json();
 
-    // ✅ CLOUDINARY FIX
     const image =
       event.image && event.image.startsWith("http")
         ? event.image
@@ -99,33 +94,43 @@ async function loadEventInfo() {
 
     if (!authUser) {
       actionSection = `
-        <div class="alert alert-info mt-3">
-          Para unirte al evento necesitás iniciar sesión.
+        <div class="alert alert-info mt-4">
+          Para participar del evento necesitás iniciar sesión.
         </div>
-        <a href="login.html" class="btn btn-outline-primary mt-2">
+        <a href="login.html" class="btn btn-primary">
           Iniciar sesión
         </a>
       `;
     } else if (price === 0) {
       actionSection = `
-        <span class="badge bg-success mt-3">
-          🎉 Evento gratuito
-        </span>
+        <div class="alert alert-success mt-4">
+          🎉 Este evento es gratuito
+        </div>
       `;
     } else {
       actionSection = `
-        <button class="btn btn-primary mt-3"
-          onclick="payEvent('${event._id}')">
-          💳 Comprar entrada ($${price})
-        </button>
+        <div class="mt-4">
+          <!-- Compra directa -->
+          <button class="btn btn-primary w-100 mb-3"
+            onclick="payEvent('${event._id}')">
+            💳 Comprar entrada · $${price}
+          </button>
 
-        <button class="btn btn-outline-warning btn-sm ms-3 mt-3">
-          Suscribite
-        </button>
-
-        <p class="text-muted mt-2" style="font-size:14px">
-          ⭐ Si sos suscriptor, no pagás este evento
-        </p>
+          <!-- Suscripción -->
+          <div class="card border-warning">
+            <div class="card-body">
+              <h6 class="card-title mb-2">
+                ⭐ Acceso por suscripción
+              </h6>
+              <p class="card-text text-muted" style="font-size:14px">
+                Si sos suscriptor, este evento está incluido y no pagás entrada.
+              </p>
+              <button class="btn btn-outline-warning w-100 btn-sm">
+                Ver planes de suscripción
+              </button>
+            </div>
+          </div>
+        </div>
       `;
     }
 

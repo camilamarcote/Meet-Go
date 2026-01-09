@@ -12,6 +12,9 @@ import eventsRouter from "./routes/events.js";
 import usersRoutes from "./routes/users.js";
 import ticketRoutes from "./routes/tickets.js";
 import paymentsRoutes from "./routes/payments.js";
+import subscriptionRoutes from "./routes/subscriptions.js";
+
+
 
 const app = express();
 const server = http.createServer(app);
@@ -41,6 +44,7 @@ app.use("/api/events", eventsRouter);
 app.use("/api/events", ticketRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api", paymentsRoutes);
+app.use("/api/subscriptions", subscriptionRoutes);
 
 // =============================
 // 🔁 WebSockets
