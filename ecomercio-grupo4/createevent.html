@@ -45,18 +45,32 @@
         </select>
       </div>
 
-      <!-- Precio -->
-      <div class="mb-3">
-        <label class="form-label">Precio (0 = gratis)</label>
-        <input
-          type="number"
-          id="eventPrice"
-          class="form-control"
-          min="0"
-          value="0"
-          required
-        >
-      </div>
+<!-- Precio general -->
+<div class="mb-3">
+  <label class="form-label">Precio general (0 = gratis)</label>
+  <input
+    type="number"
+    id="eventPrice"
+    class="form-control"
+    min="0"
+    value="0"
+    required
+  >
+</div>
+
+<!-- Precio alternativo -->
+<div class="mb-3">
+  <label class="form-label">
+    Precio alternativo <small class="text-muted">(opcional)</small>
+  </label>
+  <input
+    type="number"
+    id="eventAltPrice"
+    class="form-control"
+    min="0"
+    placeholder="Ej: precio para suscriptores"
+  >
+</div>
 
       <!-- Imagen -->
       <div class="mb-3">
@@ -77,22 +91,32 @@
       </div>
 
       <!-- Departamento -->
-      <div class="mb-3">
-        <label class="form-label">Departamento</label>
-        <select id="eventDepartment" class="form-select" required>
-          <option value="">Seleccionar</option>
-          <option>Montevideo</option>
-          <option>Canelones</option>
-          <option>Maldonado</option>
-          <option>Colonia</option>
-          <option>Salto</option>
-          <option>Paysandú</option>
-          <option>Rivera</option>
-          <option>San José</option>
-          <option>Tacuarembó</option>
-          <option>Rocha</option>
-        </select>
-      </div>
+<!-- Departamento -->
+<div class="mb-3">
+  <label class="form-label">Departamento</label>
+  <select id="eventDepartment" class="form-select" required>
+    <option value="">Seleccionar</option>
+    <option>Montevideo</option>
+    <option>Canelones</option>
+    <option>Maldonado</option>
+    <option>Colonia</option>
+    <option>Salto</option>
+    <option>Paysandú</option>
+    <option>Rivera</option>
+    <option>San José</option>
+    <option>Tacuarembó</option>
+    <option>Rocha</option>
+  </select>
+</div>
+
+<!-- Barrio / Localidad -->
+<div class="mb-3">
+  <label class="form-label">Barrio / Localidad</label>
+  <select id="eventNeighborhood" class="form-select" disabled required>
+    <option value="">Seleccioná un departamento primero</option>
+  </select>
+</div>
+
 
       <!-- Fecha -->
       <div class="mb-3">
