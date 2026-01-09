@@ -1,7 +1,13 @@
+// =============================
+// 🌐 API BASE
+// =============================
 const API_URL = "https://meetgo-backend.onrender.com";
 
 const eventsContainer = document.getElementById("eventsContainer");
 
+/* =============================
+   🖼️ Imagen por categoría
+============================= */
 function getCategoryImage(category) {
   const images = {
     Cultural: "img/default_cultural.jpg",
@@ -12,7 +18,9 @@ function getCategoryImage(category) {
   return images[category] || "img/default_event.jpg";
 }
 
-
+/* =============================
+   📦 Cargar eventos
+============================= */
 async function loadEvents() {
   try {
     const res = await fetch(`${API_URL}/api/events`);
@@ -22,9 +30,10 @@ async function loadEvents() {
     eventsContainer.innerHTML = "";
 
     events.forEach(event => {
+      // ✅ CLOUDINARY FIX
       const img =
-        event.image && event.image.trim() !== ""
-          ? `${API_URL}${event.image}`
+        event.image && event.image.startsWith("http")
+          ? event.image
           : getCategoryImage(event.category);
 
       const card = `

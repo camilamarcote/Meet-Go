@@ -1,3 +1,6 @@
+// =============================
+// 🌐 API BASE
+// =============================
 const API_URL = "https://meetgo-backend.onrender.com";
 
 const params = new URLSearchParams(window.location.search);
@@ -34,9 +37,7 @@ async function payEvent(eventId) {
       `${API_URL}/api/events/${eventId}/tickets`,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: authUser._id || authUser.id
         })
@@ -82,16 +83,15 @@ async function payEvent(eventId) {
 async function loadEventInfo() {
   try {
     const res = await fetch(`${API_URL}/api/events/${eventId}`);
-
-    if (!res.ok) {
-      throw new Error("Evento no encontrado");
-    }
+    if (!res.ok) throw new Error("Evento no encontrado");
 
     const event = await res.json();
 
-    const image = event.image
-      ? `${API_URL}${event.image}`
-      : getCategoryImage(event.category);
+    // ✅ CLOUDINARY FIX
+    const image =
+      event.image && event.image.startsWith("http")
+        ? event.image
+        : getCategoryImage(event.category);
 
     const price = Number(event.price) || 0;
 
