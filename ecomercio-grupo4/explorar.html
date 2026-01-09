@@ -4,38 +4,43 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Explorar eventos - Meet&Go</title>
+
   <link href="css/bootstrap.min.css" rel="stylesheet">
   <link href="css/explorar.css" rel="stylesheet">
-  <!-- Favicon básico -->
-<link rel="icon" type="image/x-icon" href="img/favicon/favicon.ico">
 
-<!-- Favicons PNG -->
-<link rel="icon" type="image/png" sizes="32x32" href="img/favicon/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="img/favicon/favicon-16x16.png">
-
-<!-- Apple Touch (iPhone/iPad) -->
-<link rel="apple-touch-icon" sizes="180x180" href="img/favicon/apple-touch-icon.png">
-
-<!-- Manifest (opcional pero recomendado) -->
-<link rel="manifest" href="img/favicon/site.webmanifest">
-
+  <!-- Favicons -->
+  <link rel="icon" type="image/x-icon" href="img/favicon/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="img/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="img/favicon/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="img/favicon/apple-touch-icon.png">
+  <link rel="manifest" href="img/favicon/site.webmanifest">
 </head>
 
 <body>
-  <main class="container my-5">
-   <div class="container my-4">
+<main class="container my-5">
+
+  <!-- ⭐ Banner suscripción -->
+  <div class="card border-warning mb-5 shadow-sm">
+    <div class="card-body d-md-flex justify-content-between align-items-center">
+      <div>
+        <h5 class="mb-1">⭐ Suscripción Meet&Go</h5>
+        <p class="mb-0 text-muted">
+          Accedé a eventos pagos sin costo adicional con un plan mensual.
+        </p>
+      </div>
+      <a href="suscripcion.html" class="btn btn-warning mt-3 mt-md-0">
+        Ver planes
+      </a>
+    </div>
+  </div>
+
+  <!-- Eventos -->
   <h2 class="text-center mb-4">Eventos publicados</h2>
   <div id="eventsContainer" class="row g-4"></div>
-</div>
 
-  <a href="suscripcion.html" class="btn btn-outline-warning btn-sm">
-  Ver suscripción
-</a>
-  </main>
+</main>
 
-
-
-  <script src="js/bootstrap.bundle.min.js"></script>
-  <script src="js/explorar.js"></script>
+<script src="js/bootstrap.bundle.min.js"></script>
+<script src="js/explorar.js"></script>
 </body>
 </html>

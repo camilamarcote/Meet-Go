@@ -30,11 +30,12 @@ async function loadEvents() {
     eventsContainer.innerHTML = "";
 
     events.forEach(event => {
-      // ✅ CLOUDINARY FIX
       const img =
         event.image && event.image.startsWith("http")
           ? event.image
           : getCategoryImage(event.category);
+
+      const price = Number(event.price) || 0;
 
       const card = `
         <div class="col-md-4 col-lg-3">
@@ -42,13 +43,22 @@ async function loadEvents() {
             <img src="${img}" class="card-img-top" alt="Imagen del evento">
             <div class="card-body d-flex flex-column">
               <h5 class="card-title">${event.name}</h5>
-              <p class="card-text">${event.description || ""}</p>
-              <p>
+              <p class="card-text small">${event.description || ""}</p>
+
+              <div class="mb-2">
                 <span class="badge bg-primary">${event.category}</span>
+              </div>
+
+              <p class="text-muted small mb-1">
+                ${event.date} · ${event.time}
               </p>
-              <p class="text-muted">${event.date} ${event.time}</p>
-              <div class="mt-auto d-grid gap-2">
-                <a href="eventinfo.html?id=${event._id}" class="btn btn-primary">
+
+              <p class="fw-bold">
+                ${price === 0 ? "🎉 Gratis" : `$${price}`}
+              </p>
+
+              <div class="mt-auto d-grid">
+                <a href="eventinfo.html?id=${event._id}" class="btn btn-primary btn-sm">
                   Ver más información
                 </a>
               </div>
