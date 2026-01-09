@@ -1,6 +1,6 @@
 import express from "express";
 import User from "../models/user.js";
-import { createSubscription } from "../config/mercadopago.js";
+import { createSubscription } from "../services/mercadopago.js";
 
 const router = express.Router();
 
@@ -11,6 +11,10 @@ const router = express.Router();
 router.post("/create", async (req, res) => {
   try {
     const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ message: "userId es requerido" });
+    }
 
     const user = await User.findById(userId);
     if (!user) {

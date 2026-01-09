@@ -1,6 +1,6 @@
 import express from "express";
 import EventTicket from "../models/eventTicket.js";
-import { createPaymentPreference } from "../services/mercadoPago.js";
+import { createPaymentPreference } from "../services/mercadopago.js";
 import { sendTicketMail } from "../utils/mailer.js";
 
 import { Payment, MercadoPagoConfig } from "mercadopago";
