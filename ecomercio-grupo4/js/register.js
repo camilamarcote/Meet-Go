@@ -1,64 +1,17 @@
 document.addEventListener("DOMContentLoaded", () => {
-
-  const steps = document.querySelectorAll(".form-step");
-  const nextBtns = document.querySelectorAll(".next-step");
-  const prevBtns = document.querySelectorAll(".prev-step");
   const form = document.querySelector("#registerForm");
 
-  let current = 0; 
-
-  function showStep(n) {
-    steps.forEach((step, idx) => {
-      step.style.display = idx === n ? "block" : "none";
-    });
-  }
-
-  showStep(current);
-
-  nextBtns.forEach(btn => {
-    btn.addEventListener("click", () => {
-      if (!validateStep(current)) return;
-      current++;
-      showStep(current);
-    });
-  });
-
-  prevBtns.forEach(btn => {
-    btn.addEventListener("click", () => {
-      current--;
-      showStep(current);
-    });
-  });
-
-  function validateStep(n) {
-    const step = steps[n];
-    const inputs = step.querySelectorAll("input, select, textarea");
-
-    for (let input of inputs) {
-      if (input.hasAttribute("required") && !input.value.trim()) {
-        alert("Por favor completa todos los campos obligatorios.");
-        return false;
-      }
-    }
-    return true;
-  }
-
-  /* ======================
-     SUBMIT REGISTRO
-  ====================== */
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
+    // 🧩 intereses
     const interests = [
-      ...document.querySelectorAll(
-        ".form-step:nth-of-type(2) input[type='checkbox']:checked"
-      )
+      ...document.querySelectorAll("input[name='interests']:checked")
     ].map(i => i.value);
 
+    // 🌍 idiomas
     const languages = [
-      ...document.querySelectorAll(
-        ".form-step:nth-of-type(3) .checkbox-card input[type='checkbox']:checked"
-      )
+      ...document.querySelectorAll("input[name='languages']:checked")
     ].map(l => l.value);
 
     const formData = new FormData();
@@ -77,9 +30,9 @@ document.addEventListener("DOMContentLoaded", () => {
     formData.append("style", form.style?.value || "");
     formData.append("bio", form.bio?.value || "");
 
-    // ✅ SIEMPRE arrays válidos
-    formData.append("languages", JSON.stringify(languages || []));
-    formData.append("interests", JSON.stringify(interests || []));
+    // ✅ arrays siempre válidos
+    formData.append("languages", JSON.stringify(languages));
+    formData.append("interests", JSON.stringify(interests));
 
     if (form.profileImage?.files?.length > 0) {
       formData.append("profileImage", form.profileImage.files[0]);
@@ -94,14 +47,12 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       );
 
-      // 👇 LEER COMO TEXTO PRIMERO
       const text = await res.text();
-
       let result;
+
       try {
         result = JSON.parse(text);
       } catch {
-        console.error("Respuesta no JSON:", text);
         alert("Error del servidor. Intenta nuevamente.");
         return;
       }
@@ -122,5 +73,4 @@ document.addEventListener("DOMContentLoaded", () => {
       alert("No se pudo conectar con el servidor");
     }
   });
-
 });
