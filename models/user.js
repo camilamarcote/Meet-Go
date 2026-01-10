@@ -2,23 +2,14 @@ import mongoose from "mongoose";
 
 const UserSchema = new mongoose.Schema(
   {
-    firstName: {
-      type: String,
-      trim: true,
-      required: true,
-    },
-
-    lastName: {
-      type: String,
-      trim: true,
-      required: true,
-    },
+    firstName: { type: String, trim: true, required: true },
+    lastName: { type: String, trim: true, required: true },
 
     username: {
       type: String,
       unique: true,
       required: true,
-      trim: true,
+      trim: true
     },
 
     email: {
@@ -26,102 +17,55 @@ const UserSchema = new mongoose.Schema(
       unique: true,
       required: true,
       trim: true,
-      lowercase: true,
+      lowercase: true
     },
 
     password: {
       type: String,
       required: true,
-      select: false, // 🔐 seguridad extra
+      select: false
     },
 
-    age: {
-      type: Number,
-      min: 0,
-      required: true,
-    },
+    age: { type: Number, min: 0, required: true },
 
-    department: {
+    department: { type: String, trim: true, default: "" },
+
+    nationality: { type: String, trim: true, required: true },
+
+    languages: { type: [String], default: [] },
+    interests: { type: [String], default: [] },
+
+    personality: { type: String, trim: true, default: "" },
+    style: { type: String, trim: true, default: "" },
+    bio: { type: String, trim: true, default: "" },
+
+    profileImage: { type: String, default: "" },
+
+    // 🔐 EMAIL VERIFICATION
+    isVerified: {
+      type: Boolean,
+      default: false
+    },
+    verificationToken: {
       type: String,
-      trim: true,
-      default: "",
+      default: null
     },
 
-    nationality: {
-      type: String,
-      trim: true,
-      required: true,
-    },
-
-    languages: {
-      type: [String],
-      default: [],
-    },
-
-    interests: {
-      type: [String],
-      default: [],
-    },
-
-    personality: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-
-    style: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-
-    bio: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-
-    profileImage: {
-      type: String,
-      default: "",
-    },
-
-    // =========================
-    // 🔐 SUSCRIPCIÓN
-    // =========================
+    // 🔁 SUSCRIPCIÓN
     subscription: {
-      isActive: {
-        type: Boolean,
-        default: false,
-      },
+      isActive: { type: Boolean, default: false },
       plan: {
         type: String,
         enum: ["monthly", "annual", null],
-        default: null,
+        default: null
       },
-      startedAt: {
-        type: Date,
-        default: null,
-      },
-      validUntil: {
-        type: Date,
-        default: null,
-      },
-      canceledAt: {
-        type: Date,
-        default: null,
-      },
+      startedAt: { type: Date, default: null },
+      validUntil: { type: Date, default: null },
+      canceledAt: { type: Date, default: null }
     },
 
-    roles: {
-      type: [String],
-      default: ["user"],
-    },
-
-    isOrganizer: {
-      type: Boolean,
-      default: false,
-    },
+    roles: { type: [String], default: ["user"] },
+    isOrganizer: { type: Boolean, default: false }
   },
   { timestamps: true }
 );
