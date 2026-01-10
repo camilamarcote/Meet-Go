@@ -71,7 +71,7 @@
 .price {
   font-size: 2.5rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #f0ad4e, #ff8c00);
+  background: linear-gradient(135deg, #9d26ff, #ffb300);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }

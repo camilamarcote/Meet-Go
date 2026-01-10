@@ -33,7 +33,15 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
       return;
     }
 
-    localStorage.setItem("currentUser", JSON.stringify(data.user));
+    /* ✅ CONTRATO ÚNICO */
+    localStorage.setItem("currentUser", JSON.stringify({
+      id: data.user._id,
+      token: data.token,
+      username: data.user.username,
+      email: data.user.email,
+      profileImage: data.user.profileImage || null
+    }));
+
     window.location.href = "index.html";
 
   } catch (error) {

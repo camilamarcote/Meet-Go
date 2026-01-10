@@ -49,17 +49,13 @@ document.addEventListener("DOMContentLoaded", () => {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const interests = [
-      ...document.querySelectorAll(
-        ".form-step:nth-of-type(2) input[type='checkbox']:checked"
-      )
-    ].map(i => i.value);
+    const interests = [...document.querySelectorAll(
+      ".form-step:nth-of-type(2) input[type='checkbox']:checked"
+    )].map(i => i.value);
 
-    const languages = [
-      ...document.querySelectorAll(
-        ".form-step:nth-of-type(3) .checkbox-card input[type='checkbox']:checked"
-      )
-    ].map(l => l.value);
+    const languages = [...document.querySelectorAll(
+      ".form-step:nth-of-type(3) .checkbox-card input[type='checkbox']:checked"
+    )].map(l => l.value);
 
     const formData = new FormData();
 
@@ -72,12 +68,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     formData.append("nationality", form.nationality.value);
     formData.append("department", form.department?.value || "");
-
     formData.append("personality", form.personality?.value || "");
     formData.append("style", form.style?.value || "");
     formData.append("bio", form.bio?.value || "");
 
-    // ✅ SIEMPRE arrays válidos
     formData.append("languages", JSON.stringify(languages || []));
     formData.append("interests", JSON.stringify(interests || []));
 
@@ -94,14 +88,12 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       );
 
-      // 👇 LEER COMO TEXTO PRIMERO
       const text = await res.text();
 
       let result;
       try {
         result = JSON.parse(text);
       } catch {
-        console.error("Respuesta no JSON:", text);
         alert("Error del servidor. Intenta nuevamente.");
         return;
       }
@@ -111,16 +103,27 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      alert("Registro completado con éxito 🎉");
+      /* ✅ SI EL BACKEND DEVUELVE TOKEN → AUTO LOGIN */
+      if (result.token && result.user) {
+        localStorage.setItem("currentUser", JSON.stringify({
+          id: result.user._id,
+          token: result.token,
+          username: result.user.username,
+          email: result.user.email,
+          profileImage: result.user.profileImage || null
+        }));
 
-      setTimeout(() => {
-        window.location.href = "login.html";
-      }, 300);
+        window.location.href = "index.html";
+        return;
+      }
+
+      /* 🔁 fallback: ir a login */
+      alert("Registro completado con éxito 🎉");
+      window.location.href = "login.html";
 
     } catch (error) {
       console.error("❌ Error register:", error);
       alert("No se pudo conectar con el servidor");
     }
   });
-
 });
