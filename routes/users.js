@@ -1,7 +1,7 @@
 import express from "express";
 import multer from "multer";
 import bcrypt from "bcrypt";
-import crypto from "crypto";
+import jwt from "jsonwebtoken";
 import User from "../models/user.js";
 import { sendVerificationEmail } from "../utils/sendverificationemail.js";
 
@@ -33,12 +33,21 @@ router.post("/register", upload, async (req, res) => {
       return res.status(400).json({ message: "Faltan campos obligatorios" });
     }
 
+    // 🔍 Verificar duplicados ANTES
+    const exists = await User.findOne({
+      $or: [{ email }, { username }]
+    });
+
+    if (exists) {
+      return res.status(400).json({
+        message: "El usuario o el email ya existe"
+      });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
-    const verificationToken = crypto.randomBytes(32).toString("hex");
 
     const safeParse = (value) => {
       if (!value) return [];
-      if (Array.isArray(value)) return value;
       try {
         return JSON.parse(value);
       } catch {
@@ -61,28 +70,30 @@ router.post("/register", upload, async (req, res) => {
       style: style || "",
       bio: bio || "",
       profileImage: "",
-      verificationToken,
       isVerified: false
     });
 
+    // 🔐 TOKEN JWT (24h)
+    const token = jwt.sign(
+      { id: newUser._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "24h" }
+    );
+
+    // 📧 ENVIAR MAIL ANTES
+    await sendVerificationEmail(email, token);
+
+    // 💾 GUARDAR SOLO SI EL MAIL SALIÓ
     await newUser.save();
-    await sendVerificationEmail(email, verificationToken);
 
     res.status(201).json({
-      message: "Registro exitoso. Revisá tu email para confirmar tu cuenta."
+      message: "Registro exitoso. Revisá tu email para verificar tu cuenta."
     });
 
   } catch (error) {
     console.error("❌ Register error:", error);
-
-    if (error.code === 11000) {
-      return res.status(400).json({
-        message: "El usuario o el email ya existe"
-      });
-    }
-
     res.status(500).json({
-      message: "Error al registrar usuario"
+      message: "No se pudo completar el registro"
     });
   }
 });
@@ -94,25 +105,24 @@ router.get("/verify", async (req, res) => {
   try {
     const { token } = req.query;
 
-    if (!token) {
-      return res.status(400).json({ message: "Token faltante" });
-    }
-
-    const user = await User.findOne({ verificationToken: token });
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id);
 
     if (!user) {
-      return res.status(400).json({ message: "Token inválido o expirado" });
+      return res.status(400).json({ message: "Usuario inválido" });
     }
 
     user.isVerified = true;
-    user.verificationToken = null;
     await user.save();
 
-    res.json({ message: "Cuenta verificada con éxito" });
+    // 👉 Redirige al login
+    res.redirect(`${process.env.FRONTEND_URL}/login.html`);
 
   } catch (error) {
     console.error("❌ Verify error:", error);
-    res.status(500).json({ message: "Error al verificar cuenta" });
+    res.status(400).json({
+      message: "Token inválido o expirado"
+    });
   }
 });
 
