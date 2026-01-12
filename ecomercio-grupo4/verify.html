@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="es">
+<body>
+<h2>Verificando cuenta...</h2>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const token = params.get("token");
+
+fetch(`https://meetgo-backend.onrender.com/api/users/verify?token=${token}`)
+  .then(res => res.json())
+  .then(() => {
+    alert("Cuenta verificada 🎉 Ya podés iniciar sesión");
+    window.location.href = "login.html";
+  })
+  .catch(() => {
+    alert("Token inválido");
+  });
+</script>
+</body>
+</html>

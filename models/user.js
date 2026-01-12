@@ -41,7 +41,7 @@ const UserSchema = new mongoose.Schema(
 
     profileImage: { type: String, default: "" },
 
-    // 🔐 EMAIL VERIFICATION
+    // 📧 VERIFICACIÓN EMAIL
     isVerified: {
       type: Boolean,
       default: false

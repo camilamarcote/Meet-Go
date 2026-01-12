@@ -36,11 +36,11 @@ router.post("/register", upload, async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const verificationToken = crypto.randomBytes(32).toString("hex");
 
-    const safeParse = (v) => {
-      if (!v) return [];
-      if (Array.isArray(v)) return v;
+    const safeParse = (value) => {
+      if (!value) return [];
+      if (Array.isArray(value)) return value;
       try {
-        return JSON.parse(v);
+        return JSON.parse(value);
       } catch {
         return [];
       }
@@ -76,22 +76,32 @@ router.post("/register", upload, async (req, res) => {
     console.error("❌ Register error:", error);
 
     if (error.code === 11000) {
-      return res.status(400).json({ message: "Usuario o email ya existe" });
+      return res.status(400).json({
+        message: "El usuario o el email ya existe"
+      });
     }
 
-    res.status(500).json({ message: "Error al registrar usuario" });
+    res.status(500).json({
+      message: "Error al registrar usuario"
+    });
   }
 });
 
 /* =============================
-   🟢 VERIFY EMAIL
+   📧 VERIFY EMAIL
 ============================= */
-router.get("/verify/:token", async (req, res) => {
+router.get("/verify", async (req, res) => {
   try {
-    const user = await User.findOne({ verificationToken: req.params.token });
+    const { token } = req.query;
+
+    if (!token) {
+      return res.status(400).json({ message: "Token faltante" });
+    }
+
+    const user = await User.findOne({ verificationToken: token });
 
     if (!user) {
-      return res.status(400).json({ message: "Token inválido" });
+      return res.status(400).json({ message: "Token inválido o expirado" });
     }
 
     user.isVerified = true;
@@ -101,6 +111,7 @@ router.get("/verify/:token", async (req, res) => {
     res.json({ message: "Cuenta verificada con éxito" });
 
   } catch (error) {
+    console.error("❌ Verify error:", error);
     res.status(500).json({ message: "Error al verificar cuenta" });
   }
 });
@@ -126,11 +137,12 @@ router.post("/login", async (req, res) => {
 
     if (!foundUser.isVerified) {
       return res.status(403).json({
-        message: "Debes verificar tu email antes de iniciar sesión"
+        message: "Debés verificar tu email antes de iniciar sesión"
       });
     }
 
     const isMatch = await bcrypt.compare(password, foundUser.password);
+
     if (!isMatch) {
       return res.status(401).json({ message: "Credenciales incorrectas" });
     }

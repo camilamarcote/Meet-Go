@@ -4,12 +4,10 @@ document.addEventListener("DOMContentLoaded", () => {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    // 🧩 intereses
     const interests = [
       ...document.querySelectorAll("input[name='interests']:checked")
     ].map(i => i.value);
 
-    // 🌍 idiomas
     const languages = [
       ...document.querySelectorAll("input[name='languages']:checked")
     ].map(l => l.value);
@@ -24,17 +22,16 @@ document.addEventListener("DOMContentLoaded", () => {
     formData.append("age", form.age.value);
 
     formData.append("nationality", form.nationality.value);
-    formData.append("department", form.department?.value || "");
+    formData.append("department", form.department.value || "");
 
-    formData.append("personality", form.personality?.value || "");
+    formData.append("personality", form.personality.value || "");
     formData.append("style", form.style?.value || "");
-    formData.append("bio", form.bio?.value || "");
+    formData.append("bio", form.bio.value || "");
 
-    // ✅ arrays siempre válidos
     formData.append("languages", JSON.stringify(languages));
     formData.append("interests", JSON.stringify(interests));
 
-    if (form.profileImage?.files?.length > 0) {
+    if (form.profileImage.files.length > 0) {
       formData.append("profileImage", form.profileImage.files[0]);
     }
 
@@ -53,7 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         result = JSON.parse(text);
       } catch {
-        alert("Error del servidor. Intenta nuevamente.");
+        alert("Error del servidor.");
         return;
       }
 
@@ -62,14 +59,15 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      alert("Registro completado con éxito 🎉");
+      // 👇 MENSAJE CLAVE PARA VERIFICACIÓN
+      alert(
+        "Registro exitoso 🎉\n\nTe enviamos un mail para verificar tu cuenta antes de iniciar sesión."
+      );
 
-      setTimeout(() => {
-        window.location.href = "login.html";
-      }, 300);
+      window.location.href = "login.html";
 
     } catch (error) {
-      console.error("❌ Error register:", error);
+      console.error(error);
       alert("No se pudo conectar con el servidor");
     }
   });

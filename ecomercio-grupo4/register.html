@@ -4,101 +4,103 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Registro</title>
-
   <link rel="stylesheet" href="css/register.css">
-
-  <!-- Favicons -->
-  <link rel="icon" href="img/favicon/favicon.ico">
 </head>
 
 <body>
-
 <div class="app-container">
-  <form id="registerForm">
+<form id="registerForm">
 
-    <h2>👋 Registro</h2>
-    <p class="subtitle">Completá tus datos</p>
+<h2>👋 Registro</h2>
 
-    <div class="card">
-      <label>Nombre*</label>
-      <input type="text" name="firstName" required>
+<div class="card">
+  <label>Nombre*</label>
+  <input name="firstName" required>
 
-      <label>Apellido*</label>
-      <input type="text" name="lastName" required>
+  <label>Apellido*</label>
+  <input name="lastName" required>
 
-      <label>Nombre de usuario*</label>
-      <input type="text" name="username" required>
+  <label>Usuario*</label>
+  <input name="username" required>
 
-      <label>Email*</label>
-      <input type="email" name="email" required>
+  <label>Email*</label>
+  <input type="email" name="email" required>
 
-      <label>Contraseña*</label>
-      <input type="password" name="password" required>
+  <label>Contraseña*</label>
+  <input type="password" name="password" required>
 
-      <label>Edad*</label>
-      <input type="number" name="age" min="18" required>
+  <label>Edad*</label>
+  <input type="number" name="age" min="18" required>
 
-      <label>Nacionalidad*</label>
-      <select name="nationality" required>
-        <option value="">Seleccionar...</option>
-        <option>Uruguaya</option>
-        <option>Argentina</option>
-        <option>Brasileña</option>
-        <option>Chilena</option>
-        <option>Otra</option>
-      </select>
+  <label>Nacionalidad*</label>
+  <select name="nationality" required>
+    <option value="">Seleccionar...</option>
+    <option>Uruguaya</option>
+    <option>Argentina</option>
+    <option>Brasileña</option>
+    <option>Chilena</option>
+    <option>Otra</option>
+  </select>
 
-      <label>Departamento</label>
-      <select name="department">
-        <option value="">Seleccionar...</option>
-        <option>Montevideo</option>
-        <option>Canelones</option>
-        <option>Maldonado</option>
-      </select>
+  <label>Departamento</label>
+  <select name="department">
+    <option value="">Seleccionar...</option>
+    <option>Montevideo</option>
+    <option>Canelones</option>
+    <option>Maldonado</option>
+  </select>
 
-      <label>Foto de perfil</label>
-      <input type="file" name="profileImage" accept="image/*">
-    </div>
+  <label>Foto de perfil</label>
+  <input type="file" name="profileImage" accept="image/*">
+</div>
 
-    <h3>✨ Intereses</h3>
-    <div class="card checkbox-card">
-      <label><input type="checkbox" name="interests" value="cine"> Cine</label>
-      <label><input type="checkbox" name="interests" value="musica"> Música</label>
-      <label><input type="checkbox" name="interests" value="cafe"> Café</label>
-      <label><input type="checkbox" name="interests" value="deportes"> Deportes</label>
-    </div>
+<h3>✨ Intereses</h3>
+<div class="card checkbox-card">
+  <label><input type="checkbox" name="interests" value="senderismo"> Senderismo</label>
+  <label><input type="checkbox" name="interests" value="cafe"> Café</label>
+  <label><input type="checkbox" name="interests" value="museos"> Museos</label>
+  <label><input type="checkbox" name="interests" value="cine"> Cine</label>
+  <label><input type="checkbox" name="interests" value="juegos"> Juegos</label>
+  <label><input type="checkbox" name="interests" value="musica"> Música</label>
+  <label><input type="checkbox" name="interests" value="deportes"> Deportes</label>
+  <label><input type="checkbox" name="interests" value="salir"> Salir</label>
+</div>
 
-    <h3>🌿 Personalidad</h3>
-    <div class="card">
-      <label>Temperamento</label>
-      <select name="personality">
-        <option value="">Seleccionar...</option>
-        <option>Introvertido/a</option>
-        <option>Ambivertido/a</option>
-        <option>Extrovertido/a</option>
-      </select>
+<h3>🌿 Personalidad</h3>
+<div class="card">
+  <label>Temperamento</label>
+  <select name="personality">
+    <option value="">Seleccionar...</option>
+    <option>Introvertido/a</option>
+    <option>Ambivertido/a</option>
+    <option>Extrovertido/a</option>
+  </select>
 
-      <label>Estilo social</label>
-      <label><input type="radio" name="style" value="grupos"> Grupos grandes</label>
-      <label><input type="radio" name="style" value="pequenos"> Grupos pequeños</label>
-      <label><input type="radio" name="style" value="uno"> 1 a 1</label>
+  <label>Estilo social</label>
+  <label><input type="radio" name="style" value="grupos"> Grupos grandes</label>
+  <label><input type="radio" name="style" value="pequenos"> Grupos pequeños</label>
+  <label><input type="radio" name="style" value="uno"> 1 a 1</label>
 
-      <label>Idiomas</label>
-      <div class="checkbox-card">
-        <label><input type="checkbox" name="languages" value="espanol"> Español</label>
-        <label><input type="checkbox" name="languages" value="ingles"> Inglés</label>
-        <label><input type="checkbox" name="languages" value="portugues"> Portugués</label>
-      </div>
+  <label>Idiomas</label>
+  <div class="checkbox-card">
+    <label><input type="checkbox" name="languages" value="espanol"> Español</label>
+    <label><input type="checkbox" name="languages" value="ingles"> Inglés</label>
+    <label><input type="checkbox" name="languages" value="portugues"> Portugués</label>
+    <label><input type="checkbox" name="languages" value="frances"> Francés</label>
+    <label><input type="checkbox" name="languages" value="italiano"> Italiano</label>
+    <label><input type="checkbox" name="languages" value="aleman"> Alemán</label>
+    <label><input type="checkbox" name="languages" value="otro"> Otro</label>
+  </div>
 
-      <label>Biografía</label>
-      <textarea name="bio" rows="4"></textarea>
-    </div>
+  <label>Biografía</label>
+  <textarea name="bio" rows="4"></textarea>
+</div>
 
-    <button type="submit" class="btn-primary">
-      Finalizar registro
-    </button>
+<button type="submit" class="btn-primary">
+  Finalizar registro
+</button>
 
-  </form>
+</form>
 </div>
 
 <script src="js/register.js"></script>
