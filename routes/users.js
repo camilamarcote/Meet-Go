@@ -1,96 +1,71 @@
 import express from "express";
-import multer from "multer";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import User from "../models/user.js";
-import { sendVerificationEmail } from "../utils/sendverificationemail.js";
-import { authMiddleware } from "../middlewares/auth.js";
+import User from "../models/User.js";
+import authMiddleware from "../middlewares/authMiddleware.js";
+import { sendVerificationEmail } from "../utils/sendVerificationEmail.js";
 
 const router = express.Router();
-const upload = multer().single("profileImage");
-
-const FRONT_URL =
-  process.env.FRONT_URL || "https://meetandgof.netlify.app";
-
 
 /* =============================
-   🟢 REGISTER
+   👤 PERFIL ACTUAL (/me)
 ============================= */
-router.post("/register", upload, async (req, res) => {
+router.get("/me", authMiddleware, async (req, res) => {
   try {
-    const {
-      firstName,
-      lastName,
-      username,
-      email,
-      password,
-      age,
-      department,
-      nationality,
-      personality,
-      style,
-      bio,
-      interests,
-      languages
-    } = req.body;
+    const user = await User.findById(req.user.id).select("-password");
 
-    if (!firstName || !lastName || !username || !email || !password || !age || !nationality) {
-      return res.status(400).json({ message: "Faltan campos obligatorios" });
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
     }
 
-    const exists = await User.findOne({
-      $or: [{ email }, { username }]
-    });
+    res.json(user);
+  } catch (error) {
+    console.error("❌ Get profile error:", error);
+    res.status(500).json({ message: "Error al obtener perfil" });
+  }
+});
 
-    if (exists) {
-      return res.status(400).json({ message: "El usuario o el email ya existe" });
+/* =============================
+   ✏️ ACTUALIZAR PERFIL
+============================= */
+router.put("/:id", authMiddleware, async (req, res) => {
+  try {
+    if (req.user.id !== req.params.id) {
+      return res.status(403).json({ message: "No autorizado" });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const safeParse = (value) => {
-      if (!value) return [];
-      try {
-        return JSON.parse(value);
-      } catch {
-        return [];
-      }
+    const updates = {
+      firstName: req.body.firstName,
+      lastName: req.body.lastName,
+      username: req.body.username,
+      age: req.body.age,
+      nationality: req.body.nationality,
+      department: req.body.department || "",
+      personality: req.body.personality || "",
+      style: req.body.style || "",
+      bio: req.body.bio || "",
+      languages: req.body.languages || [],
+      interests: req.body.interests || []
     };
 
-    const newUser = new User({
-      firstName,
-      lastName,
-      username,
-      email,
-      password: hashedPassword,
-      age,
-      department: department || "",
-      nationality,
-      interests: safeParse(interests),
-      languages: safeParse(languages),
-      personality: personality || "",
-      style: style || "",
-      bio: bio || "",
-      profileImage: "",
-      isVerified: false
-    });
+    if (req.file) {
+      updates.profileImage = `/uploads/${req.file.filename}`;
+    }
 
-    const token = jwt.sign(
-      { id: newUser._id },
-      process.env.JWT_SECRET,
-      { expiresIn: "24h" }
-    );
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      updates,
+      { new: true, runValidators: true }
+    ).select("-password");
 
-    await sendVerificationEmail(email, token);
-    await newUser.save();
-
-    res.status(201).json({
-      message: "Registro exitoso. Revisá tu email para verificar tu cuenta."
+    res.json({
+      message: "Perfil actualizado",
+      user: updatedUser
     });
 
   } catch (error) {
-    console.error("❌ Register error:", error);
-    res.status(500).json({ message: "No se pudo completar el registro" });
+    console.error("❌ Update profile error:", error);
+    res.status(500).json({ message: "Error al actualizar perfil" });
   }
 });
 
@@ -102,157 +77,35 @@ router.get("/verify", async (req, res) => {
     const { token } = req.query;
 
     if (!token) {
-      return res.status(400).json({
-        message: "Token faltante"
-      });
+      return res.redirect(
+        `${process.env.FRONT_URL}/login.html?verified=error`
+      );
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.id);
 
     if (!user) {
-      return res.status(400).json({
-        message: "Usuario inválido"
-      });
+      return res.redirect(
+        `${process.env.FRONT_URL}/login.html?verified=error`
+      );
     }
 
-    // 👇 SI YA ESTÁ VERIFICADO → OK IGUAL
-    if (user.isVerified) {
-      return res.json({
-        message: "La cuenta ya estaba verificada"
-      });
+    if (!user.isVerified) {
+      user.isVerified = true;
+      await user.save();
     }
 
-    user.isVerified = true;
-    await user.save();
-
-    return res.json({
-      message: "Cuenta verificada correctamente"
-    });
+    return res.redirect(
+      `${process.env.FRONT_URL}/login.html?verified=true`
+    );
 
   } catch (error) {
     console.error("❌ Verify error:", error);
-    return res.status(400).json({
-      message: "Token inválido o expirado"
-    });
-  }
-});
-
-/* =============================
-   🟡 LOGIN
-============================= */
-router.post("/login", async (req, res) => {
-  try {
-    const { user, password } = req.body;
-
-    if (!user || !password) {
-      return res.status(400).json({ message: "Faltan datos" });
-    }
-
-    const foundUser = await User.findOne({
-      $or: [{ email: user }, { username: user }]
-    }).select("+password");
-
-    if (!foundUser) {
-      return res.status(401).json({ message: "Credenciales incorrectas" });
-    }
-
-    if (!foundUser.isVerified) {
-      return res.status(403).json({
-        message: "Debés verificar tu email antes de iniciar sesión"
-      });
-    }
-
-    const isMatch = await bcrypt.compare(password, foundUser.password);
-
-    if (!isMatch) {
-      return res.status(401).json({ message: "Credenciales incorrectas" });
-    }
-
-    const token = jwt.sign(
-      { id: foundUser._id },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
+    return res.redirect(
+      `${process.env.FRONT_URL}/login.html?verified=error`
     );
-
-    foundUser.password = undefined;
-
-    res.json({
-      message: "Login exitoso",
-      token,
-      user: {
-        id: foundUser._id,
-        username: foundUser.username,
-        email: foundUser.email,
-        isVerified: foundUser.isVerified
-      }
-    });
-
-  } catch (error) {
-    console.error("❌ Login error:", error);
-    res.status(500).json({ message: "Error en login" });
   }
 });
-
-
-/* =============================
-   👤 GET PERFIL
-============================= */
-router.get("/me", authMiddleware, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id);
-
-    if (!user) {
-      return res.status(404).json({ message: "Usuario no encontrado" });
-    }
-
-    res.json(user);
-  } catch (error) {
-    console.error("❌ Get profile error:", error);
-    res.status(500).json({ message: "Error al cargar perfil" });
-  }
-});
-
-/* =============================
-   ✏️ UPDATE PERFIL
-============================= */
-router.put(
-  "/me",
-  authMiddleware,
-  upload,
-  async (req, res) => {
-    try {
-      const updates = {
-        firstName: req.body.firstName,
-        lastName: req.body.lastName,
-        username: req.body.username,
-        age: req.body.age,
-        department: req.body.department || "",
-        personality: req.body.personality || "",
-        bio: req.body.bio || ""
-      };
-
-      // eliminar undefined
-      Object.keys(updates).forEach(
-        key => updates[key] === undefined && delete updates[key]
-      );
-
-      const user = await User.findByIdAndUpdate(
-        req.user.id,
-        updates,
-        { new: true }
-      );
-
-      res.json({
-        message: "Perfil actualizado",
-        user
-      });
-    } catch (error) {
-      console.error("❌ Update profile error:", error);
-      res.status(500).json({ message: "Error al actualizar perfil" });
-    }
-  }
-);
-
 
 export default router;
