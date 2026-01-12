@@ -101,34 +101,39 @@ router.get("/verify", async (req, res) => {
     const { token } = req.query;
 
     if (!token) {
-      return res.redirect(
-        `${process.env.FRONT_URL}/login.html?verified=error`
-      );
+      return res.status(400).json({
+        message: "Token faltante"
+      });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.id);
 
     if (!user) {
-      return res.redirect(
-        `${process.env.FRONT_URL}/login.html?verified=error`
-      );
+      return res.status(400).json({
+        message: "Usuario inválido"
+      });
     }
 
-    if (!user.isVerified) {
-      user.isVerified = true;
-      await user.save();
+    // 👇 SI YA ESTÁ VERIFICADO → OK IGUAL
+    if (user.isVerified) {
+      return res.json({
+        message: "La cuenta ya estaba verificada"
+      });
     }
 
-    return res.redirect(
-      `${process.env.FRONT_URL}/login.html?verified=true`
-    );
+    user.isVerified = true;
+    await user.save();
+
+    return res.json({
+      message: "Cuenta verificada correctamente"
+    });
 
   } catch (error) {
     console.error("❌ Verify error:", error);
-    return res.redirect(
-      `${process.env.FRONT_URL}/login.html?verified=error`
-    );
+    return res.status(400).json({
+      message: "Token inválido o expirado"
+    });
   }
 });
 

@@ -3,7 +3,7 @@ const params = new URLSearchParams(window.location.search);
 const token = params.get("token");
 
 if (!token) {
-  status.textContent = "❌ Token inválido o inexistente.";
+  status.textContent = "❌ Token inválido.";
 } else {
   fetch(
     `https://meetgo-backend.onrender.com/api/users/verify?token=${token}`
@@ -12,11 +12,11 @@ if (!token) {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || "Error al verificar la cuenta");
+        throw new Error(data.message);
       }
 
       status.textContent =
-        "✅ Cuenta verificada correctamente. Redirigiendo al login...";
+        "✅ Cuenta verificada. Redirigiendo al login...";
 
       setTimeout(() => {
         window.location.href = "login.html?verified=true";
@@ -25,6 +25,6 @@ if (!token) {
     .catch((err) => {
       console.error(err);
       status.textContent =
-        "❌ El enlace es inválido o ya fue utilizado.";
+        "❌ El enlace es inválido o expiró.";
     });
 }
