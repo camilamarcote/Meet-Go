@@ -80,11 +80,17 @@ router.post("/register", upload, async (req, res) => {
       { expiresIn: "24h" }
     );
 
-    // 📧 ENVIAR MAIL ANTES
-    await sendVerificationEmail(email, token);
+  try {
+  await sendVerificationEmail(email, token);
+} catch (mailError) {
+  console.error("❌ Error enviando mail:", mailError);
+  return res.status(400).json({
+    message: "No se pudo enviar el email de verificación. Intentalo más tarde."
+  });
+}
 
-    // 💾 GUARDAR SOLO SI EL MAIL SALIÓ
-    await newUser.save();
+await newUser.save();
+
 
     res.status(201).json({
       message: "Registro exitoso. Revisá tu email para verificar tu cuenta."

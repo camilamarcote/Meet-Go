@@ -4,14 +4,16 @@ document.addEventListener("DOMContentLoaded", () => {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const interests = [
-      ...document.querySelectorAll("input[name='interests']:checked")
-    ].map(i => i.value);
+    // 🔹 Checkboxes
+    const interests = Array.from(
+      document.querySelectorAll("input[name='interests']:checked")
+    ).map(i => i.value);
 
-    const languages = [
-      ...document.querySelectorAll("input[name='languages']:checked")
-    ].map(l => l.value);
+    const languages = Array.from(
+      document.querySelectorAll("input[name='languages']:checked")
+    ).map(l => l.value);
 
+    // 🔹 FormData
     const formData = new FormData();
 
     formData.append("firstName", form.firstName.value.trim());
@@ -31,7 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
     formData.append("languages", JSON.stringify(languages));
     formData.append("interests", JSON.stringify(interests));
 
-    if (form.profileImage.files.length > 0) {
+    if (form.profileImage?.files?.length > 0) {
       formData.append("profileImage", form.profileImage.files[0]);
     }
 
@@ -44,22 +46,16 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       );
 
-      const text = await res.text();
-      let result;
-
-      try {
-        result = JSON.parse(text);
-      } catch {
-        alert("Error del servidor.");
-        return;
-      }
+      // 🔥 LEEMOS SIEMPRE COMO JSON
+      const result = await res.json();
 
       if (!res.ok) {
+        console.error("❌ Error backend:", result);
         alert(result.message || "Error en el registro");
         return;
       }
 
-      // 👇 MENSAJE CLAVE PARA VERIFICACIÓN
+      // ✅ ÉXITO
       alert(
         "Registro exitoso 🎉\n\nTe enviamos un mail para verificar tu cuenta antes de iniciar sesión."
       );
@@ -67,7 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
       window.location.href = "login.html";
 
     } catch (error) {
-      console.error(error);
+      console.error("❌ Error de red:", error);
       alert("No se pudo conectar con el servidor");
     }
   });
