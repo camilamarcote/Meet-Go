@@ -29,11 +29,22 @@ router.post("/register", upload, async (req, res) => {
       languages
     } = req.body;
 
-    if (!firstName || !lastName || !username || !email || !password || !age || !nationality) {
-      return res.status(400).json({ message: "Faltan campos obligatorios" });
+    // 🔎 Validación básica
+    if (
+      !firstName ||
+      !lastName ||
+      !username ||
+      !email ||
+      !password ||
+      !age ||
+      !nationality
+    ) {
+      return res.status(400).json({
+        message: "Faltan campos obligatorios"
+      });
     }
 
-    // 🔍 Verificar duplicados ANTES
+    // 🔍 Duplicados
     const exists = await User.findOne({
       $or: [{ email }, { username }]
     });
@@ -44,6 +55,7 @@ router.post("/register", upload, async (req, res) => {
       });
     }
 
+    // 🔐 Password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const safeParse = (value) => {
@@ -55,6 +67,7 @@ router.post("/register", upload, async (req, res) => {
       }
     };
 
+    // 👤 Crear usuario (NO guardar todavía)
     const newUser = new User({
       firstName,
       lastName,
@@ -73,24 +86,25 @@ router.post("/register", upload, async (req, res) => {
       isVerified: false
     });
 
-    // 🔐 TOKEN JWT (24h)
+    // 🔐 Token verificación (24h)
     const token = jwt.sign(
       { id: newUser._id },
       process.env.JWT_SECRET,
       { expiresIn: "24h" }
     );
 
-  try {
-  await sendVerificationEmail(email, token);
-} catch (mailError) {
-  console.error("❌ Error enviando mail:", mailError);
-  return res.status(400).json({
-    message: "No se pudo enviar el email de verificación. Intentalo más tarde."
-  });
-}
+    // 📧 Enviar mail ANTES de guardar
+    try {
+      await sendVerificationEmail(email, token);
+    } catch (mailError) {
+      console.error("❌ Error enviando mail:", mailError);
+      return res.status(400).json({
+        message: "No se pudo enviar el email de verificación. Intentalo más tarde."
+      });
+    }
 
-await newUser.save();
-
+    // 💾 Guardar usuario SOLO si el mail salió bien
+    await newUser.save();
 
     res.status(201).json({
       message: "Registro exitoso. Revisá tu email para verificar tu cuenta."
@@ -105,24 +119,40 @@ await newUser.save();
 });
 
 /* =============================
-   📧 VERIFY EMAIL
+   📧 VERIFY EMAIL (JSON ONLY)
 ============================= */
 router.get("/verify", async (req, res) => {
   try {
     const { token } = req.query;
 
+    if (!token) {
+      return res.status(400).json({
+        message: "Token faltante"
+      });
+    }
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.id);
 
     if (!user) {
-      return res.status(400).json({ message: "Usuario inválido" });
+      return res.status(400).json({
+        message: "Usuario inválido"
+      });
+    }
+
+    if (user.isVerified) {
+      return res.json({
+        message: "La cuenta ya estaba verificada"
+      });
     }
 
     user.isVerified = true;
     await user.save();
 
-    // 👉 Redirige al login
-    res.redirect(`${process.env.FRONTEND_URL}/login.html`);
+    // ⚠️ IMPORTANTE: NO redirect
+    res.json({
+      message: "Cuenta verificada correctamente"
+    });
 
   } catch (error) {
     console.error("❌ Verify error:", error);
@@ -140,7 +170,9 @@ router.post("/login", async (req, res) => {
     const { user, password } = req.body;
 
     if (!user || !password) {
-      return res.status(400).json({ message: "Faltan datos" });
+      return res.status(400).json({
+        message: "Faltan datos"
+      });
     }
 
     const foundUser = await User.findOne({
@@ -148,7 +180,9 @@ router.post("/login", async (req, res) => {
     }).select("+password");
 
     if (!foundUser) {
-      return res.status(401).json({ message: "Credenciales incorrectas" });
+      return res.status(401).json({
+        message: "Credenciales incorrectas"
+      });
     }
 
     if (!foundUser.isVerified) {
@@ -160,7 +194,9 @@ router.post("/login", async (req, res) => {
     const isMatch = await bcrypt.compare(password, foundUser.password);
 
     if (!isMatch) {
-      return res.status(401).json({ message: "Credenciales incorrectas" });
+      return res.status(401).json({
+        message: "Credenciales incorrectas"
+      });
     }
 
     foundUser.password = undefined;
@@ -181,7 +217,9 @@ router.post("/login", async (req, res) => {
 
   } catch (error) {
     console.error("❌ Login error:", error);
-    res.status(500).json({ message: "Error en login" });
+    res.status(500).json({
+      message: "Error en login"
+    });
   }
 });
 
