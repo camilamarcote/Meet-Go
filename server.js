@@ -35,12 +35,14 @@ app.use(
   cors({
     origin: [
       "https://meet-go.netlify.app",
+      "https://meetandgof.netlify.app",
       "http://localhost:5500",
       "http://127.0.0.1:5500"
     ],
     credentials: true
   })
 );
+
 
 // 🔴 ESTO ES LO QUE TE FALTABA
 app.use(express.urlencoded({ extended: true }));
