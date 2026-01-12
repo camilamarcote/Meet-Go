@@ -15,4 +15,7 @@ export const sendVerificationEmail = async (email, token) => {
       <a href="${link}">Confirmar mi cuenta</a>
     `
   });
+
+  console.log("🔗 Verification link:", link);
+
 };
