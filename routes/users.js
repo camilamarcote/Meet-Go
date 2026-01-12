@@ -29,33 +29,18 @@ router.post("/register", upload, async (req, res) => {
       languages
     } = req.body;
 
-    // 🔎 Validación básica
-    if (
-      !firstName ||
-      !lastName ||
-      !username ||
-      !email ||
-      !password ||
-      !age ||
-      !nationality
-    ) {
-      return res.status(400).json({
-        message: "Faltan campos obligatorios"
-      });
+    if (!firstName || !lastName || !username || !email || !password || !age || !nationality) {
+      return res.status(400).json({ message: "Faltan campos obligatorios" });
     }
 
-    // 🔍 Duplicados
     const exists = await User.findOne({
       $or: [{ email }, { username }]
     });
 
     if (exists) {
-      return res.status(400).json({
-        message: "El usuario o el email ya existe"
-      });
+      return res.status(400).json({ message: "El usuario o el email ya existe" });
     }
 
-    // 🔐 Password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const safeParse = (value) => {
@@ -67,7 +52,6 @@ router.post("/register", upload, async (req, res) => {
       }
     };
 
-    // 👤 Crear usuario (NO guardar todavía)
     const newUser = new User({
       firstName,
       lastName,
@@ -86,24 +70,13 @@ router.post("/register", upload, async (req, res) => {
       isVerified: false
     });
 
-    // 🔐 Token verificación (24h)
     const token = jwt.sign(
       { id: newUser._id },
       process.env.JWT_SECRET,
       { expiresIn: "24h" }
     );
 
-    // 📧 Enviar mail ANTES de guardar
-    try {
-      await sendVerificationEmail(email, token);
-    } catch (mailError) {
-      console.error("❌ Error enviando mail:", mailError);
-      return res.status(400).json({
-        message: "No se pudo enviar el email de verificación. Intentalo más tarde."
-      });
-    }
-
-    // 💾 Guardar usuario SOLO si el mail salió bien
+    await sendVerificationEmail(email, token);
     await newUser.save();
 
     res.status(201).json({
@@ -112,53 +85,46 @@ router.post("/register", upload, async (req, res) => {
 
   } catch (error) {
     console.error("❌ Register error:", error);
-    res.status(500).json({
-      message: "No se pudo completar el registro"
-    });
+    res.status(500).json({ message: "No se pudo completar el registro" });
   }
 });
 
 /* =============================
-   📧 VERIFY EMAIL (JSON ONLY)
+   📧 VERIFY EMAIL (REDIRECT)
 ============================= */
 router.get("/verify", async (req, res) => {
   try {
     const { token } = req.query;
 
     if (!token) {
-      return res.status(400).json({
-        message: "Token faltante"
-      });
+      return res.redirect(
+        `${process.env.FRONTEND_URL}/login.html?verified=error`
+      );
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.id);
 
     if (!user) {
-      return res.status(400).json({
-        message: "Usuario inválido"
-      });
+      return res.redirect(
+        `${process.env.FRONTEND_URL}/login.html?verified=error`
+      );
     }
 
-    if (user.isVerified) {
-      return res.json({
-        message: "La cuenta ya estaba verificada"
-      });
+    if (!user.isVerified) {
+      user.isVerified = true;
+      await user.save();
     }
 
-    user.isVerified = true;
-    await user.save();
-
-    // ⚠️ IMPORTANTE: NO redirect
-    res.json({
-      message: "Cuenta verificada correctamente"
-    });
+    return res.redirect(
+      `${process.env.FRONTEND_URL}/login.html?verified=true`
+    );
 
   } catch (error) {
     console.error("❌ Verify error:", error);
-    res.status(400).json({
-      message: "Token inválido o expirado"
-    });
+    return res.redirect(
+      `${process.env.FRONTEND_URL}/login.html?verified=error`
+    );
   }
 });
 
@@ -170,9 +136,7 @@ router.post("/login", async (req, res) => {
     const { user, password } = req.body;
 
     if (!user || !password) {
-      return res.status(400).json({
-        message: "Faltan datos"
-      });
+      return res.status(400).json({ message: "Faltan datos" });
     }
 
     const foundUser = await User.findOne({
@@ -180,9 +144,7 @@ router.post("/login", async (req, res) => {
     }).select("+password");
 
     if (!foundUser) {
-      return res.status(401).json({
-        message: "Credenciales incorrectas"
-      });
+      return res.status(401).json({ message: "Credenciales incorrectas" });
     }
 
     if (!foundUser.isVerified) {
@@ -194,32 +156,31 @@ router.post("/login", async (req, res) => {
     const isMatch = await bcrypt.compare(password, foundUser.password);
 
     if (!isMatch) {
-      return res.status(401).json({
-        message: "Credenciales incorrectas"
-      });
+      return res.status(401).json({ message: "Credenciales incorrectas" });
     }
+
+    const token = jwt.sign(
+      { id: foundUser._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
     foundUser.password = undefined;
 
     res.json({
       message: "Login exitoso",
+      token,
       user: {
         id: foundUser._id,
         username: foundUser.username,
         email: foundUser.email,
-        roles: foundUser.roles,
-        isOrganizer: foundUser.isOrganizer,
-        profileImage: foundUser.profileImage,
-        subscription: foundUser.subscription,
         isVerified: foundUser.isVerified
       }
     });
 
   } catch (error) {
     console.error("❌ Login error:", error);
-    res.status(500).json({
-      message: "Error en login"
-    });
+    res.status(500).json({ message: "Error en login" });
   }
 });
 

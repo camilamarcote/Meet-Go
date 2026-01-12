@@ -9,6 +9,17 @@ togglePasswordBtn.addEventListener("click", () => {
   eyeIcon.className = isHidden ? "bi bi-eye-slash" : "bi bi-eye";
 });
 
+/* ✅ Mensaje post-verificación */
+const params = new URLSearchParams(window.location.search);
+
+if (params.get("verified") === "true") {
+  alert("✅ Cuenta verificada correctamente. Ya podés iniciar sesión.");
+}
+
+if (params.get("verified") === "error") {
+  alert("❌ El enlace de verificación es inválido o expiró.");
+}
+
 /* 🔐 LOGIN */
 document.getElementById("loginForm").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -38,11 +49,8 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
       return;
     }
 
-    // 🔐 guardar token
     localStorage.setItem("token", data.token);
-
-    // (opcional) guardar info básica
-    localStorage.setItem("user", JSON.stringify(data.user));
+    localStorage.setItem("currentUser", JSON.stringify(data.user));
 
     window.location.href = "index.html";
 
