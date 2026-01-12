@@ -14,8 +14,6 @@ import ticketRoutes from "./routes/tickets.js";
 import paymentsRoutes from "./routes/payments.js";
 import subscriptionRoutes from "./routes/subscriptions.js";
 
-
-
 const app = express();
 const server = http.createServer(app);
 
@@ -23,19 +21,32 @@ const server = http.createServer(app);
 // 🔌 Socket.io
 // =============================
 const io = new Server(server, {
-  cors: { origin: "*" }
+  cors: {
+    origin: "*"
+  }
 });
 
 // =============================
-// 🧩 Middlewares
+// 🧩 Middlewares (CLAVE)
 // =============================
-app.use(cors());
 
+// 🔐 CORS
 app.use(
-  express.json({
-    limit: "10mb"
+  cors({
+    origin: [
+      "https://meet-go.netlify.app",
+      "http://localhost:5500",
+      "http://127.0.0.1:5500"
+    ],
+    credentials: true
   })
 );
+
+// 🔴 ESTO ES LO QUE TE FALTABA
+app.use(express.urlencoded({ extended: true }));
+
+// JSON (para login, pagos, etc.)
+app.use(express.json({ limit: "10mb" }));
 
 // =============================
 // 🛣️ API
