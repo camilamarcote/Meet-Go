@@ -16,6 +16,11 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
   const user = document.getElementById("loginUser").value.trim();
   const password = passwordInput.value;
 
+  if (!user || !password) {
+    alert("Completá todos los campos");
+    return;
+  }
+
   try {
     const response = await fetch(
       "https://meetgo-backend.onrender.com/api/users/login",
@@ -33,7 +38,12 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
       return;
     }
 
-    localStorage.setItem("currentUser", JSON.stringify(data.user));
+    // 🔐 guardar token
+    localStorage.setItem("token", data.token);
+
+    // (opcional) guardar info básica
+    localStorage.setItem("user", JSON.stringify(data.user));
+
     window.location.href = "index.html";
 
   } catch (error) {

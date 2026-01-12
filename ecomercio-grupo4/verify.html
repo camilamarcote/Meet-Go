@@ -1,21 +1,41 @@
 <!DOCTYPE html>
 <html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Verificando cuenta...</title>
+</head>
 <body>
-<h2>Verificando cuenta...</h2>
+  <h2>Verificando tu cuenta ⏳</h2>
 
-<script>
-const params = new URLSearchParams(window.location.search);
-const token = params.get("token");
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
 
-fetch(`https://meetgo-backend.onrender.com/api/users/verify?token=${token}`)
-  .then(res => res.json())
-  .then(() => {
-    alert("Cuenta verificada 🎉 Ya podés iniciar sesión");
-    window.location.href = "login.html";
-  })
-  .catch(() => {
-    alert("Token inválido");
-  });
-</script>
+    if (!token) {
+      document.body.innerHTML = "<p>Token inválido</p>";
+    } else {
+      fetch("https://meetgo-backend.onrender.com/api/users/verify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ token })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          document.body.innerHTML = "<p>Cuenta verificada 🎉 Redirigiendo...</p>";
+          setTimeout(() => {
+            window.location.href = "login.html";
+          }, 2000);
+        } else {
+          document.body.innerHTML = "<p>Error al verificar</p>";
+        }
+      })
+      .catch(() => {
+        document.body.innerHTML = "<p>Error de servidor</p>";
+      });
+    }
+  </script>
 </body>
 </html>
