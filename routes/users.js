@@ -8,6 +8,10 @@ import { sendVerificationEmail } from "../utils/sendverificationemail.js";
 const router = express.Router();
 const upload = multer().single("profileImage");
 
+const FRONT_URL =
+  process.env.FRONT_URL || "https://meetandgof.netlify.app";
+
+
 /* =============================
    🟢 REGISTER
 ============================= */
@@ -98,7 +102,7 @@ router.get("/verify", async (req, res) => {
 
     if (!token) {
       return res.redirect(
-        `${process.env.FRONTEND_URL}/login.html?verified=error`
+        `${process.env.FRONT_URL}/login.html?verified=error`
       );
     }
 
@@ -107,7 +111,7 @@ router.get("/verify", async (req, res) => {
 
     if (!user) {
       return res.redirect(
-        `${process.env.FRONTEND_URL}/login.html?verified=error`
+        `${process.env.FRONT_URL}/login.html?verified=error`
       );
     }
 
@@ -117,13 +121,13 @@ router.get("/verify", async (req, res) => {
     }
 
     return res.redirect(
-      `${process.env.FRONTEND_URL}/login.html?verified=true`
+      `${process.env.FRONT_URL}/login.html?verified=true`
     );
 
   } catch (error) {
     console.error("❌ Verify error:", error);
     return res.redirect(
-      `${process.env.FRONTEND_URL}/login.html?verified=error`
+      `${process.env.FRONT_URL}/login.html?verified=error`
     );
   }
 });

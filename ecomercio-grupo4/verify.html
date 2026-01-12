@@ -3,23 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <title>Verificando cuenta</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #f9fafb;
+    }
+  </style>
 </head>
 <body>
-  <h2>Verificando tu cuenta...</h2>
 
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get("token");
+  <h2 id="status">Verificando tu cuenta...</h2>
 
-    if (!token) {
-      document.body.innerHTML = "<p>Token inválido</p>";
-      throw new Error("Token no encontrado");
-    }
+  <script src="js/verify.js"></script>
 
-    const API_URL = "https://meetgo-backend.onrender.com";
-
-    // 🔁 REDIRECCIÓN REAL DEL NAVEGADOR
-    window.location.href = `${API_URL}/api/users/verify?token=${token}`;
-  </script>
 </body>
 </html>
