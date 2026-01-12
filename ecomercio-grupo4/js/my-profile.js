@@ -1,17 +1,15 @@
 const API_URL = "https://meetgo-backend.onrender.com";
 
 document.addEventListener("DOMContentLoaded", async () => {
+  const stored = JSON.parse(localStorage.getItem("currentUser"));
 
-  const authUser = JSON.parse(localStorage.getItem("currentUser"));
-
-  if (!authUser || !authUser.id || !authUser.token) {
+  if (!stored || !stored.token) {
     alert("No hay usuario logueado");
     window.location.href = "welcome.html";
     return;
   }
 
-  const token = authUser.token;
-  const userId = authUser.id;
+  const token = stored.token;
   const form = document.getElementById("profileForm");
   const profileImageInput = document.getElementById("profileImage");
   const profileImagePreview = document.getElementById("currentProfileImage");
@@ -20,16 +18,13 @@ document.addEventListener("DOMContentLoaded", async () => {
      CARGAR PERFIL
   ====================== */
   try {
-    const res = await fetch(`${API_URL}/api/users/${userId}`, {
+    const res = await fetch(`${API_URL}/api/users/me`, {
       headers: {
         Authorization: `Bearer ${token}`
       }
     });
 
-    if (!res.ok) {
-      alert("Error al cargar perfil");
-      return;
-    }
+    if (!res.ok) throw new Error();
 
     const user = await res.json();
 
@@ -42,11 +37,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     form.personality.value = user.personality || "";
     form.bio.value = user.bio || "";
 
-    profileImagePreview.src = user.profileImage
-      ? `${API_URL}${user.profileImage}`
-      : "img/default-user.png";
+    profileImagePreview.src =
+      user.profileImage || "img/default-user.png";
 
-  } catch (error) {
+  } catch {
     alert("Error al cargar perfil");
   }
 
@@ -56,22 +50,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const formData = new FormData();
-
-    formData.append("firstName", form.firstName.value);
-    formData.append("lastName", form.lastName.value);
-    formData.append("username", form.username.value);
-    formData.append("age", form.age.value);
-    formData.append("department", form.department.value || "");
-    formData.append("personality", form.personality.value);
-    formData.append("bio", form.bio.value);
-
-    if (profileImageInput.files.length > 0) {
-      formData.append("profileImage", profileImageInput.files[0]);
-    }
+    const formData = new FormData(form);
 
     try {
-      const updateRes = await fetch(`${API_URL}/api/users/${userId}`, {
+      const res = await fetch(`${API_URL}/api/users/me`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`
@@ -79,24 +61,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         body: formData
       });
 
-      const data = await updateRes.json();
+      const data = await res.json();
 
-      if (!updateRes.ok) {
+      if (!res.ok) {
         alert(data.message || "Error al actualizar");
         return;
       }
 
-      alert("Perfil actualizado");
-
-      localStorage.setItem("currentUser", JSON.stringify({
-        ...authUser,
-        username: data.user.username,
-        profileImage: data.user.profileImage
-      }));
-
+      alert("Perfil actualizado correctamente");
       window.location.href = "index.html";
 
-    } catch (error) {
+    } catch {
       alert("Error al actualizar perfil");
     }
   });

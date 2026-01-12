@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/user.js";
 import { sendVerificationEmail } from "../utils/sendverificationemail.js";
+import { authMiddleware } from "../middlewares/auth.js";
 
 const router = express.Router();
 const upload = multer().single("profileImage");
@@ -192,5 +193,66 @@ router.post("/login", async (req, res) => {
     res.status(500).json({ message: "Error en login" });
   }
 });
+
+
+/* =============================
+   👤 GET PERFIL
+============================= */
+router.get("/me", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    res.json(user);
+  } catch (error) {
+    console.error("❌ Get profile error:", error);
+    res.status(500).json({ message: "Error al cargar perfil" });
+  }
+});
+
+/* =============================
+   ✏️ UPDATE PERFIL
+============================= */
+router.put(
+  "/me",
+  authMiddleware,
+  upload,
+  async (req, res) => {
+    try {
+      const updates = {
+        firstName: req.body.firstName,
+        lastName: req.body.lastName,
+        username: req.body.username,
+        age: req.body.age,
+        department: req.body.department || "",
+        personality: req.body.personality || "",
+        bio: req.body.bio || ""
+      };
+
+      // eliminar undefined
+      Object.keys(updates).forEach(
+        key => updates[key] === undefined && delete updates[key]
+      );
+
+      const user = await User.findByIdAndUpdate(
+        req.user.id,
+        updates,
+        { new: true }
+      );
+
+      res.json({
+        message: "Perfil actualizado",
+        user
+      });
+    } catch (error) {
+      console.error("❌ Update profile error:", error);
+      res.status(500).json({ message: "Error al actualizar perfil" });
+    }
+  }
+);
+
 
 export default router;

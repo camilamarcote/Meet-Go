@@ -50,7 +50,14 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
     }
 
     localStorage.setItem("token", data.token);
-    localStorage.setItem("currentUser", JSON.stringify(data.user));
+   localStorage.setItem(
+  "currentUser",
+  JSON.stringify({
+    token: data.token,
+    user: data.user
+  })
+);
+
 
     window.location.href = "index.html";
 
