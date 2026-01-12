@@ -16,17 +16,10 @@
       throw new Error("Token no encontrado");
     }
 
-    const API_URL = "https://meetgo-backend.onrender.com"; // 👈 ACÁ
+    const API_URL = "https://meetgo-backend.onrender.com";
 
-    fetch(`${API_URL}/api/users/verify?token=${token}`)
-      .then(res => {
-        if (!res.ok) throw new Error("Error en verificación");
-        // si el backend redirige, el navegador sigue solo
-      })
-      .catch(err => {
-        console.error(err);
-        document.body.innerHTML = "<p>Error en el servidor</p>";
-      });
+    // 🔁 REDIRECCIÓN REAL DEL NAVEGADOR
+    window.location.href = `${API_URL}/api/users/verify?token=${token}`;
   </script>
 </body>
 </html>
