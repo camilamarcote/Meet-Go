@@ -11,14 +11,12 @@ import { sendVerificationEmail } from "../utils/sendverificationemail.js";
 const router = express.Router();
 
 /* =============================
-   📦 MULTER (FormData)
+   📦 MULTER
 ============================= */
-const upload = multer({
-  storage: multer.memoryStorage()
-});
+const upload = multer({ storage: multer.memoryStorage() });
 
 /* =============================
-   👤 PERFIL ACTUAL
+   👤 PERFIL
 ============================= */
 router.get("/me", protect, async (req, res) => {
   try {
@@ -28,8 +26,35 @@ router.get("/me", protect, async (req, res) => {
     }
     res.json(user);
   } catch (error) {
-    console.error("❌ Get profile error:", error);
     res.status(500).json({ message: "Error al obtener perfil" });
+  }
+});
+
+/* =============================
+   📧 VERIFY EMAIL  ✅ (ESTO FALTABA)
+============================= */
+router.get("/verify", async (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token) {
+      return res.redirect(`${process.env.FRONT_URL}/login.html?verified=error`);
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id);
+
+    if (!user) {
+      return res.redirect(`${process.env.FRONT_URL}/login.html?verified=error`);
+    }
+
+    if (!user.isVerified) {
+      user.isVerified = true;
+      await user.save();
+    }
+
+    return res.redirect(`${process.env.FRONT_URL}/login.html?verified=true`);
+  } catch (error) {
+    return res.redirect(`${process.env.FRONT_URL}/login.html?verified=error`);
   }
 });
 
@@ -52,7 +77,6 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       bio
     } = req.body;
 
-    // 🔐 Validaciones
     if (!password) {
       return res.status(400).json({ message: "La contraseña es obligatoria" });
     }
@@ -72,12 +96,9 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
     });
 
     if (exists) {
-      return res.status(400).json({
-        message: "Usuario o email ya existe"
-      });
+      return res.status(400).json({ message: "Usuario o email ya existe" });
     }
 
-    // 🧠 Parse arrays
     const languages = req.body.languages
       ? JSON.parse(req.body.languages)
       : [];
@@ -86,7 +107,6 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       ? JSON.parse(req.body.interests)
       : [];
 
-    // 🔐 Hash
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
@@ -112,7 +132,6 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
     res.status(201).json({
       message: "Usuario creado. Revisá tu email para verificar la cuenta"
     });
-
   } catch (error) {
     console.error("❌ Register error:", error);
     res.status(500).json({ message: "Error en registro" });
@@ -153,9 +172,7 @@ router.post("/login", async (req, res) => {
         profileImage: foundUser.profileImage
       }
     });
-
   } catch (error) {
-    console.error("❌ Login error:", error);
     res.status(500).json({ message: "Error en login" });
   }
 });
