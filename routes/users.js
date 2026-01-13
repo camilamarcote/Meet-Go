@@ -1,7 +1,7 @@
 import express from "express";
-import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import multer from "multer";
+import jwt from "jsonwebtoken";
 
 import User from "../models/User.js";
 import { protect } from "../middlewares/auth.js";
@@ -31,7 +31,7 @@ router.get("/me", protect, async (req, res) => {
 });
 
 /* =============================
-   📧 VERIFY EMAIL  ✅ (ESTO FALTABA)
+   📧 VERIFY (link del mail)
 ============================= */
 router.get("/verify", async (req, res) => {
   try {
@@ -40,21 +40,49 @@ router.get("/verify", async (req, res) => {
       return res.redirect(`${process.env.FRONT_URL}/login.html?verified=error`);
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id);
+    const user = await User.findOne({ verificationToken: token });
 
     if (!user) {
       return res.redirect(`${process.env.FRONT_URL}/login.html?verified=error`);
     }
 
-    if (!user.isVerified) {
-      user.isVerified = true;
-      await user.save();
-    }
+    user.isVerified = true;
+    user.verificationToken = null;
+    await user.save();
 
     return res.redirect(`${process.env.FRONT_URL}/login.html?verified=true`);
   } catch (error) {
     return res.redirect(`${process.env.FRONT_URL}/login.html?verified=error`);
+  }
+});
+
+/* =============================
+   🔁 RESEND VERIFICATION
+============================= */
+router.post("/resend-verification", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({ message: "La cuenta ya está verificada" });
+    }
+
+    const token = generateToken(user);
+    user.verificationToken = token;
+    await user.save();
+
+    await sendVerificationEmail(user.email, token);
+
+    res.json({ message: "Email de verificación reenviado" });
+  } catch (error) {
+    console.error("❌ Resend error:", error);
+    res.status(500).json({ message: "Error al reenviar email" });
   }
 });
 
@@ -127,6 +155,9 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
     });
 
     const token = generateToken(user);
+    user.verificationToken = token;
+    await user.save();
+
     await sendVerificationEmail(user.email, token);
 
     res.status(201).json({

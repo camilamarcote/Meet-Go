@@ -40,8 +40,9 @@ const UserSchema = new mongoose.Schema(
 
     profileImage: { type: String, default: "" },
 
-    // 📧 Verificación email
+    // 📧 Verificación
     isVerified: { type: Boolean, default: false },
+    verificationToken: { type: String, default: null },
 
     subscription: {
       isActive: { type: Boolean, default: false },
