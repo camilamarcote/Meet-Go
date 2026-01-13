@@ -1,16 +1,24 @@
 import express from "express";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
+import multer from "multer";
+
 import User from "../models/User.js";
 import { protect } from "../middlewares/auth.js";
-
-import bcrypt from "bcryptjs";
 import { generateToken } from "../utils/jwt.js";
 import { sendVerificationEmail } from "../utils/sendverificationemail.js";
 
 const router = express.Router();
 
 /* =============================
-   👤 PERFIL ACTUAL (/me)
+   📦 MULTER (FormData)
+============================= */
+const upload = multer({
+  storage: multer.memoryStorage()
+});
+
+/* =============================
+   👤 PERFIL ACTUAL
 ============================= */
 router.get("/me", protect, async (req, res) => {
   try {
@@ -26,88 +34,9 @@ router.get("/me", protect, async (req, res) => {
 });
 
 /* =============================
-   ✏️ ACTUALIZAR PERFIL (/me)
-============================= */
-router.put("/me", protect, async (req, res) => {
-  try {
-    // Parse arrays si vienen como string
-    if (req.body.languages) {
-      req.body.languages = JSON.parse(req.body.languages);
-    }
-    if (req.body.interests) {
-      req.body.interests = JSON.parse(req.body.interests);
-    }
-
-    const updates = {
-      firstName: req.body.firstName,
-      lastName: req.body.lastName,
-      username: req.body.username,
-      age: req.body.age,
-      nationality: req.body.nationality,
-      department: req.body.department || "",
-      personality: req.body.personality || "",
-      style: req.body.style || "",
-      bio: req.body.bio || "",
-      languages: req.body.languages || [],
-      interests: req.body.interests || []
-    };
-
-    if (req.file) {
-      updates.profileImage = `/uploads/${req.file.filename}`;
-    }
-
-    const updatedUser = await User.findByIdAndUpdate(
-      req.user.id,
-      updates,
-      { new: true, runValidators: true }
-    ).select("-password");
-
-    res.json({
-      message: "Perfil actualizado",
-      user: updatedUser
-    });
-
-  } catch (error) {
-    console.error("❌ Update profile error:", error);
-    res.status(500).json({ message: "Error al actualizar perfil" });
-  }
-});
-
-/* =============================
-   📧 VERIFY EMAIL
-============================= */
-router.get("/verify", async (req, res) => {
-  try {
-    const { token } = req.query;
-    if (!token) {
-      return res.redirect(`${process.env.FRONT_URL}/login.html?verified=error`);
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id);
-
-    if (!user) {
-      return res.redirect(`${process.env.FRONT_URL}/login.html?verified=error`);
-    }
-
-    if (!user.isVerified) {
-      user.isVerified = true;
-      await user.save();
-    }
-
-    return res.redirect(`${process.env.FRONT_URL}/login.html?verified=true`);
-
-  } catch (error) {
-    console.error("❌ Verify error:", error);
-    return res.redirect(`${process.env.FRONT_URL}/login.html?verified=error`);
-  }
-});
-
-
-/* =============================
    📝 REGISTER
 ============================= */
-router.post("/register", async (req, res) => {
+router.post("/register", upload.single("profileImage"), async (req, res) => {
   try {
     const {
       firstName,
@@ -116,22 +45,48 @@ router.post("/register", async (req, res) => {
       email,
       password,
       age,
-      nationality
+      nationality,
+      department,
+      personality,
+      style,
+      bio
     } = req.body;
+
+    // 🔐 Validaciones
+    if (!password) {
+      return res.status(400).json({ message: "La contraseña es obligatoria" });
+    }
+
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        message:
+          "La contraseña debe tener mínimo 8 caracteres, mayúscula, minúscula, número y carácter especial"
+      });
+    }
 
     const exists = await User.findOne({
       $or: [{ email }, { username }]
     });
 
     if (exists) {
-      return res.status(400).json({ message: "Usuario o email ya existe" });
+      return res.status(400).json({
+        message: "Usuario o email ya existe"
+      });
     }
 
-    if (!password) {
-  return res.status(400).json({ message: "La contraseña es obligatoria" });
-}
+    // 🧠 Parse arrays
+    const languages = req.body.languages
+      ? JSON.parse(req.body.languages)
+      : [];
 
+    const interests = req.body.interests
+      ? JSON.parse(req.body.interests)
+      : [];
 
+    // 🔐 Hash
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
@@ -141,7 +96,14 @@ router.post("/register", async (req, res) => {
       email,
       password: hashedPassword,
       age,
-      nationality
+      nationality,
+      department: department || "",
+      personality: personality || "",
+      style: style || "",
+      bio: bio || "",
+      languages,
+      interests,
+      profileImage: req.file ? req.file.originalname : ""
     });
 
     const token = generateToken(user);
@@ -197,6 +159,5 @@ router.post("/login", async (req, res) => {
     res.status(500).json({ message: "Error en login" });
   }
 });
-
 
 export default router;
