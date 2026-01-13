@@ -9,7 +9,7 @@
 
 <body>
 <div class="app-container">
-<form id="registerForm">
+<form id="registerForm"> 
 
 <h2>👋 Registro</h2>
 
@@ -26,8 +26,19 @@
   <label>Email*</label>
   <input type="email" name="email" required>
 
-  <label>Contraseña*</label>
-  <input type="password" name="password" required>
+<label>Contraseña*</label>
+<input
+  type="password"
+  name="password"
+  required
+  minlength="8"
+  autocomplete="new-password"
+  placeholder="Mín. 8 caracteres, mayúscula, número y símbolo"
+/>
+<small>
+  Debe incluir mayúscula, minúscula, número y carácter especial
+</small>
+
 
   <label>Edad*</label>
   <input type="number" name="age" min="18" required>

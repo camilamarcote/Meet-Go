@@ -4,6 +4,24 @@ document.addEventListener("DOMContentLoaded", () => {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
+    const password = form.password.value;
+
+    // 🔐 Validación de contraseña
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+
+    if (!passwordRegex.test(password)) {
+      alert(
+        "La contraseña debe tener:\n" +
+        "- Mínimo 8 caracteres\n" +
+        "- 1 mayúscula\n" +
+        "- 1 minúscula\n" +
+        "- 1 número\n" +
+        "- 1 carácter especial"
+      );
+      return;
+    }
+
     // 🔹 Checkboxes
     const interests = Array.from(
       document.querySelectorAll("input[name='interests']:checked")
@@ -15,21 +33,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 🔹 FormData
     const formData = new FormData();
-
     formData.append("firstName", form.firstName.value.trim());
     formData.append("lastName", form.lastName.value.trim());
     formData.append("username", form.username.value.trim());
     formData.append("email", form.email.value.trim());
-    formData.append("password", form.password.value);
+    formData.append("password", password); // 👈 GARANTIZADO
     formData.append("age", form.age.value);
-
     formData.append("nationality", form.nationality.value);
     formData.append("department", form.department.value || "");
-
     formData.append("personality", form.personality.value || "");
     formData.append("style", form.style?.value || "");
     formData.append("bio", form.bio.value || "");
-
     formData.append("languages", JSON.stringify(languages));
     formData.append("interests", JSON.stringify(interests));
 
@@ -46,7 +60,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       );
 
-      // 🔥 LEEMOS SIEMPRE COMO JSON
       const result = await res.json();
 
       if (!res.ok) {
@@ -55,9 +68,8 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // ✅ ÉXITO
       alert(
-        "Registro exitoso 🎉\n\nTe enviamos un mail para verificar tu cuenta antes de iniciar sesión."
+        "Registro exitoso 🎉\n\nRevisá tu email para verificar tu cuenta."
       );
 
       window.location.href = "login.html";
