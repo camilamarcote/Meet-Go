@@ -49,15 +49,16 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
       return;
     }
 
-    localStorage.setItem("token", data.token);
-   localStorage.setItem(
-  "currentUser",
-  JSON.stringify({
-    token: data.token,
-    user: data.user
-  })
-);
-
+    // ✅ Guardamos todo en un solo objeto
+    localStorage.setItem(
+      "currentUser",
+      JSON.stringify({
+        token: data.token,
+        id: data.user._id,
+        username: data.user.username,
+        profileImage: data.user.profileImage
+      })
+    );
 
     window.location.href = "index.html";
 

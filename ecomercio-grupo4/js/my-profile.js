@@ -1,17 +1,15 @@
 const API_URL = "https://meetgo-backend.onrender.com";
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const stored = JSON.parse(localStorage.getItem("currentUser"));
+  const authUser = JSON.parse(localStorage.getItem("currentUser"));
 
-  if (!stored || !stored.token) {
-    alert("No hay usuario logueado");
+  if (!authUser || !authUser.token) {
     window.location.href = "welcome.html";
     return;
   }
 
-  const token = stored.token;
+  const token = authUser.token;
   const form = document.getElementById("profileForm");
-  const profileImageInput = document.getElementById("profileImage");
   const profileImagePreview = document.getElementById("currentProfileImage");
 
   /* ======================
@@ -37,8 +35,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     form.personality.value = user.personality || "";
     form.bio.value = user.bio || "";
 
-    profileImagePreview.src =
-      user.profileImage || "img/default-user.png";
+    form.email.disabled = true;
+
+    profileImagePreview.src = user.profileImage
+      ? `${API_URL}${user.profileImage}`
+      : "img/default-user.png";
 
   } catch {
     alert("Error al cargar perfil");
@@ -69,6 +70,16 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       alert("Perfil actualizado correctamente");
+
+      localStorage.setItem(
+        "currentUser",
+        JSON.stringify({
+          ...authUser,
+          username: data.user.username,
+          profileImage: data.user.profileImage
+        })
+      );
+
       window.location.href = "index.html";
 
     } catch {

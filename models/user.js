@@ -29,7 +29,6 @@ const UserSchema = new mongoose.Schema(
     age: { type: Number, min: 0, required: true },
 
     department: { type: String, trim: true, default: "" },
-
     nationality: { type: String, trim: true, required: true },
 
     languages: { type: [String], default: [] },
@@ -41,13 +40,9 @@ const UserSchema = new mongoose.Schema(
 
     profileImage: { type: String, default: "" },
 
-    // 📧 EMAIL VERIFICATION
-    isVerified: {
-      type: Boolean,
-      default: false
-    },
+    // 📧 Verificación email
+    isVerified: { type: Boolean, default: false },
 
-    // 🔁 SUSCRIPCIÓN
     subscription: {
       isActive: { type: Boolean, default: false },
       plan: {
