@@ -1,24 +1,11 @@
 const passwordInput = document.getElementById("loginPass");
 const togglePasswordBtn = document.getElementById("togglePassword");
-const eyeIcon = togglePasswordBtn.querySelector("i");
 
 /* 👁️ Mostrar / ocultar password */
 togglePasswordBtn.addEventListener("click", () => {
-  const isHidden = passwordInput.type === "password";
-  passwordInput.type = isHidden ? "text" : "password";
-  eyeIcon.className = isHidden ? "bi bi-eye-slash" : "bi bi-eye";
+  passwordInput.type =
+    passwordInput.type === "password" ? "text" : "password";
 });
-
-/* ✅ Mensaje post-verificación */
-const params = new URLSearchParams(window.location.search);
-
-if (params.get("verified") === "true") {
-  alert("✅ Cuenta verificada correctamente. Ya podés iniciar sesión.");
-}
-
-if (params.get("verified") === "error") {
-  alert("❌ El enlace de verificación es inválido o expiró.");
-}
 
 /* 🔐 LOGIN */
 document.getElementById("loginForm").addEventListener("submit", async (e) => {
@@ -42,6 +29,12 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
       }
     );
 
+    // ⚠️ Si NO es JSON (404, HTML, etc)
+    const contentType = response.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      throw new Error("Respuesta inválida del servidor");
+    }
+
     const data = await response.json();
 
     if (!response.ok) {
@@ -49,7 +42,7 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
       return;
     }
 
-    // ✅ Guardamos todo en un solo objeto
+    // ✅ Guardamos sesión
     localStorage.setItem(
       "currentUser",
       JSON.stringify({
@@ -63,7 +56,7 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
     window.location.href = "index.html";
 
   } catch (error) {
-    console.error("❌ Error en login frontend:", error);
+    console.error("❌ Login error:", error);
     alert("Error de conexión con el servidor");
   }
 });
