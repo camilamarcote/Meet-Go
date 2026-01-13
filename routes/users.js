@@ -3,6 +3,10 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import { protect } from "../middlewares/auth.js";
 
+import bcrypt from "bcryptjs";
+import { generateToken } from "../utils/jwt.js";
+import { sendVerificationEmail } from "../utils/sendVerificationEmail.js";
+
 const router = express.Router();
 
 /* =============================
@@ -98,5 +102,96 @@ router.get("/verify", async (req, res) => {
     return res.redirect(`${process.env.FRONT_URL}/login.html?verified=error`);
   }
 });
+
+
+/* =============================
+   📝 REGISTER
+============================= */
+router.post("/register", async (req, res) => {
+  try {
+    const {
+      firstName,
+      lastName,
+      username,
+      email,
+      password,
+      age,
+      nationality
+    } = req.body;
+
+    const exists = await User.findOne({
+      $or: [{ email }, { username }]
+    });
+
+    if (exists) {
+      return res.status(400).json({ message: "Usuario o email ya existe" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await User.create({
+      firstName,
+      lastName,
+      username,
+      email,
+      password: hashedPassword,
+      age,
+      nationality
+    });
+
+    const token = generateToken(user);
+    await sendVerificationEmail(user.email, token);
+
+    res.status(201).json({
+      message: "Usuario creado. Revisá tu email para verificar la cuenta"
+    });
+
+  } catch (error) {
+    console.error("❌ Register error:", error);
+    res.status(500).json({ message: "Error en registro" });
+  }
+});
+
+/* =============================
+   🔐 LOGIN
+============================= */
+router.post("/login", async (req, res) => {
+  try {
+    const { user, password } = req.body;
+
+    const foundUser = await User.findOne({
+      $or: [{ email: user }, { username: user }]
+    }).select("+password");
+
+    if (!foundUser) {
+      return res.status(400).json({ message: "Credenciales inválidas" });
+    }
+
+    const ok = await bcrypt.compare(password, foundUser.password);
+    if (!ok) {
+      return res.status(400).json({ message: "Credenciales inválidas" });
+    }
+
+    if (!foundUser.isVerified) {
+      return res.status(403).json({ message: "Cuenta no verificada" });
+    }
+
+    const token = generateToken(foundUser);
+
+    res.json({
+      token,
+      user: {
+        _id: foundUser._id,
+        username: foundUser.username,
+        profileImage: foundUser.profileImage
+      }
+    });
+
+  } catch (error) {
+    console.error("❌ Login error:", error);
+    res.status(500).json({ message: "Error en login" });
+  }
+});
+
 
 export default router;
