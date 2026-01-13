@@ -3,9 +3,20 @@ const togglePasswordBtn = document.getElementById("togglePassword");
 
 /* 👁️ Mostrar / ocultar password */
 togglePasswordBtn.addEventListener("click", () => {
-  passwordInput.type =
-    passwordInput.type === "password" ? "text" : "password";
+  const isHidden = passwordInput.type === "password";
+  passwordInput.type = isHidden ? "text" : "password";
 });
+
+/* ✅ Mensajes post-verificación (viene del backend) */
+const params = new URLSearchParams(window.location.search);
+
+if (params.get("verified") === "true") {
+  alert("✅ Cuenta verificada correctamente. Ya podés iniciar sesión.");
+}
+
+if (params.get("verified") === "error") {
+  alert("❌ El enlace de verificación es inválido o expiró.");
+}
 
 /* 🔐 LOGIN */
 document.getElementById("loginForm").addEventListener("submit", async (e) => {
@@ -29,12 +40,6 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
       }
     );
 
-    // ⚠️ Si NO es JSON (404, HTML, etc)
-    const contentType = response.headers.get("content-type");
-    if (!contentType || !contentType.includes("application/json")) {
-      throw new Error("Respuesta inválida del servidor");
-    }
-
     const data = await response.json();
 
     if (!response.ok) {
@@ -53,10 +58,11 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
       })
     );
 
+    // 🚀 Redirección final
     window.location.href = "index.html";
 
   } catch (error) {
-    console.error("❌ Login error:", error);
-    alert("Error de conexión con el servidor");
+    console.error("❌ Error de conexión:", error);
+    alert("No se pudo conectar con el servidor");
   }
 });
