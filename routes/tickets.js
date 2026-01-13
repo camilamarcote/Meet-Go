@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import QRCode from "qrcode";
 
 import Event from "../models/event.js";
-import User from "../models/user.js";
+import User from "../models/User.js";
 import EventTicket from "../models/eventTicket.js";
 
 const router = express.Router();
