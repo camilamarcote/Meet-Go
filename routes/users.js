@@ -5,7 +5,7 @@ import { protect } from "../middlewares/auth.js";
 
 import bcrypt from "bcryptjs";
 import { generateToken } from "../utils/jwt.js";
-import { sendVerificationEmail } from "../utils/sendVerificationEmail.js";
+import { sendVerificationEmail } from "../utils/sendverificationemail.js";
 
 const router = express.Router();
 
