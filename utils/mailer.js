@@ -2,7 +2,7 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-export async function mailer({ to, user, event, ticket }) {
+export async function sendTicketMail({ to, user, event, ticket }) {
   console.log("📧 Enviando mail de ticket a:", to);
 
   const paymentText =
