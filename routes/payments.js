@@ -32,13 +32,13 @@ router.post("/payments/create/:ticketId", async (req, res) => {
       ticketId: ticket._id
     });
 
-    res.json({
+    return res.json({
       init_point: preference.init_point
     });
 
   } catch (error) {
     console.error("❌ Error creando pago:", error);
-    res.status(500).json({ message: "Error creando pago" });
+    return res.status(500).json({ message: "Error creando pago" });
   }
 });
 
@@ -53,6 +53,7 @@ router.post("/payments/webhook", async (req, res) => {
   try {
     const { type, data } = req.body;
 
+    // Solo procesamos pagos
     if (type !== "payment") {
       return res.sendStatus(200);
     }
@@ -64,7 +65,7 @@ router.post("/payments/webhook", async (req, res) => {
       const ticketId = payment.metadata?.ticketId;
 
       if (!ticketId) {
-        console.warn("⚠️ Pago aprobado sin ticketId");
+        console.warn("⚠️ Pago aprobado sin ticketId en metadata");
         return res.sendStatus(200);
       }
 
@@ -82,7 +83,7 @@ router.post("/payments/webhook", async (req, res) => {
         .populate("user")
         .populate("event");
 
-      // 📧 Mail con QR solo después de pagar
+      // 📧 Enviar mail SOLO después de aprobar pago
       if (ticket?.user?.email) {
         await sendTicketMail({
           to: ticket.user.email,
@@ -95,11 +96,11 @@ router.post("/payments/webhook", async (req, res) => {
       console.log("✅ Pago aprobado y mail enviado:", payment.id);
     }
 
-    res.sendStatus(200);
+    return res.sendStatus(200);
 
   } catch (error) {
-    console.error("❌ Error en webhook MP:", error);
-    res.sendStatus(500);
+    console.error("❌ Error en webhook Mercado Pago:", error);
+    return res.sendStatus(500);
   }
 });
 
