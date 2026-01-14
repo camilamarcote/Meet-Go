@@ -7,7 +7,11 @@ export const sendVerificationEmail = async (email, token) => {
     process.env.FRONT_URL ||
     "https://meetandgof.netlify.app";
 
-  const link = `${FRONT_URL}/verify.html?token=${token}`;
+  const BACKEND_URL =
+  process.env.BACKEND_URL || "https://api.meetandgouy.com";
+
+const link = `${BACKEND_URL}/api/users/verify?token=${token}`;
+
 
   console.log("🔗 Verification link:", link);
 
