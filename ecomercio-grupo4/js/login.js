@@ -1,11 +1,13 @@
+const API_URL = "https://api.meetandgouy.com";
+
 const passwordInput = document.getElementById("loginPass");
 const togglePasswordBtn = document.getElementById("togglePassword");
 const loginForm = document.getElementById("loginForm");
 
 /* 👁️ Mostrar / ocultar password */
 togglePasswordBtn.addEventListener("click", () => {
-  const isHidden = passwordInput.type === "password";
-  passwordInput.type = isHidden ? "text" : "password";
+  passwordInput.type =
+    passwordInput.type === "password" ? "text" : "password";
 });
 
 /* ✅ Mensajes post-verificación */
@@ -23,8 +25,7 @@ if (params.get("verified") === "error") {
 loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const userInput = document.getElementById("loginUser");
-  const user = userInput.value.trim();
+  const user = document.getElementById("loginUser").value.trim();
   const password = passwordInput.value;
 
   if (!user || !password) {
@@ -33,20 +34,15 @@ loginForm.addEventListener("submit", async (e) => {
   }
 
   try {
-    const response = await fetch(
-      "https://meetgo-backend.onrender.com/api/users/login",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user, password })
-      }
-    );
+    const response = await fetch(`${API_URL}/api/users/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user, password })
+    });
 
     const data = await response.json();
 
-    /* ❌ ERROR */
     if (!response.ok) {
-      // 👉 Cuenta no verificada → ofrecer reenvío
       if (response.status === 403) {
         const resend = confirm(
           "⚠️ Tu cuenta no está verificada.\n\n¿Querés que te reenviemos el email de verificación?"
@@ -62,7 +58,7 @@ loginForm.addEventListener("submit", async (e) => {
       return;
     }
 
-    /* ✅ Guardamos sesión */
+    /* ✅ Guardar sesión */
     localStorage.setItem(
       "currentUser",
       JSON.stringify({
@@ -73,20 +69,19 @@ loginForm.addEventListener("submit", async (e) => {
       })
     );
 
-    /* 🚀 Redirección final */
     window.location.href = "index.html";
 
   } catch (error) {
-    console.error("❌ Error de conexión:", error);
+    console.error(error);
     alert("No se pudo conectar con el servidor");
   }
 });
 
-/* 🔁 Reenviar email de verificación */
+/* 🔁 Reenviar verificación */
 async function resendVerification(email) {
   try {
     const res = await fetch(
-      "https://meetgo-backend.onrender.com/api/users/resend-verification",
+      `${API_URL}/api/users/resend-verification`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -101,10 +96,8 @@ async function resendVerification(email) {
       return;
     }
 
-    alert("📧 Te reenviamos el email de verificación. Revisá tu bandeja.");
-
-  } catch (error) {
-    console.error("❌ Error reenviando email:", error);
+    alert("📧 Te reenviamos el email de verificación.");
+  } catch {
     alert("No se pudo reenviar el email");
   }
 }

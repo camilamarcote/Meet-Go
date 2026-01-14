@@ -1,9 +1,10 @@
+const API_URL = "https://api.meetandgouy.com";
+
 async function validateTicket() {
   const qrCode = qrInput.value;
   const eventId = eventIdInput.value;
 
-  const res = await fetch("https://meetgo-backend.onrender.com/api/users/register"
- , {
+  const res = await fetch(`${API_URL}/api/tickets/validate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ qrCode, eventId })

@@ -1,7 +1,8 @@
 // =============================
 // 🌐 API BASE
 // =============================
-const API_URL = "https://meetgo-backend.onrender.com";
+const API_URL = "https://api.meetandgouy.com";
+;
 
 const eventForm = document.getElementById("eventForm");
 const departmentSelect = document.getElementById("eventDepartment");
@@ -11,7 +12,7 @@ const neighborhoodSelect = document.getElementById("eventNeighborhood");
 // 📍 Barrios por departamento
 // =============================
 const neighborhoodsByDepartment = {
-  Montevideo: [
+  Montevideo: [ 
     "Centro",
     "Cordón",
     "Pocitos",

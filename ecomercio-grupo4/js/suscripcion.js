@@ -1,13 +1,14 @@
 // =============================
 // 🌐 API BASE
 // =============================
-const API_URL = "https://meetgo-backend.onrender.com";
+const API_URL = "https://api.meetandgouy.com";
+
 
 const subscribeBtn = document.getElementById("subscribeBtn");
 
 subscribeBtn.addEventListener("click", async () => {
   const user = JSON.parse(localStorage.getItem("currentUser"));
-
+ 
   if (!user) {
     alert("Debes iniciar sesión para suscribirte");
     window.location.href = "login.html";

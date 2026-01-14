@@ -1,77 +1,36 @@
-// =============================
-// 🌐 API BASE
-// =============================
-const API_URL = "https://meetgo-backend.onrender.com";
+const API_URL = "https://api.meetandgouy.com";
 
 const eventsContainer = document.getElementById("eventsContainer");
 
-/* =============================
-   🖼️ Imagen por categoría
-============================= */
-function getCategoryImage(category) {
-  const images = {
-    Cultural: "img/default_cultural.jpg",
-    Recreativa: "img/default_recreativa.jpg",
-    Deportiva: "img/default_deportiva.jpg",
-    Gastronómica: "img/default_gastronomica.jpg"
-  };
-  return images[category] || "img/default_event.jpg";
-}
-
-/* =============================
-   📦 Cargar eventos
-============================= */
 async function loadEvents() {
   try {
     const res = await fetch(`${API_URL}/api/events`);
-    if (!res.ok) throw new Error("Error al obtener eventos");
+    if (!res.ok) throw new Error();
 
     const events = await res.json();
     eventsContainer.innerHTML = "";
 
     events.forEach(event => {
-      const img =
-        event.image && event.image.startsWith("http")
-          ? event.image
-          : getCategoryImage(event.category);
-
       const price = Number(event.price) || 0;
 
-      const card = `
+      eventsContainer.innerHTML += `
         <div class="col-md-4 col-lg-3">
           <div class="card h-100 shadow-sm">
-            <img src="${img}" class="card-img-top" alt="Imagen del evento">
+            <img src="${event.image || "img/default_event.jpg"}" class="card-img-top">
             <div class="card-body d-flex flex-column">
-              <h5 class="card-title">${event.name}</h5>
-              <p class="card-text small">${event.description || ""}</p>
-
-              <div class="mb-2">
-                <span class="badge bg-primary">${event.category}</span>
-              </div>
-
-              <p class="text-muted small mb-1">
-                ${event.date} · ${event.time}
-              </p>
-
-              <p class="fw-bold">
-                ${price === 0 ? "🎉 Gratis" : `$${price}`}
-              </p>
-
-              <div class="mt-auto d-grid">
-                <a href="eventinfo.html?id=${event._id}" class="btn btn-primary btn-sm">
-                  Ver más información
-                </a>
-              </div>
+              <h5>${event.name}</h5>
+              <p>${event.description || ""}</p>
+              <p>${price === 0 ? "🎉 Gratis" : `$${price}`}</p>
+              <a href="eventinfo.html?id=${event._id}" class="btn btn-primary btn-sm mt-auto">
+                Ver evento
+              </a>
             </div>
           </div>
-        </div>
-      `;
-
-      eventsContainer.innerHTML += card;
+        </div>`;
     });
 
   } catch (err) {
-    console.error("❌ Error al cargar eventos:", err);
+    console.error(err);
   }
 }
 

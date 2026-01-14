@@ -1,17 +1,20 @@
 // =============================
-// 🌐 API BASE
+// 🌐 API BASE (DOMINIO PRODUCCIÓN)
 // =============================
-const API_URL = "https://meetgo-backend.onrender.com";
+const API_URL = "https://api.meetandgouy.com";
 
+// =============================
+// 📌 Parámetros
+// =============================
 const params = new URLSearchParams(window.location.search);
 const eventId = params.get("id");
 const eventDetails = document.getElementById("eventDetails");
 
 const authUser = JSON.parse(localStorage.getItem("currentUser")) || null;
 
-/* =============================
-   🖼️ Imagen por categoría
-============================= */
+// =============================
+// 🖼️ Imagen por categoría
+// =============================
 function getCategoryImage(category) {
   const images = {
     Cultural: "img/default_cultural.jpg",
@@ -22,9 +25,9 @@ function getCategoryImage(category) {
   return images[category] || "img/default_event.jpg";
 }
 
-/* =============================
-   🎟️ Comprar entrada
-============================= */
+// =============================
+// 🎟️ Comprar entrada
+// =============================
 async function payEvent(eventId) {
   if (!authUser) {
     window.location.href = "login.html";
@@ -32,6 +35,7 @@ async function payEvent(eventId) {
   }
 
   try {
+    // Crear ticket
     const ticketRes = await fetch(
       `${API_URL}/api/events/${eventId}/tickets`,
       {
@@ -52,6 +56,7 @@ async function payEvent(eventId) {
 
     const ticketData = await ticketRes.json();
 
+    // Iniciar pago
     const paymentRes = await fetch(
       `${API_URL}/api/payments/create/${ticketData.ticket._id}`,
       { method: "POST" }
@@ -73,10 +78,15 @@ async function payEvent(eventId) {
   }
 }
 
-/* =============================
-   📄 Cargar info del evento
-============================= */
+// =============================
+// 📄 Cargar info del evento
+// =============================
 async function loadEventInfo() {
+  if (!eventId) {
+    eventDetails.innerHTML = "<p>Evento no válido</p>";
+    return;
+  }
+
   try {
     const res = await fetch(`${API_URL}/api/events/${eventId}`);
     if (!res.ok) throw new Error("Evento no encontrado");
@@ -110,18 +120,14 @@ async function loadEventInfo() {
     } else {
       actionSection = `
         <div class="mt-4">
-          <!-- Compra directa -->
           <button class="btn btn-primary w-100 mb-3"
             onclick="payEvent('${event._id}')">
             💳 Comprar entrada · $${price}
           </button>
 
-          <!-- Suscripción -->
           <div class="card border-warning">
             <div class="card-body">
-              <h6 class="card-title mb-2">
-                ⭐ Acceso por suscripción
-              </h6>
+              <h6 class="card-title mb-2">⭐ Acceso por suscripción</h6>
               <p class="card-text text-muted" style="font-size:14px">
                 Si sos suscriptor, este evento está incluido y no pagás entrada.
               </p>

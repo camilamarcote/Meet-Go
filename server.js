@@ -34,8 +34,9 @@ const io = new Server(server, {
 app.use(
   cors({
     origin: [
-      "https://meet-go.netlify.app",
-      "https://meetandgof.netlify.app",
+      "https://meetandgouy.com",
+      "https://www.meetandgouy.com",
+      "https://meetandgof.netlify.app", // lo dejamos por transición
       "http://localhost:5500",
       "http://127.0.0.1:5500"
     ],
