@@ -26,6 +26,7 @@ router.get("/me", protect, async (req, res) => {
     }
     res.json(user);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Error al obtener perfil" });
   }
 });
@@ -36,23 +37,33 @@ router.get("/me", protect, async (req, res) => {
 router.get("/verify", async (req, res) => {
   try {
     const { token } = req.query;
+
     if (!token) {
-      return res.redirect(`${process.env.FRONT_URL}/login.html?verified=error`);
+      return res.redirect(
+        `${process.env.FRONT_URL}/login.html?verified=error`
+      );
     }
 
     const user = await User.findOne({ verificationToken: token });
 
     if (!user) {
-      return res.redirect(`${process.env.FRONT_URL}/login.html?verified=error`);
+      return res.redirect(
+        `${process.env.FRONT_URL}/login.html?verified=error`
+      );
     }
 
     user.isVerified = true;
     user.verificationToken = null;
     await user.save();
 
-    return res.redirect(`${process.env.FRONT_URL}/login.html?verified=true`);
-  } catch {
-    return res.redirect(`${process.env.FRONT_URL}/login.html?verified=error`);
+    return res.redirect(
+      `${process.env.FRONT_URL}/login.html?verified=true`
+    );
+  } catch (error) {
+    console.error(error);
+    return res.redirect(
+      `${process.env.FRONT_URL}/login.html?verified=error`
+    );
   }
 });
 
@@ -69,7 +80,9 @@ router.post("/resend-verification", async (req, res) => {
     }
 
     if (user.isVerified) {
-      return res.status(400).json({ message: "La cuenta ya está verificada" });
+      return res
+        .status(400)
+        .json({ message: "La cuenta ya está verificada" });
     }
 
     const token = generateToken(user);
@@ -182,7 +195,6 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
     res.status(201).json({
       message: "Usuario creado. Revisá tu email para verificar la cuenta"
     });
-
   } catch (error) {
     console.error("❌ Register error:", error);
     res.status(500).json({ message: "Error en registro" });
@@ -223,8 +235,59 @@ router.post("/login", async (req, res) => {
         profileImage: foundUser.profileImage
       }
     });
-  } catch {
+  } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Error en login" });
+  }
+});
+
+/* =============================
+   ✏️ UPDATE PROFILE (CON CLOUDINARY)
+============================= */
+router.put("/me", protect, upload.single("profileImage"), async (req, res) => {
+  try {
+    const updates = {
+      firstName: req.body.firstName,
+      lastName: req.body.lastName,
+      age: req.body.age,
+      nationality: req.body.nationality,
+      department: req.body.department,
+      personality: req.body.personality,
+      style: req.body.style,
+      bio: req.body.bio
+    };
+
+    if (req.body.languages) {
+      updates.languages = JSON.parse(req.body.languages);
+    }
+
+    if (req.body.interests) {
+      updates.interests = JSON.parse(req.body.interests);
+    }
+
+    /* ☁️ CLOUDINARY UPDATE */
+    if (req.file) {
+      const uploadResult = await cloudinary.uploader.upload(
+        `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`,
+        {
+          folder: "meetandgo/users",
+          resource_type: "image"
+        }
+      );
+
+      updates.profileImage = uploadResult.secure_url;
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      updates,
+      { new: true }
+    ).select("-password");
+
+    res.json(user);
+  } catch (error) {
+    console.error("❌ Update profile error:", error);
+    res.status(500).json({ message: "Error al actualizar perfil" });
   }
 });
 
