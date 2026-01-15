@@ -1,5 +1,8 @@
-import mercadopago from "mercadopago";
-import { MercadoPagoConfig, Preference } from "mercadopago";
+import {
+  MercadoPagoConfig,
+  Preference,
+  PreApproval
+} from "mercadopago";
 
 // =============================
 // 🔐 Configuración base
@@ -27,10 +30,10 @@ export async function createPaymentPreference({ event, user, ticketId }) {
 
         items: [
           {
-            id: ticketId.toString(),                 // ✅ items.id
+            id: ticketId.toString(),                 // ✅ recomendado
             title: event.name,
             description: event.description || "Entrada a evento",
-            category_id: "tickets",                  // ✅ items.category_id
+            category_id: "tickets",                  // ✅ recomendado
             quantity: 1,
             currency_id: "UYU",
             unit_price: price
@@ -71,26 +74,34 @@ export async function createPaymentPreference({ event, user, ticketId }) {
 }
 
 // =============================
-// 🔁 SUSCRIPCIÓN MENSUAL
+// 🔁 SUSCRIPCIÓN MENSUAL (SDK NUEVO)
 // =============================
+const preapprovalClient = new PreApproval(mpClient);
+
 export async function createSubscription({ user }) {
   try {
-    const response = await mercadopago.preapproval.create({
-      reason: "Suscripción mensual Meet&Go",
-      external_reference: `subscription_${user._id}`,
-      payer_email: user.email,
-      auto_recurring: {
-        frequency: 1,
-        frequency_type: "months",
-        transaction_amount: 390,
-        currency_id: "UYU"
-      },
-      back_url: `${process.env.FRONT_URL}/suscripcion-success`,
-      notification_url: `${process.env.BACKEND_URL}/api/subscriptions/webhook`,
-      status: "pending"
+    const response = await preapprovalClient.create({
+      body: {
+        reason: "Suscripción mensual Meet&Go",
+        external_reference: `subscription_${user._id}`,
+
+        payer_email: user.email,
+
+        auto_recurring: {
+          frequency: 1,
+          frequency_type: "months",
+          transaction_amount: 390,
+          currency_id: "UYU"
+        },
+
+        back_url: `${process.env.FRONT_URL}/suscripcion-success`,
+        notification_url: `${process.env.BACKEND_URL}/api/subscriptions/webhook`,
+
+        status: "pending"
+      }
     });
 
-    return response.body;
+    return response;
 
   } catch (error) {
     console.error("❌ Error suscripción Mercado Pago:", error);

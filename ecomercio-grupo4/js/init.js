@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </li>
 
         <li class="nav-item">
-          <a class="nav-link" href="aboutus.html">Sobre la App</a>
+          <a class="nav-link" href="aboutus.html">Sobre nosotras</a>
         </li>
 
         <li class="nav-item" id="nav-my-events" style="display:none">
