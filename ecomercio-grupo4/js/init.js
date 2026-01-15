@@ -77,12 +77,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     <div class="dropdown">
       <a href="#" data-bs-toggle="dropdown">
-        <img src="${
-          user.profileImage
-            ? user.profileImage
-            : "img/default-user.png"
-        }" class="profile-avatar" />
-      </a>
+       <img src="${
+  user.profileImage && user.profileImage.startsWith("http")
+    ? user.profileImage
+    : `https://ui-avatars.com/api/?name=${encodeURIComponent(
+        user.username
+      )}&background=9d26ff&color=ffffff&bold=true`
+}" class="profile-avatar" />
+
 
       <ul class="dropdown-menu dropdown-menu-end">
         <li>

@@ -1,17 +1,17 @@
 import express from "express";
 import bcrypt from "bcryptjs";
 import multer from "multer";
-import jwt from "jsonwebtoken";
 
 import User from "../models/User.js";
 import { protect } from "../middlewares/auth.js";
 import { generateToken } from "../utils/jwt.js";
 import { sendVerificationEmail } from "../utils/sendverificationemail.js";
+import cloudinary from "../config/cloudinary.js";
 
 const router = express.Router();
 
 /* =============================
-   📦 MULTER
+   📦 MULTER (MEMORIA)
 ============================= */
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -51,7 +51,7 @@ router.get("/verify", async (req, res) => {
     await user.save();
 
     return res.redirect(`${process.env.FRONT_URL}/login.html?verified=true`);
-  } catch (error) {
+  } catch {
     return res.redirect(`${process.env.FRONT_URL}/login.html?verified=error`);
   }
 });
@@ -64,7 +64,6 @@ router.post("/resend-verification", async (req, res) => {
     const { email } = req.body;
 
     const user = await User.findOne({ email });
-
     if (!user) {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
@@ -87,7 +86,7 @@ router.post("/resend-verification", async (req, res) => {
 });
 
 /* =============================
-   📝 REGISTER
+   📝 REGISTER (CON CLOUDINARY)
 ============================= */
 router.post("/register", upload.single("profileImage"), async (req, res) => {
   try {
@@ -105,6 +104,7 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       bio
     } = req.body;
 
+    /* 🔐 PASSWORD */
     if (!password) {
       return res.status(400).json({ message: "La contraseña es obligatoria" });
     }
@@ -119,6 +119,7 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       });
     }
 
+    /* 🔎 EXISTENCIA */
     const exists = await User.findOne({
       $or: [{ email }, { username }]
     });
@@ -127,6 +128,7 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       return res.status(400).json({ message: "Usuario o email ya existe" });
     }
 
+    /* 📌 ARRAYS */
     const languages = req.body.languages
       ? JSON.parse(req.body.languages)
       : [];
@@ -135,6 +137,22 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       ? JSON.parse(req.body.interests)
       : [];
 
+    /* ☁️ CLOUDINARY */
+    let profileImageUrl = "";
+
+    if (req.file) {
+      const uploadResult = await cloudinary.uploader.upload(
+        `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`,
+        {
+          folder: "meetandgo/users",
+          resource_type: "image"
+        }
+      );
+
+      profileImageUrl = uploadResult.secure_url;
+    }
+
+    /* 👤 CREATE USER */
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
@@ -151,9 +169,10 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       bio: bio || "",
       languages,
       interests,
-      profileImage: req.file ? req.file.originalname : ""
+      profileImage: profileImageUrl
     });
 
+    /* 📧 VERIFICACIÓN */
     const token = generateToken(user);
     user.verificationToken = token;
     await user.save();
@@ -163,6 +182,7 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
     res.status(201).json({
       message: "Usuario creado. Revisá tu email para verificar la cuenta"
     });
+
   } catch (error) {
     console.error("❌ Register error:", error);
     res.status(500).json({ message: "Error en registro" });
@@ -203,7 +223,7 @@ router.post("/login", async (req, res) => {
         profileImage: foundUser.profileImage
       }
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: "Error en login" });
   }
 });
