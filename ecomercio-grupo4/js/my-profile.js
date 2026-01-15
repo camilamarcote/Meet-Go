@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   /* =============================
      📥 CARGAR PERFIL
-  ============================= */
+  ============================== */
   try {
     const res = await fetch(`${API_URL}/api/users/me`, {
       headers: {
@@ -22,7 +22,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     if (!res.ok) throw new Error();
-
     const user = await res.json();
 
     form.firstName.value = user.firstName || "";
@@ -37,23 +36,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     form.bio.value = user.bio || "";
 
     /* CHECKBOXES */
-    if (user.languages) {
-      user.languages.forEach(lang => {
-        const checkbox = document.querySelector(
-          `input[name="languages"][value="${lang}"]`
-        );
-        if (checkbox) checkbox.checked = true;
-      });
-    }
+    user.languages?.forEach(lang => {
+      const cb = document.querySelector(
+        `input[name="languages"][value="${lang}"]`
+      );
+      if (cb) cb.checked = true;
+    });
 
-    if (user.interests) {
-      user.interests.forEach(int => {
-        const checkbox = document.querySelector(
-          `input[name="interests"][value="${int}"]`
-        );
-        if (checkbox) checkbox.checked = true;
-      });
-    }
+    user.interests?.forEach(int => {
+      const cb = document.querySelector(
+        `input[name="interests"][value="${int}"]`
+      );
+      if (cb) cb.checked = true;
+    });
 
     /* NO EDITABLES */
     form.email.disabled = true;
@@ -66,17 +61,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   /* =============================
      ✏️ GUARDAR CAMBIOS
-  ============================= */
+  ============================== */
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const interests = Array.from(
-      document.querySelectorAll("input[name='interests']:checked")
-    ).map(i => i.value);
-
     const languages = Array.from(
       document.querySelectorAll("input[name='languages']:checked")
-    ).map(l => l.value);
+    ).map(el => el.value);
+
+    const interests = Array.from(
+      document.querySelectorAll("input[name='interests']:checked")
+    ).map(el => el.value);
 
     const formData = new FormData(form);
     formData.set("languages", JSON.stringify(languages));
@@ -91,14 +86,22 @@ document.addEventListener("DOMContentLoaded", async () => {
         body: formData
       });
 
-      const result = await res.json();
+      const updatedUser = await res.json();
 
       if (!res.ok) {
-        alert(result.message || "Error al actualizar perfil");
+        alert(updatedUser.message || "Error al actualizar perfil");
         return;
       }
 
+      /* 🔄 ACTUALIZAR LOCALSTORAGE */
+      const stored = JSON.parse(localStorage.getItem("currentUser"));
+      stored.profileImage = updatedUser.profileImage;
+      localStorage.setItem("currentUser", JSON.stringify(stored));
+
       alert("✅ Perfil actualizado correctamente");
+
+      /* 👉 VOLVER AL INDEX */
+      window.location.href = "index.html";
 
     } catch (error) {
       console.error(error);

@@ -32,73 +32,6 @@ router.get("/me", protect, async (req, res) => {
 });
 
 /* =============================
-   📧 VERIFY (link del mail)
-============================= */
-router.get("/verify", async (req, res) => {
-  try {
-    const { token } = req.query;
-
-    if (!token) {
-      return res.redirect(
-        `${process.env.FRONT_URL}/login.html?verified=error`
-      );
-    }
-
-    const user = await User.findOne({ verificationToken: token });
-
-    if (!user) {
-      return res.redirect(
-        `${process.env.FRONT_URL}/login.html?verified=error`
-      );
-    }
-
-    user.isVerified = true;
-    user.verificationToken = null;
-    await user.save();
-
-    return res.redirect(
-      `${process.env.FRONT_URL}/login.html?verified=true`
-    );
-  } catch (error) {
-    console.error(error);
-    return res.redirect(
-      `${process.env.FRONT_URL}/login.html?verified=error`
-    );
-  }
-});
-
-/* =============================
-   🔁 RESEND VERIFICATION
-============================= */
-router.post("/resend-verification", async (req, res) => {
-  try {
-    const { email } = req.body;
-
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: "Usuario no encontrado" });
-    }
-
-    if (user.isVerified) {
-      return res
-        .status(400)
-        .json({ message: "La cuenta ya está verificada" });
-    }
-
-    const token = generateToken(user);
-    user.verificationToken = token;
-    await user.save();
-
-    await sendVerificationEmail(user.email, token);
-
-    res.json({ message: "Email de verificación reenviado" });
-  } catch (error) {
-    console.error("❌ Resend error:", error);
-    res.status(500).json({ message: "Error al reenviar email" });
-  }
-});
-
-/* =============================
    📝 REGISTER (CON CLOUDINARY)
 ============================= */
 router.post("/register", upload.single("profileImage"), async (req, res) => {
@@ -117,7 +50,6 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       bio
     } = req.body;
 
-    /* 🔐 PASSWORD */
     if (!password) {
       return res.status(400).json({ message: "La contraseña es obligatoria" });
     }
@@ -132,7 +64,6 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       });
     }
 
-    /* 🔎 EXISTENCIA */
     const exists = await User.findOne({
       $or: [{ email }, { username }]
     });
@@ -141,7 +72,6 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       return res.status(400).json({ message: "Usuario o email ya existe" });
     }
 
-    /* 📌 ARRAYS */
     const languages = req.body.languages
       ? JSON.parse(req.body.languages)
       : [];
@@ -150,7 +80,6 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       ? JSON.parse(req.body.interests)
       : [];
 
-    /* ☁️ CLOUDINARY */
     let profileImageUrl = "";
 
     if (req.file) {
@@ -165,7 +94,6 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       profileImageUrl = uploadResult.secure_url;
     }
 
-    /* 👤 CREATE USER */
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
@@ -185,7 +113,6 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       profileImage: profileImageUrl
     });
 
-    /* 📧 VERIFICACIÓN */
     const token = generateToken(user);
     user.verificationToken = token;
     await user.save();
@@ -195,49 +122,10 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
     res.status(201).json({
       message: "Usuario creado. Revisá tu email para verificar la cuenta"
     });
+
   } catch (error) {
     console.error("❌ Register error:", error);
     res.status(500).json({ message: "Error en registro" });
-  }
-});
-
-/* =============================
-   🔐 LOGIN
-============================= */
-router.post("/login", async (req, res) => {
-  try {
-    const { user, password } = req.body;
-
-    const foundUser = await User.findOne({
-      $or: [{ email: user }, { username: user }]
-    }).select("+password");
-
-    if (!foundUser) {
-      return res.status(400).json({ message: "Credenciales inválidas" });
-    }
-
-    const ok = await bcrypt.compare(password, foundUser.password);
-    if (!ok) {
-      return res.status(400).json({ message: "Credenciales inválidas" });
-    }
-
-    if (!foundUser.isVerified) {
-      return res.status(403).json({ message: "Cuenta no verificada" });
-    }
-
-    const token = generateToken(foundUser);
-
-    res.json({
-      token,
-      user: {
-        _id: foundUser._id,
-        username: foundUser.username,
-        profileImage: foundUser.profileImage
-      }
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error en login" });
   }
 });
 
@@ -265,7 +153,6 @@ router.put("/me", protect, upload.single("profileImage"), async (req, res) => {
       updates.interests = JSON.parse(req.body.interests);
     }
 
-    /* ☁️ CLOUDINARY UPDATE */
     if (req.file) {
       const uploadResult = await cloudinary.uploader.upload(
         `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`,
@@ -285,6 +172,7 @@ router.put("/me", protect, upload.single("profileImage"), async (req, res) => {
     ).select("-password");
 
     res.json(user);
+
   } catch (error) {
     console.error("❌ Update profile error:", error);
     res.status(500).json({ message: "Error al actualizar perfil" });
