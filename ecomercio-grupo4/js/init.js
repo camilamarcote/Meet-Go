@@ -35,7 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <a class="nav-link" href="createevent.html">Crear Evento</a>
         </li>
 
-        <!-- ⭐ SUSCRIPCIÓN -->
+        <!-- ⭐ SUSCRIPCIÓN --> 
         <li class="nav-item" id="nav-suscripcion">
           <a class="nav-link fw-semibold text-warning" href="suscripcion.html">
             ⭐ Suscribite

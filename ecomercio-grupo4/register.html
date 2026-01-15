@@ -26,23 +26,23 @@
   <label>Email*</label>
   <input type="email" name="email" required>
 
-<label>Contraseña*</label>
-<input
-  type="password"
-  name="password"
-  required
-  minlength="8"
-  autocomplete="new-password"
-  placeholder="Mín. 8 caracteres, mayúscula, número y símbolo"
-/>
-<small>
-  Debe incluir mayúscula, minúscula, número y carácter especial
-</small>
-
+  <label>Contraseña*</label>
+  <input
+    type="password"
+    name="password"
+    required
+    minlength="8"
+    autocomplete="new-password"
+    placeholder="Mín. 8 caracteres, mayúscula, número y símbolo"
+  />
+  <small>
+    Debe incluir mayúscula, minúscula, número y carácter especial
+  </small>
 
   <label>Edad*</label>
   <input type="number" name="age" min="18" required>
 
+  <!-- 🌎 NACIONALIDAD -->
   <label>Nacionalidad*</label>
   <select name="nationality" required>
     <option value="">Seleccionar...</option>
@@ -50,35 +50,72 @@
     <option>Argentina</option>
     <option>Brasileña</option>
     <option>Chilena</option>
+    <option>Paraguaya</option>
+    <option>Boliviana</option>
+    <option>Peruana</option>
+    <option>Colombiana</option>
+    <option>Venezolana</option>
+    <option>Mexicana</option>
+    <option>Española</option>
+    <option>Italiana</option>
+    <option>Francesa</option>
+    <option>Alemana</option>
+    <option>Estadounidense</option>
+    <option>Canadiense</option>
     <option>Otra</option>
   </select>
 
+  <!-- 🏙️ DEPARTAMENTO -->
   <label>Departamento</label>
   <select name="department">
     <option value="">Seleccionar...</option>
-    <option>Montevideo</option>
+    <option>Artigas</option>
     <option>Canelones</option>
+    <option>Cerro Largo</option>
+    <option>Colonia</option>
+    <option>Durazno</option>
+    <option>Flores</option>
+    <option>Florida</option>
+    <option>Lavalleja</option>
     <option>Maldonado</option>
+    <option>Montevideo</option>
+    <option>Paysandú</option>
+    <option>Río Negro</option>
+    <option>Rivera</option>
+    <option>Rocha</option>
+    <option>Salto</option>
+    <option>San José</option>
+    <option>Soriano</option>
+    <option>Tacuarembó</option>
+    <option>Treinta y Tres</option>
   </select>
 
   <label>Foto de perfil</label>
   <input type="file" name="profileImage" accept="image/*">
 </div>
 
+<!-- ⭐ INTERESES -->
 <h3>✨ Intereses</h3>
 <div class="card checkbox-card">
+  <label><input type="checkbox" name="interests" value="musica"> Música</label>
+  <label><input type="checkbox" name="interests" value="cine"> Cine</label>
+  <label><input type="checkbox" name="interests" value="lectura"> Lectura</label>
+  <label><input type="checkbox" name="interests" value="deporte"> Deporte</label>
+  <label><input type="checkbox" name="interests" value="viajes"> Viajes</label>
+  <label><input type="checkbox" name="interests" value="arte"> Arte</label>
+
+  <!-- extras que ya tenías -->
   <label><input type="checkbox" name="interests" value="senderismo"> Senderismo</label>
   <label><input type="checkbox" name="interests" value="cafe"> Café</label>
   <label><input type="checkbox" name="interests" value="museos"> Museos</label>
-  <label><input type="checkbox" name="interests" value="cine"> Cine</label>
   <label><input type="checkbox" name="interests" value="juegos"> Juegos</label>
-  <label><input type="checkbox" name="interests" value="musica"> Música</label>
-  <label><input type="checkbox" name="interests" value="deportes"> Deportes</label>
   <label><input type="checkbox" name="interests" value="salir"> Salir</label>
 </div>
 
+<!-- 🌿 PERSONALIDAD -->
 <h3>🌿 Personalidad</h3>
 <div class="card">
+
   <label>Temperamento</label>
   <select name="personality">
     <option value="">Seleccionar...</option>
@@ -92,6 +129,7 @@
   <label><input type="radio" name="style" value="pequenos"> Grupos pequeños</label>
   <label><input type="radio" name="style" value="uno"> 1 a 1</label>
 
+  <!-- 🗣️ IDIOMAS -->
   <label>Idiomas</label>
   <div class="checkbox-card">
     <label><input type="checkbox" name="languages" value="espanol"> Español</label>
