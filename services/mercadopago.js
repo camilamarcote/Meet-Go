@@ -8,11 +8,11 @@ const mpClient = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN
 });
 
-const preferenceClient = new Preference(mpClient);
-
 // =============================
 // 🎟️ PAGO DE EVENTO (ONE-TIME)
 // =============================
+const preferenceClient = new Preference(mpClient);
+
 export async function createPaymentPreference({ event, user, ticketId }) {
   try {
     const price = Number(event.price);
@@ -24,29 +24,35 @@ export async function createPaymentPreference({ event, user, ticketId }) {
     const response = await preferenceClient.create({
       body: {
         external_reference: `ticket_${ticketId}`,
+
         items: [
           {
-            id: ticketId.toString(),
+            id: ticketId.toString(),                 // ✅ items.id
             title: event.name,
-            description: `Entrada para ${event.name}`,
-            category_id: "tickets",
+            description: event.description || "Entrada a evento",
+            category_id: "tickets",                  // ✅ items.category_id
             quantity: 1,
             currency_id: "UYU",
             unit_price: price
           }
         ],
+
         payer: {
-          email: user.email,
-          first_name: user.firstName || "Usuario",
-          last_name: user.lastName || "Meet&Go"
+          email: user.email,                         // ✅ obligatorio
+          first_name: user.firstName || "Usuario",   // ✅ recomendado
+          last_name: user.lastName || "MeetGo"       // ✅ recomendado
         },
+
         back_urls: {
-          success: `${process.env.FRONT_URL}/payment-success.html`,
-          failure: `${process.env.FRONT_URL}/payment-failure.html`,
-          pending: `${process.env.FRONT_URL}/payment-pending.html`
+          success: `${process.env.FRONT_URL}/payment-success`,
+          failure: `${process.env.FRONT_URL}/payment-failure`,
+          pending: `${process.env.FRONT_URL}/payment-pending`
         },
+
         auto_return: "approved",
+
         notification_url: `${process.env.BACKEND_URL}/api/payments/webhook`,
+
         metadata: {
           ticketId: ticketId.toString(),
           eventId: event._id.toString(),
@@ -59,7 +65,7 @@ export async function createPaymentPreference({ event, user, ticketId }) {
     return response;
 
   } catch (error) {
-    console.error("❌ Error creando pago:", error);
+    console.error("❌ Error creando pago Mercado Pago:", error);
     throw error;
   }
 }
@@ -79,7 +85,7 @@ export async function createSubscription({ user }) {
         transaction_amount: 390,
         currency_id: "UYU"
       },
-      back_url: `${process.env.FRONT_URL}/suscripcion-success.html`,
+      back_url: `${process.env.FRONT_URL}/suscripcion-success`,
       notification_url: `${process.env.BACKEND_URL}/api/subscriptions/webhook`,
       status: "pending"
     });
@@ -87,7 +93,7 @@ export async function createSubscription({ user }) {
     return response.body;
 
   } catch (error) {
-    console.error("❌ ERROR MERCADO PAGO SUSCRIPCIÓN:", error);
+    console.error("❌ Error suscripción Mercado Pago:", error);
     throw error;
   }
 }
