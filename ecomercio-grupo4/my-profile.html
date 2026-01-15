@@ -2,151 +2,114 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
+  <title>Mi perfil</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mi Perfil</title>
 
-  <link rel="stylesheet" href="css/my-profile.css">
+  <!-- CSS compartido con register -->
+  <link rel="stylesheet" href="css/forms.css">
 
   <!-- Favicons -->
-  <link rel="icon" type="image/x-icon" href="img/favicon/favicon.ico">
-  <link rel="icon" type="image/png" sizes="32x32" href="img/favicon/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="img/favicon/favicon-16x16.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="img/favicon/apple-touch-icon.png">
-  <link rel="manifest" href="img/favicon/site.webmanifest">
+  <link rel="icon" href="img/favicon/favicon.ico">
 </head>
 
-<body>
+<body class="profile-page">
 
-<h1 class="title">Mi Perfil</h1>
+  <div class="app-container">
 
-<div class="profile-container">
+    <h2>Mi perfil</h2>
+    <p class="subtitle">Editá tu información personal</p>
 
-  <!-- ===== FOTO DE PERFIL ===== -->
-  <div class="profile-image-section">
-    <img id="currentProfileImage"
-         src="img/default-user.png"
-         alt="Foto de perfil"
-         class="profile-img">
+    <form id="profileForm" enctype="multipart/form-data">
 
-    <label for="profileImage" class="file-label">Cambiar foto</label>
-    <input type="file" id="profileImage" accept="image/*" style="display:none">
+      <!-- =============================
+           DATOS PERSONALES
+      ============================== -->
+      <div class="card">
+        <label>Nombre</label>
+        <input type="text" name="firstName">
+
+        <label>Apellido</label>
+        <input type="text" name="lastName">
+
+        <label>Usuario</label>
+        <input type="text" name="username">
+
+        <label>Email</label>
+        <input type="email" name="email">
+
+        <label>Edad</label>
+        <input type="number" name="age">
+
+        <label>Nacionalidad</label>
+        <input type="text" name="nationality">
+
+        <label>Departamento</label>
+        <input type="text" name="department">
+      </div>
+
+      <!-- =============================
+           PERFIL
+      ============================== -->
+      <div class="card">
+        <label>Personalidad</label>
+        <input type="text" name="personality">
+
+        <label>Estilo</label>
+        <input type="text" name="style">
+
+        <label>Bio</label>
+        <textarea name="bio" rows="4"></textarea>
+      </div>
+
+      <!-- =============================
+           IDIOMAS
+      ============================== -->
+      <div class="card checkbox-card">
+        <label>
+          <input type="checkbox" name="languages" value="Español">
+          Español
+        </label>
+        <label>
+          <input type="checkbox" name="languages" value="Inglés">
+          Inglés
+        </label>
+        <label>
+          <input type="checkbox" name="languages" value="Portugués">
+          Portugués
+        </label>
+      </div>
+
+      <!-- =============================
+           INTERESES
+      ============================== -->
+      <div class="card checkbox-card">
+        <label>
+          <input type="checkbox" name="interests" value="Viajes">
+          Viajes
+        </label>
+        <label>
+          <input type="checkbox" name="interests" value="Música">
+          Música
+        </label>
+        <label>
+          <input type="checkbox" name="interests" value="Deporte">
+          Deporte
+        </label>
+      </div>
+
+      <!-- =============================
+           FOTO PERFIL
+      ============================== -->
+      <div class="card">
+        <label>Foto de perfil</label>
+        <input type="file" name="profileImage" accept="image/*">
+      </div>
+
+      <button class="btn-primary">Guardar cambios</button>
+
+    </form>
   </div>
 
-  <!-- ===== FORMULARIO ===== -->
-  <form id="profileForm">
-
-    <label>Nombre</label>
-    <input type="text" id="firstName" required>
-
-    <label>Apellido</label>
-    <input type="text" id="lastName" required>
-
-    <label>Usuario</label>
-    <input type="text" id="username" required>
-
-    <label>Email</label>
-    <input type="email" id="email" disabled>
-
-    <label>Edad</label>
-    <input type="number" id="age" min="18">
-
-    <!-- 🌎 NACIONALIDAD -->
-    <label>Nacionalidad *</label>
-    <select id="nationality" required>
-      <option value="">Seleccionar...</option>
-      <option>Uruguaya</option>
-      <option>Argentina</option>
-      <option>Brasileña</option>
-      <option>Chilena</option>
-      <option>Paraguaya</option>
-      <option>Boliviana</option>
-      <option>Peruana</option>
-      <option>Colombiana</option>
-      <option>Venezolana</option>
-      <option>Mexicana</option>
-      <option>Española</option>
-      <option>Italiana</option>
-      <option>Francesa</option>
-      <option>Alemana</option>
-      <option>Estadounidense</option>
-      <option>Canadiense</option>
-      <option>Otra</option>
-    </select>
-
-    <!-- 🏙️ DEPARTAMENTO (opcional) -->
-    <label>Departamento</label>
-    <select id="department">
-      <option value="">Seleccionar...</option>
-      <option>Artigas</option>
-      <option>Canelones</option>
-      <option>Cerro Largo</option>
-      <option>Colonia</option>
-      <option>Durazno</option>
-      <option>Flores</option>
-      <option>Florida</option>
-      <option>Lavalleja</option>
-      <option>Maldonado</option>
-      <option>Montevideo</option>
-      <option>Paysandú</option>
-      <option>Río Negro</option>
-      <option>Rivera</option>
-      <option>Rocha</option>
-      <option>Salto</option>
-      <option>San José</option>
-      <option>Soriano</option>
-      <option>Tacuarembó</option>
-      <option>Treinta y Tres</option>
-    </select>
-
-    <!-- PERSONALIDAD -->
-    <label>Temperamento</label>
-    <select id="personality">
-      <option value="">Seleccionar...</option>
-      <option>Introvertido/a</option>
-      <option>Ambivertido/a</option>
-      <option>Extrovertido/a</option>
-    </select>
-
-    <!-- ESTILO SOCIAL -->
-    <label>Estilo social</label>
-    <div class="radio-group">
-      <label><input type="radio" name="style" value="grupos"> Grupos grandes</label>
-      <label><input type="radio" name="style" value="pequenos"> Grupos pequeños</label>
-      <label><input type="radio" name="style" value="uno"> 1 a 1</label>
-    </div>
-
-    <!-- 🗣️ IDIOMAS -->
-    <label>Idiomas que hablás</label>
-    <div class="checkbox-group">
-      <label><input type="checkbox" value="espanol"> Español</label>
-      <label><input type="checkbox" value="ingles"> Inglés</label>
-      <label><input type="checkbox" value="portugues"> Portugués</label>
-      <label><input type="checkbox" value="frances"> Francés</label>
-      <label><input type="checkbox" value="italiano"> Italiano</label>
-      <label><input type="checkbox" value="aleman"> Alemán</label>
-      <label><input type="checkbox" value="otro"> Otro</label>
-    </div>
-
-    <!-- INTERESES -->
-    <label>Intereses</label>
-    <div class="checkbox-group">
-      <label><input type="checkbox" value="musica"> Música</label>
-      <label><input type="checkbox" value="cine"> Cine</label>
-      <label><input type="checkbox" value="lectura"> Lectura</label>
-      <label><input type="checkbox" value="deporte"> Deporte</label>
-      <label><input type="checkbox" value="viajes"> Viajes</label>
-      <label><input type="checkbox" value="arte"> Arte</label>
-    </div>
-
-    <!-- BIO -->
-    <label>Biografía</label>
-    <textarea id="bio" rows="4"></textarea>
-
-    <button type="submit" class="btn-primary">Guardar Cambios</button>
-  </form>
-
-</div>
-
-<script src="js/my-profile.js"></script>
+  <script src="js/myprofile.js"></script>
 </body>
 </html>
