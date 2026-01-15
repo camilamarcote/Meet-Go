@@ -8,11 +8,11 @@ const mpClient = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN
 });
 
+const preferenceClient = new Preference(mpClient);
+
 // =============================
 // 🎟️ PAGO DE EVENTO (ONE-TIME)
 // =============================
-const preferenceClient = new Preference(mpClient);
-
 export async function createPaymentPreference({ event, user, ticketId }) {
   try {
     const price = Number(event.price);
@@ -26,19 +26,24 @@ export async function createPaymentPreference({ event, user, ticketId }) {
         external_reference: `ticket_${ticketId}`,
         items: [
           {
+            id: ticketId.toString(),
             title: event.name,
+            description: `Entrada para ${event.name}`,
+            category_id: "tickets",
             quantity: 1,
             currency_id: "UYU",
             unit_price: price
           }
         ],
         payer: {
-          email: user.email
+          email: user.email,
+          first_name: user.firstName || "Usuario",
+          last_name: user.lastName || "Meet&Go"
         },
         back_urls: {
-          success: `${process.env.FRONTEND_URL}/payment-success.html`,
-          failure: `${process.env.FRONTEND_URL}/payment-failure.html`,
-          pending: `${process.env.FRONTEND_URL}/payment-pending.html`
+          success: `${process.env.FRONT_URL}/payment-success.html`,
+          failure: `${process.env.FRONT_URL}/payment-failure.html`,
+          pending: `${process.env.FRONT_URL}/payment-pending.html`
         },
         auto_return: "approved",
         notification_url: `${process.env.BACKEND_URL}/api/payments/webhook`,
@@ -71,10 +76,10 @@ export async function createSubscription({ user }) {
       auto_recurring: {
         frequency: 1,
         frequency_type: "months",
-        transaction_amount: 390, // monto ejemplo en UYU
+        transaction_amount: 390,
         currency_id: "UYU"
       },
-      back_url: `${process.env.FRONTEND_URL}/suscripcion-success.html`,
+      back_url: `${process.env.FRONT_URL}/suscripcion-success.html`,
       notification_url: `${process.env.BACKEND_URL}/api/subscriptions/webhook`,
       status: "pending"
     });
@@ -82,12 +87,7 @@ export async function createSubscription({ user }) {
     return response.body;
 
   } catch (error) {
-    console.error("❌ ERROR MERCADO PAGO SUSCRIPCIÓN:", {
-      message: error.message,
-      status: error.status,
-      response: error.response?.data
-    });
-
+    console.error("❌ ERROR MERCADO PAGO SUSCRIPCIÓN:", error);
     throw error;
   }
 }
