@@ -400,25 +400,16 @@ a.custom-card:hover {
 .navbar-toggler:focus {
   box-shadow: none !important;
 }
-
-.nav-suscripcion {
-  background-color: #ffe11fed;
-}
-
-.subscription-highlight {
-  margin-top: 5rem;
-  margin-bottom: 5rem;
-  padding: 4rem 1rem;
+/* Texto del nav con gradiente */
+.gradient-text {
   background: linear-gradient(135deg, #9d26ff, #ffb300);
-  border-radius: 20px;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
 }
 
-.subscription-highlight h3 {
-  font-family: "Montserrat", sans-serif;
-  font-weight: 800;
-}
-
-.subscription-highlight p {
-  font-size: 1.05rem;
-  color: #444;
+/* Ajuste fino del emoji */
+.gradient-text .star {
+  margin-right: 0.2rem;
 }
