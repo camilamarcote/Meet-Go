@@ -49,12 +49,11 @@ export async function createPaymentPreference({ event, user, ticketId }) {
           first_name: user.firstName || "Usuario",
           last_name: user.lastName || "Meet&Go"
         },
-
-        back_urls: {
-          success: `${process.env.FRONT_URL}/payment-success`,
-          failure: `${process.env.FRONT_URL}/payment-failure`,
-          pending: `${process.env.FRONT_URL}/payment-pending`
-        },
+back_urls: {
+  success: `${process.env.FRONT_URL}/payment-success.html`,
+  failure: `${process.env.FRONT_URL}/payment-failure.html`,
+  pending: `${process.env.FRONT_URL}/payment-pending.html`
+},
 
         auto_return: "approved",
 
@@ -110,6 +109,8 @@ export async function createSubscription({ user }) {
 
     console.log("🧾 Preference ID:", response.id);
 console.log("🔗 Init point:", response.init_point);
+
+
 
 
     return response;
