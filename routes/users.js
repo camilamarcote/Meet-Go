@@ -130,6 +130,56 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
 });
 
 /* =============================
+   🔐 LOGIN
+============================= */
+router.post("/login", async (req, res) => {
+  try {
+    const { user, password } = req.body;
+
+    if (!user || !password) {
+      return res.status(400).json({ message: "Faltan credenciales" });
+    }
+
+    // Buscar por email o username
+    const foundUser = await User.findOne({
+      $or: [{ email: user }, { username: user }]
+    }).select("+password");
+
+    if (!foundUser) {
+      return res.status(401).json({ message: "Credenciales inválidas" });
+    }
+
+    const isMatch = await bcrypt.compare(password, foundUser.password);
+
+    if (!isMatch) {
+      return res.status(401).json({ message: "Credenciales inválidas" });
+    }
+
+    if (!foundUser.isVerified) {
+      return res.status(403).json({
+        message: "Cuenta no verificada"
+      });
+    }
+
+    const token = generateToken(foundUser);
+
+    res.json({
+      token,
+      user: {
+        _id: foundUser._id,
+        username: foundUser.username,
+        email: foundUser.email,
+        profileImage: foundUser.profileImage
+      }
+    });
+
+  } catch (error) {
+    console.error("❌ Login error:", error);
+    res.status(500).json({ message: "Error al iniciar sesión" });
+  }
+});
+
+/* =============================
    ✏️ UPDATE PROFILE (CON CLOUDINARY)
 ============================= */
 router.put("/me", protect, upload.single("profileImage"), async (req, res) => {
