@@ -5,7 +5,7 @@ import QRCode from "qrcode";
 
 import Event from "../models/event.js";
 import User from "../models/User.js";
-import EventTicket from "../models/eventTicket.js";
+import EventTicket from "../models/eventTicket.js"; 
 
 const router = express.Router();
 
