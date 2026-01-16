@@ -1,6 +1,9 @@
-import { PreApproval } from "mercadopago";
+import express from "express";
+import { MercadoPagoConfig, PreApproval } from "mercadopago";
 import User from "../models/User.js";
 import { sendSubscriptionMail } from "../utils/mailer.js";
+
+const router = express.Router();
 
 const mpClient = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN
@@ -30,7 +33,7 @@ router.post("/webhook", async (req, res) => {
             isActive: true,
             plan: "monthly",
             startedAt: new Date(),
-            validUntil: subscription.auto_recurring.end_date || null
+            validUntil: subscription.auto_recurring?.end_date || null
           }
         },
         { new: true }
@@ -50,3 +53,5 @@ router.post("/webhook", async (req, res) => {
     res.sendStatus(500);
   }
 });
+
+export default router;

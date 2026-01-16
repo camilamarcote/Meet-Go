@@ -1,3 +1,10 @@
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+// ===============================
+// 🎟️ MAIL DE TICKET
+// ===============================
 export async function sendTicketMail({ to, user, event, ticket }) {
   console.log("📧 Enviando mail de ticket a:", to);
 
@@ -43,9 +50,8 @@ export async function sendTicketMail({ to, user, event, ticket }) {
           </p>
         ` : ""}
 
-        <hr>
-
         ${attachments.length ? `
+          <hr>
           <p style="text-align:center">
             <img src="cid:ticketqr" width="220" />
           </p>
@@ -66,5 +72,45 @@ export async function sendTicketMail({ to, user, event, ticket }) {
     subject: `🎟️ Entrada confirmada – ${event.name}`,
     html,
     attachments
+  });
+}
+
+// ===============================
+// 🔁 MAIL DE SUSCRIPCIÓN
+// ===============================
+export async function sendSubscriptionMail(user) {
+  console.log("📧 Enviando mail de suscripción a:", user.email);
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; background:#f4f4f4; padding:20px">
+      <div style="max-width:600px; margin:auto; background:#ffffff; padding:24px; border-radius:8px">
+
+        <h1 style="text-align:center; color:#222">💳 Meet&Go</h1>
+
+        <p>Hola <strong>${user.username || ""}</strong>,</p>
+
+        <p>
+          Tu <strong>suscripción mensual</strong> fue activada correctamente 🎉
+        </p>
+
+        <p>
+          A partir de ahora tenés acceso a todas las funciones premium de Meet&Go.
+        </p>
+
+        <hr>
+
+        <p style="font-size:12px; color:#777; text-align:center">
+          Meet&Go · Gracias por confiar en nosotros
+        </p>
+
+      </div>
+    </div>
+  `;
+
+  await resend.emails.send({
+    from: "Meet&Go <no-reply@meetandgouy.com>",
+    to: user.email,
+    subject: "✅ Suscripción activada – Meet&Go",
+    html
   });
 }
