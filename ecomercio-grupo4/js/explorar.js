@@ -20,7 +20,6 @@ async function loadEvents() {
             <div class="card-body d-flex flex-column">
               <h5>${event.name}</h5>
               <p>${event.description || ""}</p>
-              <p>${price === 0 ? "🎉 Gratis" : `$${price}`}</p>
               <a href="eventinfo.html?id=${event._id}" class="btn btn-primary btn-sm mt-auto">
                 Ver evento
               </a>

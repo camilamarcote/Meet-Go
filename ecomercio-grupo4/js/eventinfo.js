@@ -62,11 +62,10 @@ async function loadEventInfo() {
           <div class="card-body text-center">
             <h5 class="card-title">⭐ Acceso por suscripción</h5>
             <p class="card-text text-muted" style="font-size:14px">
-              Este evento está incluido dentro de nuestros planes mensuales.
-              Suscribite y accedé a todos los eventos sin pagar entradas individuales.
+              Suscribite para poder acceder a todas las actividades de Meet&Go
             </p>
             <a href="suscripcion.html" class="btn btn-warning w-100">
-              Ver planes de suscripción
+              Sucribite
             </a>
           </div>
         </div>
