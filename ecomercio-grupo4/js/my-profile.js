@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   /* =============================
      📥 CARGAR PERFIL
-  ============================== */
+  ============================= */
   try {
     const res = await fetch(`${API_URL}/api/users/me`, {
       headers: {
@@ -21,7 +21,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     });
 
-    if (!res.ok) throw new Error();
+    if (!res.ok) throw new Error("Error al obtener perfil");
+
     const user = await res.json();
 
     form.firstName.value = user.firstName || "";
@@ -37,17 +38,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     /* CHECKBOXES */
     user.languages?.forEach(lang => {
-      const cb = document.querySelector(
+      const checkbox = document.querySelector(
         `input[name="languages"][value="${lang}"]`
       );
-      if (cb) cb.checked = true;
+      if (checkbox) checkbox.checked = true;
     });
 
     user.interests?.forEach(int => {
-      const cb = document.querySelector(
+      const checkbox = document.querySelector(
         `input[name="interests"][value="${int}"]`
       );
-      if (cb) cb.checked = true;
+      if (checkbox) checkbox.checked = true;
     });
 
     /* NO EDITABLES */
@@ -61,17 +62,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   /* =============================
      ✏️ GUARDAR CAMBIOS
-  ============================== */
+  ============================= */
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const languages = Array.from(
-      document.querySelectorAll("input[name='languages']:checked")
-    ).map(el => el.value);
-
     const interests = Array.from(
       document.querySelectorAll("input[name='interests']:checked")
-    ).map(el => el.value);
+    ).map(i => i.value);
+
+    const languages = Array.from(
+      document.querySelectorAll("input[name='languages']:checked")
+    ).map(l => l.value);
 
     const formData = new FormData(form);
     formData.set("languages", JSON.stringify(languages));
@@ -94,13 +95,20 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       /* 🔄 ACTUALIZAR LOCALSTORAGE */
-      const stored = JSON.parse(localStorage.getItem("currentUser"));
-      stored.profileImage = updatedUser.profileImage;
-      localStorage.setItem("currentUser", JSON.stringify(stored));
+      localStorage.setItem(
+        "currentUser",
+        JSON.stringify({
+          ...authUser,
+          user: {
+            ...authUser.user,
+            profileImage: updatedUser.profileImage
+          }
+        })
+      );
 
       alert("✅ Perfil actualizado correctamente");
 
-      /* 👉 VOLVER AL INDEX */
+      /* 🚀 REDIRECCIÓN */
       window.location.href = "index.html";
 
     } catch (error) {
