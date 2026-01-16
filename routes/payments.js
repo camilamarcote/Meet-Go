@@ -32,8 +32,11 @@ router.post("/payments/create/:ticketId", async (req, res) => {
       ticketId: ticket._id
     });
 
+    // 🔎 Log útil para soporte MP
+    console.log("🧾 Preference creada:", preference.id);
+
     return res.json({
-      init_point: preference.init_point
+      init_point: preference.init_point // ⚠️ USAR ESTE EN PRODUCCIÓN
     });
 
   } catch (error) {
@@ -46,15 +49,19 @@ router.post("/payments/create/:ticketId", async (req, res) => {
 // 🔔 Webhook Mercado Pago
 // =============================
 const mpClient = new MercadoPagoConfig({
-  accessToken: process.env.MP_ACCESS_TOKEN
+  accessToken: process.env.MP_ACCESS_TOKEN // ✔ producción
 });
 
 router.post("/payments/webhook", async (req, res) => {
   try {
     const { type, data } = req.body;
 
-    // Solo procesamos pagos
-    if (type !== "payment") {
+    // Aceptamos payment y merchant_order
+    if (type !== "payment" && type !== "merchant_order") {
+      return res.sendStatus(200);
+    }
+
+    if (!data?.id) {
       return res.sendStatus(200);
     }
 
@@ -83,7 +90,7 @@ router.post("/payments/webhook", async (req, res) => {
         .populate("user")
         .populate("event");
 
-      // 📧 Enviar mail SOLO después de aprobar pago
+      // 📧 Enviar mail SOLO si hay usuario
       if (ticket?.user?.email) {
         await sendTicketMail({
           to: ticket.user.email,
@@ -93,7 +100,7 @@ router.post("/payments/webhook", async (req, res) => {
         });
       }
 
-      console.log("✅ Pago aprobado y mail enviado:", payment.id);
+      console.log("✅ Pago aprobado y procesado:", payment.id);
     }
 
     return res.sendStatus(200);

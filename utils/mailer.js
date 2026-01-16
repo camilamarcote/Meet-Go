@@ -1,14 +1,16 @@
-import { Resend } from "resend";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function sendTicketMail({ to, user, event, ticket }) {
   console.log("📧 Enviando mail de ticket a:", to);
 
-  const paymentText =
-    ticket.payment?.status === "approved"
-      ? "✅ Pago aprobado"
-      : "⏳ Pago pendiente";
+  const attachments = [];
+
+  if (ticket.qrImage?.includes("base64,")) {
+    attachments.push({
+      filename: "ticket-qr.png",
+      content: ticket.qrImage.split("base64,")[1],
+      encoding: "base64",
+      cid: "ticketqr"
+    });
+  }
 
   const html = `
     <div style="font-family: Arial, sans-serif; background:#f4f4f4; padding:20px">
@@ -16,12 +18,12 @@ export async function sendTicketMail({ to, user, event, ticket }) {
 
         <h1 style="text-align:center; color:#222">🎟️ Meet&Go</h1>
 
-        <p>Hola <strong>${user.username}</strong>,</p>
+        <p>Hola <strong>${user.username || "!"}</strong>,</p>
 
         <p>
           Tu entrada para el evento
           <strong>${event.name}</strong>
-          fue generada correctamente 🎉
+          fue confirmada correctamente 🎉
         </p>
 
         <hr>
@@ -33,79 +35,36 @@ export async function sendTicketMail({ to, user, event, ticket }) {
           🏷️ <strong>Categoría:</strong> ${event.category || "General"}
         </p>
 
-        ${
-          event.whatsappLink
-            ? `
+        ${event.whatsappLink ? `
           <hr>
           <h3>💬 Grupo de WhatsApp del evento</h3>
-          <p>Unite al grupo oficial del evento:</p>
-          <p style="text-align:center; margin:20px 0">
-            <a
-              href="${event.whatsappLink}"
-              target="_blank"
-              style="
-                background:#25D366;
-                color:#ffffff;
-                padding:12px 20px;
-                text-decoration:none;
-                border-radius:6px;
-                font-weight:bold;
-                display:inline-block;
-              "
-            >
-              👉 Unirme al grupo de WhatsApp
-            </a>
+          <p style="text-align:center">
+            <a href="${event.whatsappLink}" target="_blank">Unirme al grupo</a>
           </p>
-        `
-            : ""
-        }
+        ` : ""}
 
         <hr>
 
-        <h3>🔐 Tu entrada</h3>
+        ${attachments.length ? `
+          <p style="text-align:center">
+            <img src="cid:ticketqr" width="220" />
+          </p>
+          <p style="text-align:center">Mostrá este QR al ingresar</p>
+        ` : ""}
 
-        <p style="text-align:center">
-          <img src="cid:ticketqr" width="220" alt="QR Ticket" />
-        </p>
-
-        <p style="text-align:center; font-size:14px">
-          Mostrá este QR al ingresar al evento
-        </p>
-
-        <hr>
-
-        <p>
-          💳 <strong>Estado del pago:</strong> ${paymentText}
-        </p>
-
-        <p style="font-size:12px; color:#777; text-align:center; margin-top:30px">
-          Meet&Go · Encuentros reales, conexiones genuinas<br>
-          No respondas este correo
+        <p style="font-size:12px; color:#777; text-align:center">
+          Meet&Go · No respondas este correo
         </p>
 
       </div>
     </div>
   `;
 
-  try {
-    await resend.emails.send({
-      from: "Meet&Go <no-reply@meetandgouy.com>",
-      to,
-      subject: `🎟️ Tu entrada para ${event.name}`,
-      html,
-      attachments: [
-        {
-          filename: "ticket-qr.png",
-          content: ticket.qrImage.split("base64,")[1],
-          encoding: "base64",
-          cid: "ticketqr"
-        }
-      ]
-    });
-
-    console.log("✅ Mail de ticket enviado correctamente");
-  } catch (error) {
-    console.error("❌ Error enviando mail de ticket:", error);
-    throw error;
-  }
+  await resend.emails.send({
+    from: "Meet&Go <no-reply@meetandgouy.com>",
+    to,
+    subject: `🎟️ Entrada confirmada – ${event.name}`,
+    html,
+    attachments
+  });
 }

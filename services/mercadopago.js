@@ -8,7 +8,7 @@ import {
 // 🔐 Configuración base
 // =============================
 const mpClient = new MercadoPagoConfig({
-  accessToken: process.env.MP_ACCESS_TOKEN
+  accessToken: process.env.MP_ACCESS_TOKEN // ⚠️ TOKEN DE PRODUCCIÓN
 });
 
 // =============================
@@ -26,14 +26,18 @@ export async function createPaymentPreference({ event, user, ticketId }) {
 
     const response = await preferenceClient.create({
       body: {
+        // 🔒 Recomendado por MP
+        binary_mode: true,
+        statement_descriptor: "MEETANDGO",
+
         external_reference: `ticket_${ticketId}`,
 
         items: [
           {
-            id: ticketId.toString(),                 // ✅ recomendado
+            id: ticketId.toString(),
             title: event.name,
             description: event.description || "Entrada a evento",
-            category_id: "tickets",                  // ✅ recomendado
+            category_id: "tickets",
             quantity: 1,
             currency_id: "UYU",
             unit_price: price
@@ -41,9 +45,9 @@ export async function createPaymentPreference({ event, user, ticketId }) {
         ],
 
         payer: {
-          email: user.email,                         // ✅ obligatorio
-          first_name: user.firstName || "Usuario",   // ✅ recomendado
-          last_name: user.lastName || "MeetGo"       // ✅ recomendado
+          email: user.email,
+          first_name: user.firstName || "Usuario",
+          last_name: user.lastName || "Meet&Go"
         },
 
         back_urls: {
@@ -65,6 +69,9 @@ export async function createPaymentPreference({ event, user, ticketId }) {
       }
     });
 
+    // 🔎 ÚTIL PARA DEBUG / SOPORTE MP
+    console.log("🧾 Preference ID:", response.id);
+
     return response;
 
   } catch (error) {
@@ -74,7 +81,7 @@ export async function createPaymentPreference({ event, user, ticketId }) {
 }
 
 // =============================
-// 🔁 SUSCRIPCIÓN MENSUAL (SDK NUEVO)
+// 🔁 SUSCRIPCIÓN MENSUAL
 // =============================
 const preapprovalClient = new PreApproval(mpClient);
 
@@ -100,6 +107,10 @@ export async function createSubscription({ user }) {
         status: "pending"
       }
     });
+
+    console.log("🧾 Preference ID:", response.id);
+console.log("🔗 Init point:", response.init_point);
+
 
     return response;
 

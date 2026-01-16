@@ -1,29 +1,52 @@
-import express from "express";
+import { PreApproval } from "mercadopago";
 import User from "../models/User.js";
-import { createSubscription } from "../services/mercadopago.js";
+import { sendSubscriptionMail } from "../utils/mailer.js";
 
-const router = express.Router();
-
-// POST /api/subscriptions/create
-router.post("/create", async (req, res) => {
-  try {
-    const { userId } = req.body;
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "Usuario no encontrado" });
-    }
-
-    const subscription = await createSubscription({ user });
-
-    res.json({
-      init_point: subscription.init_point
-    });
-
-  } catch (error) {
-    console.error("❌ Error creando suscripción:", error);
-    res.status(500).json({ message: "Error creando suscripción" });
-  }
+const mpClient = new MercadoPagoConfig({
+  accessToken: process.env.MP_ACCESS_TOKEN
 });
 
-export default router;
+const preapprovalClient = new PreApproval(mpClient);
+
+router.post("/webhook", async (req, res) => {
+  try {
+    const { type, data } = req.body;
+
+    if (type !== "preapproval") {
+      return res.sendStatus(200);
+    }
+
+    const subscription = await preapprovalClient.get({
+      id: data.id
+    });
+
+    if (subscription.status === "authorized") {
+      const userId = subscription.external_reference.replace("subscription_", "");
+
+      const user = await User.findByIdAndUpdate(
+        userId,
+        {
+          subscription: {
+            isActive: true,
+            plan: "monthly",
+            startedAt: new Date(),
+            validUntil: subscription.auto_recurring.end_date || null
+          }
+        },
+        { new: true }
+      );
+
+      if (user?.email) {
+        await sendSubscriptionMail(user);
+      }
+
+      console.log("✅ Suscripción activada:", subscription.id);
+    }
+
+    res.sendStatus(200);
+
+  } catch (error) {
+    console.error("❌ Webhook suscripción:", error);
+    res.sendStatus(500);
+  }
+});
