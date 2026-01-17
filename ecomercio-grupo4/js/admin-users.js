@@ -8,25 +8,30 @@ if (!currentUser || !currentUser.token) {
 }
 
 // ⛔ solo organizadoras
-if (!currentUser.isOrganizer) {
+if (!currentUser.user?.isOrganizer) {
   document.body.innerHTML = "<h2>Acceso restringido</h2>";
   throw new Error("No autorizado");
 }
 
 async function loadUsers() {
-  const res = await fetch(`${API_URL}/api/admin/users`, {
-    headers: {
-      Authorization: `Bearer ${currentUser.token}`
+  try {
+    const res = await fetch(`${API_URL}/api/admin/users`, {
+      headers: {
+        Authorization: `Bearer ${currentUser.token}`
+      }
+    });
+
+    if (!res.ok) {
+      document.body.innerHTML = "<p>Acceso no autorizado</p>";
+      return;
     }
-  });
 
-  if (!res.ok) {
-    document.body.innerHTML = "<p>Acceso no autorizado</p>";
-    return;
+    const users = await res.json();
+    renderUsers(users);
+
+  } catch (error) {
+    console.error("Error cargando usuarios:", error);
   }
-
-  const users = await res.json();
-  renderUsers(users);
 }
 
 function renderUsers(users) {
