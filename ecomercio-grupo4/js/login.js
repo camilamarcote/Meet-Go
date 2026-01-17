@@ -59,15 +59,15 @@ loginForm.addEventListener("submit", async (e) => {
     }
 
     /* ✅ Guardar sesión */
-    localStorage.setItem(
-      "currentUser",
-      JSON.stringify({
-        token: data.token,
-        id: data.user._id,
-        username: data.user.username,
-        profileImage: data.user.profileImage
-      })
-    );
+localStorage.setItem("currentUser", JSON.stringify({
+  _id: data.user._id,
+  username: data.user.username,
+  email: data.user.email,
+  profileImage: data.user.profileImage,
+  isOrganizer: data.user.isOrganizer,
+  roles: data.user.roles,
+  token: data.token
+}));
 
     window.location.href = "index.html";
 
