@@ -1,6 +1,7 @@
 import express from "express";
 import bcrypt from "bcryptjs";
 import multer from "multer";
+import jwt from "jsonwebtoken";
 
 import User from "../models/User.js";
 import { protect } from "../middlewares/auth.js";
@@ -21,11 +22,9 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.get("/me", protect, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
-
     if (!user) {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
-
     res.json(user);
   } catch (error) {
     console.error("❌ Get profile error:", error);
@@ -34,7 +33,7 @@ router.get("/me", protect, async (req, res) => {
 });
 
 /* =============================
-   📝 REGISTER (CON CLOUDINARY)
+   📝 REGISTER
 ============================= */
 router.post("/register", upload.single("profileImage"), async (req, res) => {
   try {
@@ -92,7 +91,6 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
           resource_type: "image"
         }
       );
-
       profileImageUrl = uploadResult.secure_url;
     }
 
@@ -112,7 +110,9 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       bio: bio || "",
       languages,
       interests,
-      profileImage: profileImageUrl
+      profileImage: profileImageUrl,
+      isVerified: false,
+      roles: ["user"]
     });
 
     const token = generateToken(user);
@@ -124,10 +124,43 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
     res.status(201).json({
       message: "Usuario creado. Revisá tu email para verificar la cuenta"
     });
-
   } catch (error) {
     console.error("❌ Register error:", error);
     res.status(500).json({ message: "Error en registro" });
+  }
+});
+
+/* =============================
+   ✅ VERIFY ACCOUNT
+============================= */
+router.get("/verify", async (req, res) => {
+  try {
+    const { token } = req.query;
+
+    if (!token) {
+      return res.status(400).json({ message: "Token faltante" });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const user = await User.findById(decoded.id);
+
+    if (!user) {
+      return res.status(400).json({ message: "Usuario no encontrado" });
+    }
+
+    if (user.isVerified) {
+      return res.json({ message: "Cuenta ya verificada" });
+    }
+
+    user.isVerified = true;
+    user.verificationToken = null;
+    await user.save();
+
+    res.json({ message: "Cuenta verificada correctamente" });
+  } catch (error) {
+    console.error("❌ Verify error:", error);
+    res.status(400).json({ message: "Token inválido o expirado" });
   }
 });
 
@@ -175,7 +208,6 @@ router.post("/login", async (req, res) => {
         roles: foundUser.roles
       }
     });
-
   } catch (error) {
     console.error("❌ Login error:", error);
     res.status(500).json({ message: "Error al iniciar sesión" });
@@ -183,7 +215,7 @@ router.post("/login", async (req, res) => {
 });
 
 /* =============================
-   ✏️ UPDATE PROFILE (CON CLOUDINARY)
+   ✏️ UPDATE PROFILE
 ============================= */
 router.put("/me", protect, upload.single("profileImage"), async (req, res) => {
   try {
@@ -214,7 +246,6 @@ router.put("/me", protect, upload.single("profileImage"), async (req, res) => {
           resource_type: "image"
         }
       );
-
       updates.profileImage = uploadResult.secure_url;
     }
 
@@ -225,7 +256,6 @@ router.put("/me", protect, upload.single("profileImage"), async (req, res) => {
     ).select("-password");
 
     res.json(user);
-
   } catch (error) {
     console.error("❌ Update profile error:", error);
     res.status(500).json({ message: "Error al actualizar perfil" });
