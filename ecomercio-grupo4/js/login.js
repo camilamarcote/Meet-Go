@@ -100,4 +100,4 @@ async function resendVerification(email) {
   } catch {
     alert("No se pudo reenviar el email");
   }
-}
+} 
