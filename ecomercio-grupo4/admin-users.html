@@ -1,16 +1,44 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <h1>👩‍💼 Panel de organizadoras</h1>
-<div id="usersContainer" class="grid"></div>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel de Organizadoras</title>
 
-<script src="admin-users.js"></script>
-
+  <style>
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 16px;
+      padding: 20px;
+    }
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 16px;
+      background: #fff;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+    .success { background: #d4edda; color: #155724; }
+    .warning { background: #fff3cd; color: #856404; }
+    button {
+      width: 100%;
+      margin-top: 10px;
+    }
+  </style>
 </head>
+
 <body>
-    
+
+  <h1 style="text-align:center">Panel de organizadoras</h1>
+  <div id="usersContainer" class="grid"></div>
+
+  <script src="admin-users.js"></script>
 </body>
 </html>
