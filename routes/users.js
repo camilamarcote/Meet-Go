@@ -138,7 +138,7 @@ router.get("/verify", async (req, res) => {
     const { token } = req.query;
 
     if (!token) {
-      return res.status(400).json({ message: "Token faltante" });
+      return res.status(400).send("Token faltante");
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -146,23 +146,27 @@ router.get("/verify", async (req, res) => {
     const user = await User.findById(decoded.id);
 
     if (!user) {
-      return res.status(400).json({ message: "Usuario no encontrado" });
+      return res.status(400).send("Usuario no encontrado");
     }
 
-    if (user.isVerified) {
-      return res.json({ message: "Cuenta ya verificada" });
+    if (!user.isVerified) {
+      user.isVerified = true;
+      user.verificationToken = null;
+      await user.save();
     }
 
-    user.isVerified = true;
-    user.verificationToken = null;
-    await user.save();
+    return res.redirect(
+      `${process.env.FRONT_URL}/login.html?verified=true`
+    );
 
-    res.json({ message: "Cuenta verificada correctamente" });
   } catch (error) {
     console.error("❌ Verify error:", error);
-    res.status(400).json({ message: "Token inválido o expirado" });
+    return res.redirect(
+      `${process.env.FRONT_URL}/login.html?verified=false`
+    );
   }
 });
+
 
 /* =============================
    🔐 LOGIN
