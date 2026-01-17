@@ -3,13 +3,25 @@ const API_URL = "https://api.meetandgouy.com";
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("registerForm");
 
+  if (!form) {
+    console.error("❌ No se encontró el formulario de registro");
+    return;
+  }
+
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     /* ============================
        🔐 VALIDACIÓN PASSWORD
     ============================ */
-    const password = form.password.value;
+    const passwordInput = form.querySelector("input[name='password']");
+
+    if (!passwordInput) {
+      alert("Error interno: no se encontró el campo contraseña");
+      return;
+    }
+
+    const password = passwordInput.value;
 
     const passwordRegex =
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
@@ -37,7 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ============================ */
     const formData = new FormData(form);
 
-    // 🔹 IMPORTANTE: enviar arrays como JSON
+    // 🔹 enviar arrays como JSON
     formData.set("languages", JSON.stringify(languages));
     formData.set("interests", JSON.stringify(interests));
 
