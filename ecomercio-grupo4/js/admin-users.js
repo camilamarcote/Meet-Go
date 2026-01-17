@@ -1,6 +1,5 @@
 const API_URL = "https://api.meetandgouy.com";
 
-// 🔐 obtener usuario real
 const currentUser = JSON.parse(localStorage.getItem("currentUser"));
 
 if (!currentUser || !currentUser.token) {
@@ -8,30 +7,25 @@ if (!currentUser || !currentUser.token) {
 }
 
 // ⛔ solo organizadoras
-if (!currentUser.user?.isOrganizer) {
+if (!currentUser.isOrganizer) {
   document.body.innerHTML = "<h2>Acceso restringido</h2>";
   throw new Error("No autorizado");
 }
 
 async function loadUsers() {
-  try {
-    const res = await fetch(`${API_URL}/api/admin/users`, {
-      headers: {
-        Authorization: `Bearer ${currentUser.token}`
-      }
-    });
-
-    if (!res.ok) {
-      document.body.innerHTML = "<p>Acceso no autorizado</p>";
-      return;
+  const res = await fetch(`${API_URL}/api/admin/users`, {
+    headers: {
+      Authorization: `Bearer ${currentUser.token}`
     }
+  });
 
-    const users = await res.json();
-    renderUsers(users);
-
-  } catch (error) {
-    console.error("Error cargando usuarios:", error);
+  if (!res.ok) {
+    document.body.innerHTML = "<p>Acceso no autorizado</p>";
+    return;
   }
+
+  const users = await res.json();
+  renderUsers(users);
 }
 
 function renderUsers(users) {
@@ -49,10 +43,6 @@ function renderUsers(users) {
         <span class="badge ${isSubscribed ? "success" : "warning"}">
           ${isSubscribed ? "Suscripta" : "No suscripta"}
         </span>
-
-        <button onclick="toggleSubscription('${user._id}', ${isSubscribed})">
-          ${isSubscribed ? "Cancelar suscripción" : "Activar suscripción"}
-        </button>
       </div>
     `;
   });
