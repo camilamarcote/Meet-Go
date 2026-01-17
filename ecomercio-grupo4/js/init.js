@@ -31,9 +31,14 @@ document.addEventListener("DOMContentLoaded", () => {
           <a class="nav-link" href="myevents.html">Mis eventos</a>
         </li>
 
-        <li class="nav-item" id="nav-create-event" style="display:none">
-          <a class="nav-link" href="createevent.html">Crear Evento</a>
-        </li>
+     <li class="nav-item" id="nav-create-event" style="display:none">
+  <a class="nav-link" href="createevent.html">Crear Evento</a>
+</li>
+
+<li class="nav-item" id="nav-users" style="display:none">
+  <a class="nav-link" href="admin-users.html">Usuarios</a>
+</li>
+
 
         <!-- ⭐ SUSCRIPCIÓN --> 
         <li class="nav-item" id="nav-suscripcion">
@@ -99,9 +104,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("nav-my-events").style.display = "block";
 
-  if (user.role === "admin" || user.role === "organizer" || user.isOrganizer) {
-    document.getElementById("nav-create-event").style.display = "block";
-  }
+  //ORGANIZADORAS
+if (user.role === "admin" || user.role === "organizer" || user.isOrganizer) {
+  document.getElementById("nav-create-event").style.display = "block";
+  document.getElementById("nav-users").style.display = "block";
+}
+
 
   // 🚫 Si ya es suscriptor, ocultamos botón
   if (user.isSubscriber) {
