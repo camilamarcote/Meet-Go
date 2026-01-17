@@ -21,12 +21,14 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.get("/me", protect, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
+
     if (!user) {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
+
     res.json(user);
   } catch (error) {
-    console.error(error);
+    console.error("❌ Get profile error:", error);
     res.status(500).json({ message: "Error al obtener perfil" });
   }
 });
@@ -140,7 +142,6 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Faltan credenciales" });
     }
 
-    // Buscar por email o username
     const foundUser = await User.findOne({
       $or: [{ email: user }, { username: user }]
     }).select("+password");
@@ -156,9 +157,7 @@ router.post("/login", async (req, res) => {
     }
 
     if (!foundUser.isVerified) {
-      return res.status(403).json({
-        message: "Cuenta no verificada"
-      });
+      return res.status(403).json({ message: "Cuenta no verificada" });
     }
 
     const token = generateToken(foundUser);
@@ -167,9 +166,13 @@ router.post("/login", async (req, res) => {
       token,
       user: {
         _id: foundUser._id,
+        firstName: foundUser.firstName,
+        lastName: foundUser.lastName,
         username: foundUser.username,
         email: foundUser.email,
-        profileImage: foundUser.profileImage
+        profileImage: foundUser.profileImage,
+        isOrganizer: foundUser.isOrganizer,
+        roles: foundUser.roles
       }
     });
 
