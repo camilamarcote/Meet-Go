@@ -1,4 +1,4 @@
-import express from "express";
+/*import express from "express";
 import EventTicket from "../models/eventTicket.js";
 import { createPaymentPreference } from "../services/mercadopago.js";
 import { sendTicketMail } from "../utils/mailer.js";
@@ -112,3 +112,4 @@ router.post("/payments/webhook", async (req, res) => {
 });
 
 export default router;
+*/
