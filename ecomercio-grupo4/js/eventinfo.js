@@ -4,7 +4,7 @@ const params = new URLSearchParams(window.location.search);
 const eventId = params.get("id");
 const eventDetails = document.getElementById("eventDetails");
 
-// 🔑 sesión SOLO por token
+// 🔑 sesión SOLO por token (NO usar user acá)
 const storedUser = JSON.parse(localStorage.getItem("currentUser")) || null;
 let authUser = null;
 
@@ -23,6 +23,7 @@ async function loadCurrentUser() {
 
     if (!res.ok) return null;
     return await res.json();
+
   } catch (err) {
     console.error("❌ Error cargando usuario:", err);
     return null;
@@ -52,18 +53,11 @@ async function loadEventInfo() {
   }
 
   try {
-    // 👤 usuario REAL (si hay token)
+    // 👤 usuario REAL (fuente única de verdad)
     authUser = await loadCurrentUser();
 
-    console.log("🧠 AUTH USER COMPLETO:", authUser);
-    console.log(
-      "🔎 SUBSCRIPTION:",
-      authUser?.subscription,
-      "| isActive:",
-      authUser?.subscription?.isActive,
-      "| tipo:",
-      typeof authUser?.subscription?.isActive
-    );
+    console.log("🧠 AUTH USER FINAL:", authUser);
+    console.log("💳 SUBSCRIPTION FINAL:", authUser?.subscription);
 
     const res = await fetch(`${API_URL}/api/events/${eventId}`);
     if (!res.ok) throw new Error("Evento no encontrado");
@@ -84,13 +78,14 @@ async function loadEventInfo() {
         : getCategoryImage(event.category);
 
     /* =============================
-       🔐 LÓGICA DE ACCIÓN
+       🔐 LÓGICA DE ACCIÓN (LIMPIA)
     ============================= */
     let actionSection = "";
 
     const isLogged = !!storedUser?.token;
     const isSubscribed = authUser?.subscription?.isActive === true;
-    const isRegistered = event.participants?.includes(authUser?._id);
+    const isRegistered =
+      !!authUser && event.participants?.includes(authUser._id);
 
     console.log("✅ isLogged:", isLogged);
     console.log("💳 isSubscribed:", isSubscribed);
@@ -159,6 +154,7 @@ async function loadEventInfo() {
         </div>
       </div>
     `;
+
   } catch (error) {
     console.error("❌ Error cargando evento:", error);
     eventDetails.innerHTML = "<p>Error cargando evento</p>";
@@ -195,6 +191,7 @@ async function registerToEvent() {
 
     alert("🎉 Te inscribiste correctamente. Revisá tu mail 📧");
     loadEventInfo(); // refresca estado
+
   } catch (error) {
     console.error("❌ Error inscripción:", error);
     alert("No se pudo completar la inscripción");
