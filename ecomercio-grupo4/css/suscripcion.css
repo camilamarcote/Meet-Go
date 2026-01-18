@@ -58,8 +58,5 @@
 
 
 .price {
-  font-size: 2.5rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, #9d26ff, #ffb300);
-  -webkit-text-fill-color: transparent;
+color: #1f1f1f;
 }

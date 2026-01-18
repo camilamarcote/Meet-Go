@@ -112,7 +112,10 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       interests,
       profileImage: profileImageUrl,
       isVerified: false,
-      roles: ["user"]
+      roles: ["user"],
+      subscription: {
+        isActive: false
+      }
     });
 
     const token = generateToken(user);
@@ -167,7 +170,6 @@ router.get("/verify", async (req, res) => {
   }
 });
 
-
 /* =============================
    🔐 LOGIN
 ============================= */
@@ -199,6 +201,7 @@ router.post("/login", async (req, res) => {
 
     const token = generateToken(foundUser);
 
+    // 🔑 ACÁ ESTÁ LA CLAVE
     res.json({
       token,
       user: {
@@ -209,7 +212,10 @@ router.post("/login", async (req, res) => {
         email: foundUser.email,
         profileImage: foundUser.profileImage,
         isOrganizer: foundUser.isOrganizer,
-        roles: foundUser.roles
+        roles: foundUser.roles,
+
+        // ✅ ESTO SOLUCIONA TODO EL PROBLEMA
+        subscription: foundUser.subscription
       }
     });
   } catch (error) {
