@@ -19,7 +19,14 @@ export const protect = async (req, res, next) => {
       return res.status(401).json({ message: "Usuario no encontrado" });
     }
 
-    req.user = user;
+    req.user = {
+      id: user._id,
+      username: user.username,
+      email: user.email,
+      roles: user.roles || [],
+      isOrganizer: user.isOrganizer || false
+    };
+
     next();
 
   } catch (error) {
