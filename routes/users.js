@@ -280,5 +280,13 @@ router.get("/me", protect, async (req, res) => {
   res.json(user);
 });
 
+authUser = await loadCurrentUser();
+console.log("🧠 AUTH USER COMPLETO:", authUser);
+console.log(
+  "🔎 isActive:",
+  authUser?.subscription?.isActive,
+  typeof authUser?.subscription?.isActive
+);
+
 
 export default router;
