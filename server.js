@@ -4,6 +4,8 @@ import mongoose from "mongoose";
 import cors from "cors";
 import http from "http";
 import { Server } from "socket.io";
+import adminRoutes from "./routes/admin.js";
+
 
 // =============================
 // 🛣️ Rutas
@@ -59,6 +61,7 @@ app.use("/api/events", ticketRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api", paymentsRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
+app.use("/api/admin", adminRoutes);
 
 // =============================
 // 🔁 WebSockets
