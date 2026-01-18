@@ -271,22 +271,4 @@ router.put("/me", protect, upload.single("profileImage"), async (req, res) => {
   }
 });
 
-router.get("/me", protect, async (req, res) => {
-  console.log("🧠 USER FROM TOKEN:", req.user);
-
-  const user = await User.findById(req.user.id).select("-password");
-  console.log("📦 USER FROM DB:", user.subscription);
-
-  res.json(user);
-});
-
-authUser = await loadCurrentUser();
-console.log("🧠 AUTH USER COMPLETO:", authUser);
-console.log(
-  "🔎 isActive:",
-  authUser?.subscription?.isActive,
-  typeof authUser?.subscription?.isActive
-);
-
-
 export default router;

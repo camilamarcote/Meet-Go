@@ -23,7 +23,6 @@ async function loadCurrentUser() {
 
     if (!res.ok) return null;
     return await res.json();
-
   } catch (err) {
     console.error("❌ Error cargando usuario:", err);
     return null;
@@ -56,10 +55,28 @@ async function loadEventInfo() {
     // 👤 usuario REAL (si hay token)
     authUser = await loadCurrentUser();
 
+    console.log("🧠 AUTH USER COMPLETO:", authUser);
+    console.log(
+      "🔎 SUBSCRIPTION:",
+      authUser?.subscription,
+      "| isActive:",
+      authUser?.subscription?.isActive,
+      "| tipo:",
+      typeof authUser?.subscription?.isActive
+    );
+
     const res = await fetch(`${API_URL}/api/events/${eventId}`);
     if (!res.ok) throw new Error("Evento no encontrado");
 
     const event = await res.json();
+
+    console.log("📄 EVENT:", event);
+    console.log(
+      "👥 PARTICIPANTS:",
+      event.participants,
+      "| authUser._id:",
+      authUser?._id
+    );
 
     const image =
       event.image && event.image.startsWith("http")
@@ -67,17 +84,17 @@ async function loadEventInfo() {
         : getCategoryImage(event.category);
 
     /* =============================
-       🔐 LÓGICA DE ACCIÓN (CORRECTA)
-    ============================== */
+       🔐 LÓGICA DE ACCIÓN
+    ============================= */
     let actionSection = "";
 
-    // 🔑 LOGUEADA = hay token
     const isLogged = !!storedUser?.token;
-
-    // 💳 SUSCRIPCIÓN = viene del backend
     const isSubscribed = authUser?.subscription?.isActive === true;
-
     const isRegistered = event.participants?.includes(authUser?._id);
+
+    console.log("✅ isLogged:", isLogged);
+    console.log("💳 isSubscribed:", isSubscribed);
+    console.log("📝 isRegistered:", isRegistered);
 
     if (!isLogged) {
       actionSection = `
@@ -88,8 +105,7 @@ async function loadEventInfo() {
           Iniciar sesión
         </a>
       `;
-    }
-
+    } 
     else if (!isSubscribed) {
       actionSection = `
         <div class="alert alert-warning mt-4">
@@ -99,16 +115,14 @@ async function loadEventInfo() {
           Suscribite
         </a>
       `;
-    }
-
+    } 
     else if (isRegistered) {
       actionSection = `
         <div class="alert alert-success mt-4">
           ✅ Ya estás inscripta a este evento
         </div>
       `;
-    }
-
+    } 
     else {
       actionSection = `
         <button
@@ -122,7 +136,7 @@ async function loadEventInfo() {
 
     /* =============================
        🖼️ RENDER
-    ============================== */
+    ============================= */
     eventDetails.innerHTML = `
       <div class="row g-4">
         <div class="col-md-6">
@@ -145,7 +159,6 @@ async function loadEventInfo() {
         </div>
       </div>
     `;
-
   } catch (error) {
     console.error("❌ Error cargando evento:", error);
     eventDetails.innerHTML = "<p>Error cargando evento</p>";
@@ -182,7 +195,6 @@ async function registerToEvent() {
 
     alert("🎉 Te inscribiste correctamente. Revisá tu mail 📧");
     loadEventInfo(); // refresca estado
-
   } catch (error) {
     console.error("❌ Error inscripción:", error);
     alert("No se pudo completar la inscripción");
