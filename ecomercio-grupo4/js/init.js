@@ -27,9 +27,6 @@ document.addEventListener("DOMContentLoaded", () => {
           <a class="nav-link" href="aboutus.html">Sobre nosotras</a>
         </li>
 
-        <li class="nav-item" id="nav-my-events" style="display:none">
-          <a class="nav-link" href="myevents.html">Mis eventos</a>
-        </li>
 
      <li class="nav-item" id="nav-create-event" style="display:none">
   <a class="nav-link" href="createevent.html">Crear Evento</a>
