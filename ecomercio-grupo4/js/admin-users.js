@@ -3,13 +3,11 @@ const API_URL = "https://api.meetandgouy.com";
 document.addEventListener("DOMContentLoaded", () => {
   const currentUser = JSON.parse(localStorage.getItem("currentUser"));
 
-  // 🔐 No logueado
   if (!currentUser || !currentUser.token) {
     window.location.href = "login.html";
     return;
   }
 
-  // ⛔ Solo organizadoras
   if (!currentUser.isOrganizer) {
     document.body.innerHTML = "<h2>Acceso restringido</h2>";
     return;
@@ -38,6 +36,7 @@ async function loadUsers(token) {
     document.body.innerHTML = "<p>Acceso no autorizado</p>";
   }
 }
+
 function renderUsers(users) {
   const container = document.getElementById("usersContainer");
   container.innerHTML = "";
@@ -80,13 +79,37 @@ function renderUsers(users) {
       </div>
     `;
   });
-  function sendMail(userId, email) {
-  if (!confirm(`¿Enviar mail de suscripción a ${email}?`)) return;
-
-  console.log("Enviar mail a:", userId);
-
-  // más adelante acá llamamos a tu endpoint real
-  alert("📧 Mail enviado correctamente (simulado)");
 }
 
+/* ===============================
+   ✉️ FUNCIÓN GLOBAL (CLAVE)
+=============================== */
+async function sendMail(userId, email) {
+  if (!confirm(`¿Enviar mail de suscripción a ${email}?`)) return;
+
+  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+
+  try {
+    const res = await fetch(
+      `${API_URL}/api/admin/send-subscription-mail/${userId}`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${currentUser.token}`
+        }
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || "Error enviando mail");
+    }
+
+    alert("📧 Mail enviado correctamente");
+
+  } catch (error) {
+    console.error("❌ Error enviando mail:", error);
+    alert("Error al enviar el mail");
+  }
 }
