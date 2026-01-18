@@ -100,7 +100,9 @@ async function loadEventInfo() {
 
         <div id="joinInfo" class="mt-3" style="display:none; border:1px solid #ccc; padding:15px; border-radius:5px; background:#f9f9f9;">
           <p>📌 Para unirte al grupo de WhatsApp del evento:</p>
-          <p><a href="https://chat.whatsapp.com/tuGrupo" target="_blank">https://chat.whatsapp.com/tuGrupo</a></p>
+          <p><a href="${event.whatsappLink || '#'}" target="_blank">
+            ${event.whatsappLink || 'Link no disponible'}
+          </a></p>
 
           <p>📧 Si tenés dudas o problemas para ingresar al grupo:</p>
           <p><a href="mailto:meetandgouy@gmail.com">meetandgouy@gmail.com</a></p>
