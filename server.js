@@ -80,6 +80,17 @@ mongoose
   .then(() => console.log("✅ MongoDB conectado"))
   .catch((err) => console.error("❌ Mongo error:", err));
 
+
+  mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log("✅ MongoDB conectado");
+    console.log("🧪 DB NAME:", mongoose.connection.name);
+    console.log("🧪 DB HOST:", mongoose.connection.host);
+  })
+  .catch((err) => console.error("❌ Mongo error:", err));
+
+
 // =============================
 // 🚀 Server
 // =============================
@@ -87,9 +98,3 @@ server.listen(PORT, () => {
   console.log(`🚀 Servidor en puerto ${PORT}`);
 });
 
-import mongoose from "mongoose";
-
-mongoose.connection.once("open", () => {
-  console.log("🧪 DB NAME:", mongoose.connection.name);
-  console.log("🧪 DB HOST:", mongoose.connection.host);
-});
