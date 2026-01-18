@@ -53,7 +53,6 @@ async function loadEventInfo() {
   }
 
   try {
-    // 👤 usuario REAL (si hay token)
     authUser = await loadCurrentUser();
 
     const res = await fetch(`${API_URL}/api/events/${eventId}`);
@@ -67,7 +66,7 @@ async function loadEventInfo() {
         : getCategoryImage(event.category);
 
     /* =============================
-       🔐 LÓGICA DE ACCIÓN: TODOS PUEDEN VER BOTÓN
+       🔐 LÓGICA DE ACCIÓN
     ============================= */
     let actionSection = "";
 
@@ -91,14 +90,25 @@ async function loadEventInfo() {
         </div>
       `;
     } else {
-      // ✅ BOTÓN VISIBLE PARA TODOS LOS USUARIOS LOGUEADOS
       actionSection = `
         <button
           class="btn btn-success w-100 mt-3"
-          onclick="registerToEvent()"
+          onclick="showEventJoinInfo()"
         >
           🙋‍♀️ Unirme al evento
         </button>
+
+        <div id="joinInfo" class="mt-3" style="display:none; border:1px solid #ccc; padding:15px; border-radius:5px; background:#f9f9f9;">
+          <p>📌 Para unirte al grupo de WhatsApp del evento:</p>
+          <p><a href="https://chat.whatsapp.com/tuGrupo" target="_blank">https://chat.whatsapp.com/tuGrupo</a></p>
+
+          <p>📧 Si tenés dudas o problemas para ingresar al grupo:</p>
+          <p><a href="mailto:meetandgouy@gmail.com">meetandgouy@gmail.com</a></p>
+
+          <p style="color:red; font-weight:bold;">
+            ⚠️ Solo permitiremos el ingreso al grupo de WhatsApp a aquellos usuarios que estén suscriptos. La verificación se realiza manualmente desde Mercado Pago.
+          </p>
+        </div>
       `;
     }
 
@@ -137,7 +147,7 @@ async function loadEventInfo() {
 loadEventInfo();
 
 /* =============================
-   📝 INSCRIPCIÓN
+   📝 INSCRIPCIÓN AL EVENTO
 ============================= */
 async function registerToEvent() {
   try {
@@ -162,11 +172,20 @@ async function registerToEvent() {
       throw new Error(data.message || "Error al inscribirse");
     }
 
-    alert("🎉 Te uniste correctamente al evento.");
     loadEventInfo(); // refresca estado
-
   } catch (error) {
     console.error("❌ Error inscripción:", error);
     alert("No se pudo completar la inscripción");
+  }
+}
+
+/* =============================
+   🖥️ MOSTRAR INFO DE UNIÓN AL EVENTO
+============================= */
+function showEventJoinInfo() {
+  const joinDiv = document.getElementById("joinInfo");
+  if (joinDiv) {
+    joinDiv.style.display = joinDiv.style.display === "none" ? "block" : "none";
+    joinDiv.scrollIntoView({ behavior: "smooth" });
   }
 }
