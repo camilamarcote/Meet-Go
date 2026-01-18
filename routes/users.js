@@ -271,4 +271,14 @@ router.put("/me", protect, upload.single("profileImage"), async (req, res) => {
   }
 });
 
+router.get("/me", protect, async (req, res) => {
+  console.log("🧠 USER FROM TOKEN:", req.user);
+
+  const user = await User.findById(req.user.id).select("-password");
+  console.log("📦 USER FROM DB:", user.subscription);
+
+  res.json(user);
+});
+
+
 export default router;
