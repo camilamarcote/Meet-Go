@@ -3,72 +3,7 @@ import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 // ===============================
-// 🎟️ MAIL DE TICKET
-// ===============================
-export async function sendTicketMail({ user, event, qrImage }) {
-  console.log("📧 Enviando mail de ticket a:", user.email);
-
-  const attachments = [];
-
-  if (qrImage?.includes("base64,")) {
-    attachments.push({
-      filename: "meetandgo-ticket-qr.png",
-      content: qrImage.split("base64,")[1],
-      encoding: "base64",
-      cid: "ticketqr"
-    });
-  }
-
-  const html = `
-    <div style="font-family: Arial, sans-serif; background:#f4f4f4; padding:20px">
-      <div style="max-width:600px; margin:auto; background:#ffffff; padding:24px; border-radius:8px">
-
-        <h1 style="text-align:center">🎟️ Meet&Go</h1>
-
-        <p>Hola <strong>${user.username}</strong>,</p>
-
-        <p>
-          Tu entrada para <strong>${event.name}</strong> fue confirmada 🎉
-        </p>
-
-        <p>
-          📅 ${event.date} <br>
-          ⏰ ${event.time}
-        </p>
-
-        ${
-          attachments.length
-            ? `
-          <hr>
-          <p style="text-align:center">
-            <img src="cid:ticketqr" width="220" />
-          </p>
-          <p style="text-align:center; font-weight:bold">
-            Mostrá este QR al ingresar
-          </p>
-        `
-            : ""
-        }
-
-        <p style="font-size:12px; color:#777; text-align:center">
-          Meet&Go · No respondas este correo
-        </p>
-
-      </div>
-    </div>
-  `;
-
-  await resend.emails.send({
-    from: "Meet&Go <no-reply@meetandgouy.com>",
-    to: user.email,
-    subject: `🎟️ Entrada confirmada – ${event.name}`,
-    html,
-    attachments
-  });
-}
-
-// ===============================
-// 🔁 MAIL DE SUSCRIPCIÓN
+// ✨ MAIL DE BIENVENIDA / SUSCRIPCIÓN
 // ===============================
 export async function sendSubscriptionMail({
   user,
@@ -92,12 +27,13 @@ export async function sendSubscriptionMail({
     <div style="font-family: Arial, sans-serif; background:#f4f4f4; padding:20px">
       <div style="max-width:600px; margin:auto; background:#ffffff; padding:24px; border-radius:8px">
 
-        <h1 style="text-align:center">✨ Meet&Go</h1>
+        <h1 style="text-align:center">✨ Bienvenida a Meet&Go</h1>
 
         <p>Hola <strong>${user.username}</strong>,</p>
 
         <p>
-          Tu <strong>suscripción</strong> está activa 🎉
+          Tu <strong>suscripción</strong> ya está activa 🎉  
+          Desde ahora sos parte de la comunidad Meet&Go.
         </p>
 
         ${
@@ -108,7 +44,7 @@ export async function sendSubscriptionMail({
             <img src="cid:subscriptionqr" width="220" />
           </p>
           <p style="text-align:center; font-weight:bold">
-            QR personal de acceso
+            Este es tu QR personal de acceso
           </p>
         `
             : ""
@@ -119,8 +55,16 @@ export async function sendSubscriptionMail({
             ? `
           <hr>
           <p style="text-align:center">
-            <a href="${whatsappLink}" target="_blank">
-              Unirme al grupo de WhatsApp
+            <a href="${whatsappLink}" target="_blank" style="
+              display:inline-block;
+              padding:12px 18px;
+              background:#25D366;
+              color:white;
+              border-radius:8px;
+              text-decoration:none;
+              font-weight:bold;
+            ">
+              💬 Unirme al grupo de WhatsApp
             </a>
           </p>
         `
@@ -128,7 +72,7 @@ export async function sendSubscriptionMail({
         }
 
         <p style="font-size:12px; color:#777; text-align:center">
-          QR personal e intransferible
+          QR personal e intransferible · Meet&Go
         </p>
 
       </div>
@@ -138,8 +82,33 @@ export async function sendSubscriptionMail({
   await resend.emails.send({
     from: "Meet&Go <no-reply@meetandgouy.com>",
     to: user.email,
-    subject: "✅ Suscripción activa – Meet&Go",
+    subject: "✨ Bienvenida a Meet&Go – Suscripción activa",
     html,
     attachments
   });
+async function sendMail(userId, email) {
+  if (!confirm(`¿Enviar mail de bienvenida a ${email}?`)) return;
+
+  try {
+    const res = await fetch(
+      `${API_URL}/api/admin/send-subscription-mail/${userId}`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${currentUser.token}`
+        }
+      }
+    );
+
+    if (!res.ok) throw new Error("Error enviando mail");
+
+    alert("📧 Mail enviado correctamente");
+
+  } catch (error) {
+    console.error(error);
+    alert("❌ No se pudo enviar el mail");
+  }
+}
+
+
 }
