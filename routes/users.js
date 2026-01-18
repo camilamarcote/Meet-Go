@@ -190,7 +190,6 @@ router.post("/login", async (req, res) => {
     }
 
     const isMatch = await bcrypt.compare(password, foundUser.password);
-
     if (!isMatch) {
       return res.status(401).json({ message: "Credenciales inválidas" });
     }
@@ -199,9 +198,10 @@ router.post("/login", async (req, res) => {
       return res.status(403).json({ message: "Cuenta no verificada" });
     }
 
+    console.log("🟢 SUBSCRIPTION LOGIN:", foundUser.subscription);
+
     const token = generateToken(foundUser);
 
-    // 🔑 ACÁ ESTÁ LA CLAVE
     res.json({
       token,
       user: {
@@ -213,8 +213,6 @@ router.post("/login", async (req, res) => {
         profileImage: foundUser.profileImage,
         isOrganizer: foundUser.isOrganizer,
         roles: foundUser.roles,
-
-        // ✅ ESTO SOLUCIONA TODO EL PROBLEMA
         subscription: foundUser.subscription
       }
     });
@@ -223,6 +221,7 @@ router.post("/login", async (req, res) => {
     res.status(500).json({ message: "Error al iniciar sesión" });
   }
 });
+
 
 /* =============================
    ✏️ UPDATE PROFILE

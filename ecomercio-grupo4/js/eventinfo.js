@@ -4,8 +4,35 @@ const params = new URLSearchParams(window.location.search);
 const eventId = params.get("id");
 const eventDetails = document.getElementById("eventDetails");
 
-const authUser = JSON.parse(localStorage.getItem("currentUser")) || null;
+// 🔑 SOLO usamos localStorage para el token
+const storedUser = JSON.parse(localStorage.getItem("currentUser")) || null;
+let authUser = null;
 
+/* =============================
+   👤 USUARIO ACTUAL (BACKEND)
+============================= */
+async function loadCurrentUser() {
+  if (!storedUser?.token) return null;
+
+  try {
+    const res = await fetch(`${API_URL}/api/users/me`, {
+      headers: {
+        Authorization: `Bearer ${storedUser.token}`
+      }
+    });
+
+    if (!res.ok) return null;
+    return await res.json();
+
+  } catch (err) {
+    console.error("❌ Error cargando usuario:", err);
+    return null;
+  }
+}
+
+/* =============================
+   🖼️ CATEGORÍAS
+============================= */
 function getCategoryImage(category) {
   const images = {
     Cultural: "img/default_cultural.jpg",
@@ -16,6 +43,9 @@ function getCategoryImage(category) {
   return images[category] || "img/default_event.jpg";
 }
 
+/* =============================
+   📄 EVENTO
+============================= */
 async function loadEventInfo() {
   if (!eventId) {
     eventDetails.innerHTML = "<p>Evento no válido</p>";
@@ -23,6 +53,9 @@ async function loadEventInfo() {
   }
 
   try {
+    // 👤 usuario actualizado
+    authUser = await loadCurrentUser();
+
     const res = await fetch(`${API_URL}/api/events/${eventId}`);
     if (!res.ok) throw new Error("Evento no encontrado");
 
@@ -36,7 +69,6 @@ async function loadEventInfo() {
     /* =============================
        🔐 LÓGICA DE ACCIÓN
     ============================== */
-
     let actionSection = "";
 
     const isLogged = !!authUser;
@@ -87,7 +119,6 @@ async function loadEventInfo() {
     /* =============================
        🖼️ RENDER
     ============================== */
-
     eventDetails.innerHTML = `
       <div class="row g-4">
         <div class="col-md-6">
@@ -124,12 +155,17 @@ loadEventInfo();
 ============================= */
 async function registerToEvent() {
   try {
+    if (!storedUser?.token) {
+      alert("Tenés que iniciar sesión");
+      return;
+    }
+
     const res = await fetch(
       `${API_URL}/api/events/${eventId}/register`,
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${authUser.token}`
+          Authorization: `Bearer ${storedUser.token}`
         }
       }
     );
