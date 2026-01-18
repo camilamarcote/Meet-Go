@@ -10,7 +10,6 @@ export const protect = async (req, res, next) => {
     }
 
     const token = authHeader.split(" ")[1];
-
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const user = await User.findById(decoded.id).select("-password");
@@ -19,18 +18,21 @@ export const protect = async (req, res, next) => {
       return res.status(401).json({ message: "Usuario no encontrado" });
     }
 
-    req.user = {
-      id: user._id,
-      username: user.username,
-      email: user.email,
-      roles: user.roles || [],
-      isOrganizer: user.isOrganizer || false
-    };
-
+    req.user = user;
     next();
 
   } catch (error) {
     console.error("❌ Auth error:", error.message);
     return res.status(401).json({ message: "Token inválido o expirado" });
   }
+};
+
+// ===============================
+// 👮 SOLO ORGANIZADORAS
+// ===============================
+export const adminOnly = (req, res, next) => {
+  if (!req.user?.isOrganizer) {
+    return res.status(403).json({ message: "Acceso restringido" });
+  }
+  next();
 };
