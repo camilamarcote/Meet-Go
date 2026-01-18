@@ -1,4 +1,9 @@
 function renderUsers(users) {
+  if (!Array.isArray(users)) {
+    console.error("users no es un array:", users);
+    return;
+  }
+
   const container = document.getElementById("usersContainer");
   container.innerHTML = "";
 
@@ -28,10 +33,7 @@ function renderUsers(users) {
         <p>⭐ Intereses: ${user.interests?.join(", ") || "—"}</p>
         <p>🗣️ Idiomas: ${user.languages?.join(", ") || "—"}</p>
 
-        <button
-          class="mail-btn"
-          onclick="sendMail('${user.email}')"
-        >
+        <button class="mail-btn" onclick="sendMail('${user._id}')">
           ✉️ Enviar mail
         </button>
       </div>
