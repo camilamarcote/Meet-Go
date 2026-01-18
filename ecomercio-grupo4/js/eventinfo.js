@@ -1,20 +1,11 @@
-// =============================
-// 🌐 API BASE (DOMINIO PRODUCCIÓN)
-// =============================
 const API_URL = "https://api.meetandgouy.com";
 
-// =============================
-// 📌 Parámetros
-// =============================
 const params = new URLSearchParams(window.location.search);
 const eventId = params.get("id");
 const eventDetails = document.getElementById("eventDetails");
 
 const authUser = JSON.parse(localStorage.getItem("currentUser")) || null;
 
-// =============================
-// 🖼️ Imagen por categoría
-// =============================
 function getCategoryImage(category) {
   const images = {
     Cultural: "img/default_cultural.jpg",
@@ -25,9 +16,6 @@ function getCategoryImage(category) {
   return images[category] || "img/default_event.jpg";
 }
 
-// =============================
-// 📄 Cargar info del evento
-// =============================
 async function loadEventInfo() {
   if (!eventId) {
     eventDetails.innerHTML = "<p>Evento no válido</p>";
@@ -45,32 +33,60 @@ async function loadEventInfo() {
         ? event.image
         : getCategoryImage(event.category);
 
+    /* =============================
+       🔐 LÓGICA DE ACCIÓN
+    ============================== */
+
     let actionSection = "";
 
-    if (!authUser) {
+    const isLogged = !!authUser;
+    const isSubscribed = authUser?.isSubscribed === true;
+    const isRegistered = event.participants?.includes(authUser?._id);
+
+    if (!isLogged) {
       actionSection = `
         <div class="alert alert-info mt-4">
-          Para participar de este evento necesitás una suscripción activa.
+          Para inscribirte necesitás iniciar sesión.
         </div>
         <a href="login.html" class="btn btn-primary w-100">
           Iniciar sesión
         </a>
       `;
-    } else {
+    }
+
+    else if (!isSubscribed) {
       actionSection = `
-        <div class="card border-warning mt-4">
-          <div class="card-body text-center">
-            <h5 class="card-title">⭐ Acceso por suscripción</h5>
-            <p class="card-text text-muted" style="font-size:14px">
-              Suscribite para poder acceder a todas las actividades de Meet&Go
-            </p>
-            <a href="suscripcion.html" class="btn btn-warning w-100">
-              Sucribite
-            </a>
-          </div>
+        <div class="alert alert-warning mt-4">
+          Tenés que suscribirte para poder inscribirte a este evento.
+        </div>
+        <a href="suscripcion.html" class="btn btn-warning w-100">
+          Suscribite
+        </a>
+      `;
+    }
+
+    else if (isRegistered) {
+      actionSection = `
+        <div class="alert alert-success mt-4">
+          ✅ Ya estás inscripta a este evento
         </div>
       `;
     }
+
+    else {
+      actionSection = `
+        <button
+          class="btn btn-success w-100 mt-3"
+          onclick="registerToEvent()"
+        >
+          🙋‍♀️ Inscribirme
+        </button>
+      `;
+    }
+
+    /* =============================
+       🖼️ RENDER
+    ============================== */
 
     eventDetails.innerHTML = `
       <div class="row g-4">
@@ -102,3 +118,33 @@ async function loadEventInfo() {
 }
 
 loadEventInfo();
+
+/* =============================
+   📝 INSCRIPCIÓN
+============================= */
+async function registerToEvent() {
+  try {
+    const res = await fetch(
+      `${API_URL}/api/events/${eventId}/register`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${authUser.token}`
+        }
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || "Error al inscribirse");
+    }
+
+    alert("🎉 Te inscribiste correctamente. Revisá tu mail 📧");
+    loadEventInfo(); // refresca estado
+
+  } catch (error) {
+    console.error("❌ Error inscripción:", error);
+    alert("No se pudo completar la inscripción");
+  }
+}
