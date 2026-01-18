@@ -38,29 +38,55 @@ async function loadUsers(token) {
     document.body.innerHTML = "<p>Acceso no autorizado</p>";
   }
 }
-
 function renderUsers(users) {
   const container = document.getElementById("usersContainer");
-
-  if (!container) {
-    console.error("❌ usersContainer no existe en el HTML");
-    return;
-  }
-
   container.innerHTML = "";
 
   users.forEach(user => {
-    const isSubscribed = user.subscription?.isActive;
-
     container.innerHTML += `
-      <div class="card">
-        <h3>${user.username}</h3>
-        <p>${user.email}</p>
+      <div class="user-card">
+        <div class="user-header">
+          <h3>${user.username}</h3>
+          <span class="badge ${user.isVerified ? "success" : "warning"}">
+            ${user.isVerified ? "Verificada" : "No verificada"}
+          </span>
+        </div>
 
-        <span class="badge ${isSubscribed ? "success" : "warning"}">
-          ${isSubscribed ? "Suscripta" : "No suscripta"}
-        </span>
+        <p><strong>📧 Email:</strong> ${user.email}</p>
+        <p><strong>🎂 Edad:</strong> ${user.age ?? "—"}</p>
+        <p><strong>🌎 Nacionalidad:</strong> ${user.nationality ?? "—"}</p>
+
+        <p>
+          <strong>👮 Rol:</strong>
+          <span class="badge admin">
+            ${user.isOrganizer ? "Organizadora" : "Usuaria"}
+          </span>
+        </p>
+
+        <p><strong>⭐ Intereses:</strong><br>
+          ${user.interests?.length ? user.interests.join(", ") : "—"}
+        </p>
+
+        <p><strong>🗣️ Idiomas:</strong><br>
+          ${user.languages?.length ? user.languages.join(", ") : "—"}
+        </p>
+
+        <button
+          class="mail-btn"
+          onclick="sendMail('${user._id}', '${user.email}')"
+        >
+          ✉️ Enviar mail
+        </button>
       </div>
     `;
   });
+  function sendMail(userId, email) {
+  if (!confirm(`¿Enviar mail de suscripción a ${email}?`)) return;
+
+  console.log("Enviar mail a:", userId);
+
+  // más adelante acá llamamos a tu endpoint real
+  alert("📧 Mail enviado correctamente (simulado)");
+}
+
 }
