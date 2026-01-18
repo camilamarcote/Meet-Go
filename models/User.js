@@ -27,9 +27,11 @@ const UserSchema = new mongoose.Schema(
     },
 
     age: { type: Number, min: 0, required: true },
-
     department: { type: String, trim: true, default: "" },
     nationality: { type: String, trim: true, required: true },
+
+    // ✅ NUEVO: número de celular
+    phone: { type: String, trim: true, default: "" },
 
     languages: { type: [String], default: [] },
     interests: { type: [String], default: [] },
@@ -40,7 +42,6 @@ const UserSchema = new mongoose.Schema(
 
     profileImage: { type: String, default: "" },
 
-    // 📧 Verificación
     isVerified: { type: Boolean, default: false },
     verificationToken: { type: String, default: null },
 

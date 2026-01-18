@@ -4,7 +4,7 @@ const params = new URLSearchParams(window.location.search);
 const eventId = params.get("id");
 const eventDetails = document.getElementById("eventDetails");
 
-// 🔑 sesión SOLO por token (NO usar user acá)
+// 🔑 sesión SOLO por token (para registrar si están logueados)
 const storedUser = JSON.parse(localStorage.getItem("currentUser")) || null;
 let authUser = null;
 
@@ -53,24 +53,13 @@ async function loadEventInfo() {
   }
 
   try {
-    // 👤 usuario REAL (fuente única de verdad)
+    // 👤 usuario REAL (si hay token)
     authUser = await loadCurrentUser();
-
-    console.log("🧠 AUTH USER FINAL:", authUser);
-    console.log("💳 SUBSCRIPTION FINAL:", authUser?.subscription);
 
     const res = await fetch(`${API_URL}/api/events/${eventId}`);
     if (!res.ok) throw new Error("Evento no encontrado");
 
     const event = await res.json();
-
-    console.log("📄 EVENT:", event);
-    console.log(
-      "👥 PARTICIPANTS:",
-      event.participants,
-      "| authUser._id:",
-      authUser?._id
-    );
 
     const image =
       event.image && event.image.startsWith("http")
@@ -78,53 +67,37 @@ async function loadEventInfo() {
         : getCategoryImage(event.category);
 
     /* =============================
-       🔐 LÓGICA DE ACCIÓN (LIMPIA)
+       🔐 LÓGICA DE ACCIÓN: TODOS PUEDEN VER BOTÓN
     ============================= */
     let actionSection = "";
 
     const isLogged = !!storedUser?.token;
-    const isSubscribed = authUser?.subscription?.isActive === true;
     const isRegistered =
       !!authUser && event.participants?.includes(authUser._id);
-
-    console.log("✅ isLogged:", isLogged);
-    console.log("💳 isSubscribed:", isSubscribed);
-    console.log("📝 isRegistered:", isRegistered);
 
     if (!isLogged) {
       actionSection = `
         <div class="alert alert-info mt-4">
-          Para inscribirte necesitás iniciar sesión.
+          Para unirte al evento necesitás iniciar sesión.
         </div>
         <a href="login.html" class="btn btn-primary w-100">
           Iniciar sesión
         </a>
       `;
-    } 
-    else if (!isSubscribed) {
-      actionSection = `
-        <div class="alert alert-warning mt-4">
-          Tenés que suscribirte para poder inscribirte a este evento.
-        </div>
-        <a href="suscripcion.html" class="btn btn-warning w-100">
-          Suscribite
-        </a>
-      `;
-    } 
-    else if (isRegistered) {
+    } else if (isRegistered) {
       actionSection = `
         <div class="alert alert-success mt-4">
           ✅ Ya estás inscripta a este evento
         </div>
       `;
-    } 
-    else {
+    } else {
+      // ✅ BOTÓN VISIBLE PARA TODOS LOS USUARIOS LOGUEADOS
       actionSection = `
         <button
           class="btn btn-success w-100 mt-3"
           onclick="registerToEvent()"
         >
-          🙋‍♀️ Inscribirme
+          🙋‍♀️ Unirme al evento
         </button>
       `;
     }
@@ -189,7 +162,7 @@ async function registerToEvent() {
       throw new Error(data.message || "Error al inscribirse");
     }
 
-    alert("🎉 Te inscribiste correctamente. Revisá tu mail 📧");
+    alert("🎉 Te uniste correctamente al evento.");
     loadEventInfo(); // refresca estado
 
   } catch (error) {

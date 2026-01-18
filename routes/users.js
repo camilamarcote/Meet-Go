@@ -42,6 +42,7 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       lastName,
       username,
       email,
+      phone, // <-- NUEVO
       password,
       age,
       nationality,
@@ -73,16 +74,10 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       return res.status(400).json({ message: "Usuario o email ya existe" });
     }
 
-    const languages = req.body.languages
-      ? JSON.parse(req.body.languages)
-      : [];
-
-    const interests = req.body.interests
-      ? JSON.parse(req.body.interests)
-      : [];
+    const languages = req.body.languages ? JSON.parse(req.body.languages) : [];
+    const interests = req.body.interests ? JSON.parse(req.body.interests) : [];
 
     let profileImageUrl = "";
-
     if (req.file) {
       const uploadResult = await cloudinary.uploader.upload(
         `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`,
@@ -101,6 +96,7 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       lastName,
       username,
       email,
+      phone: phone || "", // <-- NUEVO
       password: hashedPassword,
       age,
       nationality,
@@ -113,9 +109,7 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       profileImage: profileImageUrl,
       isVerified: false,
       roles: ["user"],
-      subscription: {
-        isActive: false
-      }
+      subscription: { isActive: false }
     });
 
     const token = generateToken(user);
@@ -145,7 +139,6 @@ router.get("/verify", async (req, res) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
     const user = await User.findById(decoded.id);
 
     if (!user) {
@@ -158,15 +151,10 @@ router.get("/verify", async (req, res) => {
       await user.save();
     }
 
-    return res.redirect(
-      `${process.env.FRONT_URL}/login.html?verified=true`
-    );
-
+    return res.redirect(`${process.env.FRONT_URL}/login.html?verified=true`);
   } catch (error) {
     console.error("❌ Verify error:", error);
-    return res.redirect(
-      `${process.env.FRONT_URL}/login.html?verified=false`
-    );
+    return res.redirect(`${process.env.FRONT_URL}/login.html?verified=false`);
   }
 });
 
@@ -210,6 +198,7 @@ router.post("/login", async (req, res) => {
         lastName: foundUser.lastName,
         username: foundUser.username,
         email: foundUser.email,
+        phone: foundUser.phone, // <-- NUEVO
         profileImage: foundUser.profileImage,
         isOrganizer: foundUser.isOrganizer,
         roles: foundUser.roles,
@@ -222,7 +211,6 @@ router.post("/login", async (req, res) => {
   }
 });
 
-
 /* =============================
    ✏️ UPDATE PROFILE
 ============================= */
@@ -234,6 +222,7 @@ router.put("/me", protect, upload.single("profileImage"), async (req, res) => {
       age: req.body.age,
       nationality: req.body.nationality,
       department: req.body.department,
+      phone: req.body.phone, // <-- NUEVO
       personality: req.body.personality,
       style: req.body.style,
       bio: req.body.bio
@@ -258,11 +247,7 @@ router.put("/me", protect, upload.single("profileImage"), async (req, res) => {
       updates.profileImage = uploadResult.secure_url;
     }
 
-    const user = await User.findByIdAndUpdate(
-      req.user.id,
-      updates,
-      { new: true }
-    ).select("-password");
+    const user = await User.findByIdAndUpdate(req.user.id, updates, { new: true }).select("-password");
 
     res.json(user);
   } catch (error) {
@@ -272,3 +257,4 @@ router.put("/me", protect, upload.single("profileImage"), async (req, res) => {
 });
 
 export default router;
+

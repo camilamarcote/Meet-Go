@@ -52,6 +52,7 @@ function renderUsers(users) {
         </div>
 
         <p><strong>📧 Email:</strong> ${user.email}</p>
+         <p><strong>📱 Celular:</strong> ${user.phone ?? "—"}</p> <!-- NUEVO -->
         <p><strong>🎂 Edad:</strong> ${user.age ?? "—"}</p>
         <p><strong>🌎 Nacionalidad:</strong> ${user.nationality ?? "—"}</p>
 
