@@ -108,7 +108,7 @@ async function loadEventInfo() {
           <p><a href="mailto:meetandgouy@gmail.com">meetandgouy@gmail.com</a></p>
 
           <p style="color:red; font-weight:bold;">
-            ⚠️ Solo permitiremos el ingreso al grupo de WhatsApp a aquellos usuarios que estén suscriptos. La verificación se realiza manualmente desde Mercado Pago.
+            ⚠️ Solo permitiremos el ingreso al grupo de WhatsApp a aquellos usuarios que estén suscriptos. 
           </p>
         </div>
       `;
