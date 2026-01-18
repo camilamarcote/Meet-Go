@@ -42,6 +42,8 @@ loginForm.addEventListener("submit", async (e) => {
 
     const data = await response.json();
 
+    console.log("RESPUESTA LOGIN:", data);
+
     if (!response.ok) {
       if (response.status === 403) {
         const resend = confirm(
@@ -58,16 +60,13 @@ loginForm.addEventListener("submit", async (e) => {
       return;
     }
 
-    /* ✅ Guardar sesión */
-localStorage.setItem("currentUser", JSON.stringify({
-  _id: data.user._id,
-  username: data.user.username,
-  email: data.user.email,
-  profileImage: data.user.profileImage,
-  isOrganizer: data.user.isOrganizer,
-  roles: data.user.roles,
-  token: data.token
-}));
+    /* ✅ GUARDAR USUARIO COMPLETO (CLAVE) */
+    const loginData = {
+      ...data.user,   // 👈 incluye subscription
+      token: data.token
+    };
+
+    localStorage.setItem("currentUser", JSON.stringify(loginData));
 
     window.location.href = "index.html";
 
@@ -100,4 +99,4 @@ async function resendVerification(email) {
   } catch {
     alert("No se pudo reenviar el email");
   }
-} 
+}
