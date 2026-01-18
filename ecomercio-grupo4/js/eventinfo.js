@@ -4,7 +4,7 @@ const params = new URLSearchParams(window.location.search);
 const eventId = params.get("id");
 const eventDetails = document.getElementById("eventDetails");
 
-// 🔑 SOLO usamos localStorage para el token
+// 🔑 sesión SOLO por token
 const storedUser = JSON.parse(localStorage.getItem("currentUser")) || null;
 let authUser = null;
 
@@ -53,7 +53,7 @@ async function loadEventInfo() {
   }
 
   try {
-    // 👤 usuario actualizado
+    // 👤 usuario REAL (si hay token)
     authUser = await loadCurrentUser();
 
     const res = await fetch(`${API_URL}/api/events/${eventId}`);
@@ -67,12 +67,16 @@ async function loadEventInfo() {
         : getCategoryImage(event.category);
 
     /* =============================
-       🔐 LÓGICA DE ACCIÓN
+       🔐 LÓGICA DE ACCIÓN (CORRECTA)
     ============================== */
     let actionSection = "";
 
-    const isLogged = !!authUser;
+    // 🔑 LOGUEADA = hay token
+    const isLogged = !!storedUser?.token;
+
+    // 💳 SUSCRIPCIÓN = viene del backend
     const isSubscribed = authUser?.subscription?.isActive === true;
+
     const isRegistered = event.participants?.includes(authUser?._id);
 
     if (!isLogged) {
