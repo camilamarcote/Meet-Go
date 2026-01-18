@@ -1,6 +1,7 @@
 const API_URL = "https://api.meetandgouy.com";
 
-const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+// ⚠️ ACA estaba el error
+const currentUser = JSON.parse(localStorage.getItem("user"));
 
 if (!currentUser || !currentUser.token) {
   window.location.href = "login.html";
