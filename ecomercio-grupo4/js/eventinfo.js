@@ -40,7 +40,7 @@ async function loadEventInfo() {
     let actionSection = "";
 
     const isLogged = !!authUser;
-    const isSubscribed = authUser?.isSubscribed === true;
+    const isSubscribed = authUser?.subscription?.isActive === true;
     const isRegistered = event.participants?.includes(authUser?._id);
 
     if (!isLogged) {
