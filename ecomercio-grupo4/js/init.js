@@ -1,11 +1,4 @@
-import { refreshCurrentUser } from "./auth.js";
-
-document.addEventListener("DOMContentLoaded", async () => {
-
-  /* ============================
-     0. REFRESCAR USUARIO
-  ============================ */
-  await refreshCurrentUser();
+document.addEventListener("DOMContentLoaded", () => {
 
   /* ============================
      1. INSERTAR NAVBAR
@@ -66,6 +59,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   ============================ */
   const user = JSON.parse(localStorage.getItem("currentUser"));
   const rightZone = document.getElementById("nav-right");
+
   rightZone.innerHTML = "";
 
   // 🔓 NO LOGUEADO
@@ -104,13 +98,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   `;
 
   // 👮 ORGANIZADORAS / ADMIN
-  if (user.isOrganizer || user.roles?.includes("admin")) {
+  if (user.isOrganizer || user.role === "admin" || user.role === "organizer") {
     document.getElementById("nav-create-event").style.display = "block";
     document.getElementById("nav-users").style.display = "block";
   }
 
-  // 🚫 OCULTAR SUSCRIPCIÓN SI YA ESTÁ ACTIVA
-  if (user.subscription?.isActive) {
+  // ⭐ OCULTAR "SUSCRIBITE" SI YA TIENE SUSCRIPCIÓN ACTIVA
+  if (user.subscription && user.subscription.isActive === true) {
     const subLink = document.getElementById("nav-suscripcion");
     if (subLink) subLink.style.display = "none";
   }
