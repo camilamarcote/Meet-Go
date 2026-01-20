@@ -1,5 +1,18 @@
 const API_URL = "https://api.meetandgouy.com";
 
+// ============================
+// ⭐ OCULTAR BANNER SI ESTÁ SUSCRIPTO
+// ============================
+const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+const subscriptionBanner = document.getElementById("subscription-banner");
+
+const isSubscribed = currentUser?.subscription?.isActive === true;
+
+if (subscriptionBanner && isSubscribed) {
+  subscriptionBanner.style.display = "none";
+}
+
+
 const eventsContainer = document.getElementById("eventsContainer");
 
 async function loadEvents() {
