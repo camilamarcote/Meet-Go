@@ -107,11 +107,14 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("nav-users").style.display = "block";
   }
 
-  // 🚫 Si ya es suscriptor, ocultamos botón
-  if (user.isSubscriber) {
-    const subLink = document.getElementById("nav-suscripcion");
-    if (subLink) subLink.style.display = "none";
-  }
+// 🚫 Si ya tiene suscripción activa, ocultamos botón
+const isSubscribed = user?.subscription?.isActive === true;
+
+if (isSubscribed) {
+  const subLink = document.getElementById("nav-suscripcion");
+  if (subLink) subLink.style.display = "none";
+}
+
 
   document.getElementById("logoutLink").addEventListener("click", () => {
     localStorage.removeItem("currentUser");
