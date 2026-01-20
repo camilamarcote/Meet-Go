@@ -1,4 +1,11 @@
-document.addEventListener("DOMContentLoaded", () => {
+import { refreshCurrentUser } from "./auth.js";
+
+document.addEventListener("DOMContentLoaded", async () => {
+
+  /* ============================
+     0. REFRESCAR USUARIO
+  ============================ */
+  await refreshCurrentUser();
 
   /* ============================
      1. INSERTAR NAVBAR
@@ -26,10 +33,6 @@ document.addEventListener("DOMContentLoaded", () => {
         <li class="nav-item">
           <a class="nav-link" href="aboutus.html">Sobre nosotras</a>
         </li>
-
-        <!-- <li class="nav-item" id="nav-my-events" style="display:none">
-          <a class="nav-link" href="myevents.html">Mis eventos</a>
-        </li> -->
 
         <li class="nav-item" id="nav-create-event" style="display:none">
           <a class="nav-link" href="createevent.html">Crear Evento</a>
@@ -63,7 +66,6 @@ document.addEventListener("DOMContentLoaded", () => {
   ============================ */
   const user = JSON.parse(localStorage.getItem("currentUser"));
   const rightZone = document.getElementById("nav-right");
-
   rightZone.innerHTML = "";
 
   // 🔓 NO LOGUEADO
@@ -81,14 +83,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     <div class="dropdown">
       <a href="#" data-bs-toggle="dropdown">
-       <img src="${
-  user.profileImage && user.profileImage.startsWith("http")
-    ? user.profileImage
-    : `https://ui-avatars.com/api/?name=${encodeURIComponent(
-        user.username
-      )}&background=9d26ff&color=ffffff&bold=true`
-}" class="profile-avatar" />
-
+        <img src="${
+          user.profileImage && user.profileImage.startsWith("http")
+            ? user.profileImage
+            : `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                user.username
+              )}&background=9d26ff&color=ffffff&bold=true`
+        }" class="profile-avatar" />
+      </a>
 
       <ul class="dropdown-menu dropdown-menu-end">
         <li>
@@ -101,20 +103,17 @@ document.addEventListener("DOMContentLoaded", () => {
     </div>
   `;
 
-  // ORDENIZADORAS / ADMIN
-  if (user.role === "admin" || user.role === "organizer" || user.isOrganizer) {
+  // 👮 ORGANIZADORAS / ADMIN
+  if (user.isOrganizer || user.roles?.includes("admin")) {
     document.getElementById("nav-create-event").style.display = "block";
     document.getElementById("nav-users").style.display = "block";
   }
 
-// 🚫 Si ya tiene suscripción activa, ocultamos botón
-const isSubscribed = user?.subscription?.isActive === true;
-
-if (isSubscribed) {
-  const subLink = document.getElementById("nav-suscripcion");
-  if (subLink) subLink.style.display = "none";
-}
-
+  // 🚫 OCULTAR SUSCRIPCIÓN SI YA ESTÁ ACTIVA
+  if (user.subscription?.isActive) {
+    const subLink = document.getElementById("nav-suscripcion");
+    if (subLink) subLink.style.display = "none";
+  }
 
   document.getElementById("logoutLink").addEventListener("click", () => {
     localStorage.removeItem("currentUser");
