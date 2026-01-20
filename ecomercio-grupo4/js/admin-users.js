@@ -24,9 +24,7 @@ async function loadUsers(token) {
       }
     });
 
-    if (!res.ok) {
-      throw new Error("No autorizado");
-    }
+    if (!res.ok) throw new Error("No autorizado");
 
     const users = await res.json();
     renderUsers(users);
@@ -52,7 +50,7 @@ function renderUsers(users) {
         </div>
 
         <p><strong>📧 Email:</strong> ${user.email}</p>
-         <p><strong>📱 Celular:</strong> ${user.phone ?? "—"}</p> <!-- NUEVO -->
+        <p><strong>📱 Celular:</strong> ${user.phone ?? "—"}</p>
         <p><strong>🎂 Edad:</strong> ${user.age ?? "—"}</p>
         <p><strong>🌎 Nacionalidad:</strong> ${user.nationality ?? "—"}</p>
 
@@ -83,7 +81,7 @@ function renderUsers(users) {
 }
 
 /* ===============================
-   ✉️ FUNCIÓN GLOBAL (CLAVE)
+   ✉️ ENVIAR MAIL + ACTUALIZAR ESTADO
 =============================== */
 async function sendMail(userId, email) {
   if (!confirm(`¿Enviar mail de suscripción a ${email}?`)) return;
@@ -107,7 +105,20 @@ async function sendMail(userId, email) {
       throw new Error(data.message || "Error enviando mail");
     }
 
-    alert("📧 Mail enviado correctamente");
+    alert("📧 Mail enviado y suscripción activada");
+
+    /* ===============================
+       🔄 SINCRONIZAR FRONTEND
+       (clave para que no aparezcan carteles)
+    =============================== */
+
+    // Si la admin se envió el mail a sí misma
+    if (currentUser._id === userId) {
+      currentUser.subscription = {
+        isActive: true
+      };
+      localStorage.setItem("currentUser", JSON.stringify(currentUser));
+    }
 
   } catch (error) {
     console.error("❌ Error enviando mail:", error);
