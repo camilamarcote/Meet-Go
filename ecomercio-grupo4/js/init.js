@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
 
   /* ============================
      1. INSERTAR NAVBAR
@@ -35,7 +35,6 @@ document.addEventListener("DOMContentLoaded", () => {
           <a class="nav-link" href="admin-users.html">Usuarios</a>
         </li>
 
-        <!-- ⭐ SUSCRIPCIÓN --> 
         <li class="nav-item" id="nav-suscripcion">
           <a class="nav-link fw-semibold text-warning" href="suscripcion.html">
             ⭐ Suscribite
@@ -55,15 +54,13 @@ document.addEventListener("DOMContentLoaded", () => {
   container.innerHTML = navbarHTML;
 
   /* ============================
-     2. ESTADO DE USUARIO
+     2. ESTADO DE USUARIO REAL
   ============================ */
-  const user = JSON.parse(localStorage.getItem("currentUser"));
   const rightZone = document.getElementById("nav-right");
-
-  rightZone.innerHTML = "";
+  const token = localStorage.getItem("token");
 
   // 🔓 NO LOGUEADO
-  if (!user) {
+  if (!token) {
     rightZone.innerHTML = `
       <a href="login.html" class="btn btn-outline-primary btn-sm">Login</a>
       <a href="register.html" class="btn btn-primary btn-sm">Registro</a>
@@ -71,43 +68,68 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  // 🔐 LOGUEADO
-  rightZone.innerHTML = `
-    <span class="fw-semibold">${user.username}</span>
+  try {
+    const res = await fetch("https://api.meetandgouy.com/users/me", {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
 
-    <div class="dropdown">
-      <a href="#" data-bs-toggle="dropdown">
-        <img src="${
-          user.profileImage && user.profileImage.startsWith("http")
-            ? user.profileImage
-            : `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                user.username
-              )}&background=9d26ff&color=ffffff&bold=true`
-        }" class="profile-avatar" />
-      </a>
+    if (!res.ok) throw new Error("No autorizado");
 
-      <ul class="dropdown-menu dropdown-menu-end">
-          <a class="dropdown-item" href="#" id="logoutLink">Cerrar sesión</a>
-        </li>
-      </ul>
-    </div>
-  `;
+    const user = await res.json();
 
-  // 👮 ORGANIZADORAS / ADMIN
-  if (user.isOrganizer || user.role === "admin" || user.role === "organizer") {
-    document.getElementById("nav-create-event").style.display = "block";
-    document.getElementById("nav-users").style.display = "block";
+    /* ============================
+       3. ZONA DERECHA
+    ============================ */
+    rightZone.innerHTML = `
+      <span class="fw-semibold">${user.username}</span>
+
+      <div class="dropdown">
+        <a href="#" data-bs-toggle="dropdown">
+          <img src="${
+            user.profileImage
+              ? user.profileImage
+              : `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                  user.username
+                )}&background=9d26ff&color=ffffff&bold=true`
+          }" class="profile-avatar" />
+        </a>
+
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li>
+            <a class="dropdown-item" href="#" id="logoutLink">Cerrar sesión</a>
+          </li>
+        </ul>
+      </div>
+    `;
+
+    /* ============================
+       4. ROLES
+    ============================ */
+    if (user.isOrganizer || user.roles?.includes("admin")) {
+      document.getElementById("nav-create-event").style.display = "block";
+      document.getElementById("nav-users").style.display = "block";
+    }
+
+    /* ============================
+       5. SUSCRIPCIÓN (CLAVE)
+    ============================ */
+    if (user.subscription?.isActive === true) {
+      document.getElementById("nav-suscripcion")?.remove();
+    }
+
+    /* ============================
+       6. LOGOUT
+    ============================ */
+    document.getElementById("logoutLink").addEventListener("click", () => {
+      localStorage.removeItem("token");
+      window.location.href = "welcome.html";
+    });
+
+  } catch (error) {
+    console.error("❌ Error cargando usuario:", error);
+    localStorage.removeItem("token");
+    window.location.href = "login.html";
   }
-
-  // ⭐ OCULTAR "SUSCRIBITE" SI YA TIENE SUSCRIPCIÓN ACTIVA
-  if (user.subscription && user.subscription.isActive === true) {
-    const subLink = document.getElementById("nav-suscripcion");
-    if (subLink) subLink.style.display = "none";
-  }
-
-  document.getElementById("logoutLink").addEventListener("click", () => {
-    localStorage.removeItem("currentUser");
-    window.location.href = "welcome.html";
-  });
-
 });
