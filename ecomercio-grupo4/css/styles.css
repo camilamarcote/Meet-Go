@@ -413,3 +413,54 @@ a.custom-card:hover {
 .gradient-text .star {
   margin-right: 0.2rem;
 }
+
+/* ======================= */
+/*    SECCIÓN PARTNERS     */
+/* ======================= */
+
+.partners-section {
+  background-color: #000;
+  padding: 3rem 0;
+  margin-top: 3rem;
+}
+
+.partners-title {
+  color: #ffffff;
+  text-align: center;
+  font-family: "Montserrat Alternates", sans-serif;
+  font-weight: 400;
+  margin-bottom: 2rem;
+  letter-spacing: 0.5px;
+}
+
+/* Contenedor de logos */
+.partners-logos {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2.5rem;
+  flex-wrap: wrap;
+}
+
+/* Logos */
+.partners-logos img {
+  max-height: 60px;
+  width: auto;
+  filter: grayscale(100%);
+  opacity: 0.8;
+  transition: all 0.3s ease;
+}
+
+/* Hover elegante */
+.partners-logos img:hover {
+  filter: grayscale(0%);
+  opacity: 1;
+  transform: scale(1.08);
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .partners-logos img {
+    max-height: 45px;
+  }
+}
