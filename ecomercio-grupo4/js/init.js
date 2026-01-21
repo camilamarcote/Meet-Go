@@ -53,14 +53,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (!container) return;
   container.innerHTML = navbarHTML;
 
-  /* ============================
-     2. ESTADO DE USUARIO REAL
-  ============================ */
   const rightZone = document.getElementById("nav-right");
+  rightZone.innerHTML = "";
+
+  /* ============================
+     2. VALIDAR SESIÓN REAL
+  ============================ */
   const token = localStorage.getItem("token");
 
-  // 🔓 NO LOGUEADO
   if (!token) {
+    // 🔓 NO LOGUEADO
     rightZone.innerHTML = `
       <a href="login.html" class="btn btn-outline-primary btn-sm">Login</a>
       <a href="register.html" class="btn btn-primary btn-sm">Registro</a>
@@ -69,18 +71,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   try {
-    const res = await fetch("https://api.meetandgouy.com/users/me", {
+    const res = await fetch("https://api.meetandgouy.com/api/users/me", {
       headers: {
         Authorization: `Bearer ${token}`
       }
     });
 
-    if (!res.ok) throw new Error("No autorizado");
+    if (!res.ok) {
+      throw new Error("Token inválido");
+    }
 
     const user = await res.json();
 
     /* ============================
-       3. ZONA DERECHA
+       3. NAV LOGUEADO
     ============================ */
     rightZone.innerHTML = `
       <span class="fw-semibold">${user.username}</span>
@@ -88,7 +92,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       <div class="dropdown">
         <a href="#" data-bs-toggle="dropdown">
           <img src="${
-            user.profileImage
+            user.profileImage && user.profileImage.startsWith("http")
               ? user.profileImage
               : `https://ui-avatars.com/api/?name=${encodeURIComponent(
                   user.username
@@ -104,32 +108,30 @@ document.addEventListener("DOMContentLoaded", async () => {
       </div>
     `;
 
-    /* ============================
-       4. ROLES
-    ============================ */
+    // 👮 ADMIN / ORGANIZADORA
     if (user.isOrganizer || user.roles?.includes("admin")) {
       document.getElementById("nav-create-event").style.display = "block";
       document.getElementById("nav-users").style.display = "block";
     }
 
-    /* ============================
-       5. SUSCRIPCIÓN (CLAVE)
-    ============================ */
+    // ⭐ SUSCRIPCIÓN
     if (user.subscription?.isActive === true) {
-      document.getElementById("nav-suscripcion")?.remove();
+      const subLink = document.getElementById("nav-suscripcion");
+      if (subLink) subLink.style.display = "none";
     }
 
-    /* ============================
-       6. LOGOUT
-    ============================ */
     document.getElementById("logoutLink").addEventListener("click", () => {
       localStorage.removeItem("token");
       window.location.href = "welcome.html";
     });
 
-  } catch (error) {
-    console.error("❌ Error cargando usuario:", error);
+  } catch (err) {
+    console.warn("⚠️ Sesión inválida:", err.message);
     localStorage.removeItem("token");
-    window.location.href = "login.html";
+
+    rightZone.innerHTML = `
+      <a href="login.html" class="btn btn-outline-primary btn-sm">Login</a>
+      <a href="register.html" class="btn btn-primary btn-sm">Registro</a>
+    `;
   }
 });
