@@ -12,6 +12,28 @@ import cloudinary from "../config/cloudinary.js";
 const router = express.Router();
 
 /* =============================
+   🔓 PUBLIC – ESTADO SUSCRIPCIÓN (QR)
+============================= */
+router.get("/public/subscription-status/:id", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ isActive: false });
+    }
+
+    res.json({
+      isActive: user.subscription?.isActive === true,
+      name: `${user.firstName} ${user.lastName}`,
+      validUntil: user.subscription?.validUntil
+    });
+  } catch (error) {
+    console.error("❌ Subscription status error:", error);
+    res.status(500).json({ isActive: false });
+  }
+});
+
+/* =============================
    📦 MULTER (MEMORIA)
 ============================= */
 const upload = multer({ storage: multer.memoryStorage() });
@@ -42,7 +64,7 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       lastName,
       username,
       email,
-      phone, // <-- NUEVO
+      phone,
       password,
       age,
       nationality,
@@ -96,7 +118,7 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       lastName,
       username,
       email,
-      phone: phone || "", // <-- NUEVO
+      phone: phone || "",
       password: hashedPassword,
       age,
       nationality,
@@ -186,8 +208,6 @@ router.post("/login", async (req, res) => {
       return res.status(403).json({ message: "Cuenta no verificada" });
     }
 
-    console.log("🟢 SUBSCRIPTION LOGIN:", foundUser.subscription);
-
     const token = generateToken(foundUser);
 
     res.json({
@@ -198,7 +218,7 @@ router.post("/login", async (req, res) => {
         lastName: foundUser.lastName,
         username: foundUser.username,
         email: foundUser.email,
-        phone: foundUser.phone, // <-- NUEVO
+        phone: foundUser.phone,
         profileImage: foundUser.profileImage,
         isOrganizer: foundUser.isOrganizer,
         roles: foundUser.roles,
@@ -222,7 +242,7 @@ router.put("/me", protect, upload.single("profileImage"), async (req, res) => {
       age: req.body.age,
       nationality: req.body.nationality,
       department: req.body.department,
-      phone: req.body.phone, // <-- NUEVO
+      phone: req.body.phone,
       personality: req.body.personality,
       style: req.body.style,
       bio: req.body.bio
@@ -247,7 +267,11 @@ router.put("/me", protect, upload.single("profileImage"), async (req, res) => {
       updates.profileImage = uploadResult.secure_url;
     }
 
-    const user = await User.findByIdAndUpdate(req.user.id, updates, { new: true }).select("-password");
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      updates,
+      { new: true }
+    ).select("-password");
 
     res.json(user);
   } catch (error) {
@@ -257,4 +281,3 @@ router.put("/me", protect, upload.single("profileImage"), async (req, res) => {
 });
 
 export default router;
-
