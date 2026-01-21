@@ -422,6 +422,7 @@ a.custom-card:hover {
   width: 100%;
   background-color: #000;
   margin-top: 3rem;
+  padding: 3rem;
 }
 
 /* opcional, solo semántico */
