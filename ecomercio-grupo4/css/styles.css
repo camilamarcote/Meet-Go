@@ -419,10 +419,17 @@ a.custom-card:hover {
 /* ======================= */
 
 .partners-section {
+  width: 100%;
   background-color: #000;
   padding: 3rem 0;
   margin-top: 3rem;
 }
+
+/* opcional, solo semántico */
+.partners-inner {
+  max-width: 1140px; /* igual a container de Bootstrap */
+}
+
 
 .partners-title {
   color: #ffffff;
