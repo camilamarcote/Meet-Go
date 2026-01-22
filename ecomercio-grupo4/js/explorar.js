@@ -33,6 +33,8 @@ async function loadEvents() {
             <div class="card-body d-flex flex-column">
               <h5>${event.name}</h5>
               <p>${event.description || ""}</p>
+               <p>${event.age || ""}</p>
+                <p>${event.neighborhood || ""}</p>
               <a href="eventinfo.html?id=${event._id}" class="btn btn-primary btn-sm mt-auto">
                 Ver evento
               </a>

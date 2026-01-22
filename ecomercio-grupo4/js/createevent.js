@@ -17,6 +17,7 @@ const neighborhoodsByDepartment = {
     "Cordón",
     "Pocitos",
     "Punta Carretas",
+    "Parque Rodó",
     "Carrasco",
     "Buceo",
     "Malvín",
