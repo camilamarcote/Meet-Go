@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  if (!currentUser.isOrganizer) {
+  if (!currentUser.isOrganizer && !currentUser.roles?.includes("admin")) {
     document.body.innerHTML = "<h2>Acceso restringido</h2>";
     return;
   }
@@ -40,13 +40,22 @@ function renderUsers(users) {
   container.innerHTML = "";
 
   users.forEach(user => {
+    const isSubscribed = user.subscription?.isActive === true;
+
     container.innerHTML += `
       <div class="user-card">
         <div class="user-header">
           <h3>${user.username}</h3>
-          <span class="badge ${user.isVerified ? "success" : "warning"}">
-            ${user.isVerified ? "Verificada" : "No verificada"}
-          </span>
+
+          <div class="badges">
+            <span class="badge ${user.isVerified ? "success" : "warning"}">
+              ${user.isVerified ? "Verificada" : "No verificada"}
+            </span>
+
+            <span class="badge ${isSubscribed ? "success" : "neutral"}">
+              ${isSubscribed ? "⭐ Suscripta" : "Sin suscripción"}
+            </span>
+          </div>
         </div>
 
         <p><strong>📧 Email:</strong> ${user.email}</p>
@@ -69,19 +78,70 @@ function renderUsers(users) {
           ${user.languages?.length ? user.languages.join(", ") : "—"}
         </p>
 
-        <button
-          class="mail-btn"
-          onclick="sendMail('${user._id}', '${user.email}')"
-        >
-          ✉️ Enviar mail
-        </button>
+        <div class="user-actions">
+          <button
+            class="mail-btn"
+            onclick="sendMail('${user._id}', '${user.email}')"
+          >
+            ✉️ Enviar mail
+          </button>
+
+          ${
+            !isSubscribed
+              ? `
+              <button
+                class="subscribe-btn"
+                onclick="activateSubscription('${user._id}')"
+              >
+                ⭐ Marcar como suscripta
+              </button>
+            `
+              : ""
+          }
+        </div>
       </div>
     `;
   });
 }
 
 /* ===============================
-   ✉️ ENVIAR MAIL + ACTUALIZAR ESTADO
+   ⭐ ACTIVAR SUSCRIPCIÓN MANUAL
+=============================== */
+async function activateSubscription(userId) {
+  if (!confirm("¿Marcar este usuario como suscripta?")) return;
+
+  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+
+  try {
+    const res = await fetch(
+      `${API_URL}/api/admin/activate-subscription/${userId}`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${currentUser.token}`
+        }
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || "Error activando suscripción");
+    }
+
+    alert("✅ Suscripción activada");
+
+    // 🔄 recargar estado real desde backend
+    loadUsers(currentUser.token);
+
+  } catch (err) {
+    console.error("❌ Error:", err);
+    alert("Error activando suscripción");
+  }
+}
+
+/* ===============================
+   ✉️ ENVIAR MAIL
 =============================== */
 async function sendMail(userId, email) {
   if (!confirm(`¿Enviar mail de suscripción a ${email}?`)) return;
@@ -105,20 +165,7 @@ async function sendMail(userId, email) {
       throw new Error(data.message || "Error enviando mail");
     }
 
-    alert("📧 Mail enviado y suscripción activada");
-
-    /* ===============================
-       🔄 SINCRONIZAR FRONTEND
-       (clave para que no aparezcan carteles)
-    =============================== */
-
-    // Si la admin se envió el mail a sí misma
-    if (currentUser._id === userId) {
-      currentUser.subscription = {
-        isActive: true
-      };
-      localStorage.setItem("currentUser", JSON.stringify(currentUser));
-    }
+    alert("📧 Mail enviado correctamente");
 
   } catch (error) {
     console.error("❌ Error enviando mail:", error);

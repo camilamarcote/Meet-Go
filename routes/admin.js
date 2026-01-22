@@ -11,11 +11,8 @@ const router = express.Router();
 =============================== */
 router.get("/users", protect, adminOnly, async (req, res) => {
   try {
-    const users = await User.find()
-      .select("-password -verificationToken");
-
+    const users = await User.find().select("-password -verificationToken");
     res.json(users);
-
   } catch (error) {
     console.error("❌ Error obteniendo usuarios:", error);
     res.status(500).json({ message: "Error obteniendo usuarios" });
@@ -50,10 +47,47 @@ router.post(
       });
 
       res.json({ message: "Mail enviado correctamente" });
-
     } catch (error) {
       console.error("❌ Error enviando mail:", error);
       res.status(500).json({ message: "Error enviando mail" });
+    }
+  }
+);
+
+/* ===============================
+   ✅ ACTIVAR SUSCRIPCIÓN MANUAL
+=============================== */
+router.post(
+  "/activate-subscription/:userId",
+  protect,
+  adminOnly,
+  async (req, res) => {
+    try {
+      const user = await User.findByIdAndUpdate(
+        req.params.userId,
+        {
+          subscription: {
+            isActive: true,
+            plan: "manual",
+            startedAt: new Date(),
+            validUntil: null,
+            canceledAt: null
+          }
+        },
+        { new: true }
+      );
+
+      if (!user) {
+        return res.status(404).json({ message: "Usuario no encontrado" });
+      }
+
+      res.json({
+        message: "Suscripción activada manualmente",
+        subscription: user.subscription
+      });
+    } catch (error) {
+      console.error("❌ Error activando suscripción:", error);
+      res.status(500).json({ message: "Error activando suscripción" });
     }
   }
 );
