@@ -42,8 +42,6 @@ loginForm.addEventListener("submit", async (e) => {
 
     const data = await response.json();
 
-    console.log("RESPUESTA LOGIN:", data);
-
     if (!response.ok) {
       if (response.status === 403) {
         const resend = confirm(
@@ -60,13 +58,17 @@ loginForm.addEventListener("submit", async (e) => {
       return;
     }
 
-    /* ✅ GUARDAR USUARIO COMPLETO (CLAVE) */
-    const loginData = {
-      ...data.user,   // 👈 incluye subscription
-      token: data.token
-    };
+    /* ✅ GUARDAR TOKEN (CLAVE) */
+    localStorage.setItem("token", data.token);
 
-    localStorage.setItem("currentUser", JSON.stringify(loginData));
+    /* ✅ GUARDAR USUARIO */
+    localStorage.setItem(
+      "currentUser",
+      JSON.stringify({
+        ...data.user,
+        token: data.token
+      })
+    );
 
     window.location.href = "index.html";
 

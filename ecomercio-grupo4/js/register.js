@@ -15,12 +15,6 @@ document.addEventListener("DOMContentLoaded", () => {
        🔐 VALIDACIÓN PASSWORD
     ============================ */
     const passwordInput = form.querySelector("input[name='password']");
-
-    if (!passwordInput) {
-      alert("Error interno: no se encontró el campo contraseña");
-      return;
-    }
-
     const password = passwordInput.value;
 
     const passwordRegex =
@@ -48,14 +42,9 @@ document.addEventListener("DOMContentLoaded", () => {
        📦 FORM DATA
     ============================ */
     const formData = new FormData(form);
-
-    // 🔹 enviar arrays como JSON
     formData.set("languages", JSON.stringify(languages));
     formData.set("interests", JSON.stringify(interests));
 
-    /* ============================
-       🚀 REQUEST
-    ============================ */
     try {
       const res = await fetch(`${API_URL}/api/users/register`, {
         method: "POST",
@@ -68,6 +57,10 @@ document.addEventListener("DOMContentLoaded", () => {
         alert(result.message || "Error en el registro");
         return;
       }
+
+      // 🧹 Limpieza preventiva (no rompe nada)
+      localStorage.removeItem("token");
+      localStorage.removeItem("currentUser");
 
       alert("🎉 Registro exitoso. Revisá tu email para verificar la cuenta.");
       window.location.href = "login.html";

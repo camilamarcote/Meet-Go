@@ -61,8 +61,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   ============================ */
   const token = localStorage.getItem("token");
 
+  // 🔓 NO LOGUEADO
   if (!token) {
-    // 🔓 NO LOGUEADO
     rightZone.innerHTML = `
       <a href="login.html" class="btn btn-outline-primary btn-sm">Login</a>
       <a href="register.html" class="btn btn-primary btn-sm">Registro</a>
@@ -77,9 +77,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     });
 
-    if (!res.ok) {
-      throw new Error("Token inválido");
-    }
+    if (!res.ok) throw new Error("Token inválido");
 
     const user = await res.json();
 
@@ -114,20 +112,23 @@ document.addEventListener("DOMContentLoaded", async () => {
       document.getElementById("nav-users").style.display = "block";
     }
 
-    // ⭐ SUSCRIPCIÓN
+    // ⭐ OCULTAR SUSCRIPCIÓN SI ESTÁ ACTIVA
     if (user.subscription?.isActive === true) {
       const subLink = document.getElementById("nav-suscripcion");
       if (subLink) subLink.style.display = "none";
     }
 
+    // 🚪 LOGOUT
     document.getElementById("logoutLink").addEventListener("click", () => {
       localStorage.removeItem("token");
+      localStorage.removeItem("currentUser");
       window.location.href = "welcome.html";
     });
 
   } catch (err) {
     console.warn("⚠️ Sesión inválida:", err.message);
     localStorage.removeItem("token");
+    localStorage.removeItem("currentUser");
 
     rightZone.innerHTML = `
       <a href="login.html" class="btn btn-outline-primary btn-sm">Login</a>
