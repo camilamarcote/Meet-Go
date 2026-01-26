@@ -1,82 +1,58 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Beneficios</title>
 
-  <!-- Bootstrap -->
   <link href="css/bootstrap.min.css" rel="stylesheet" />
   <link href="css/styles.css" rel="stylesheet" />
-
-  <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat+Alternates:wght@300;400;500&display=swap" rel="stylesheet">
 </head>
 
 <body>
   <div id="navbar-container"></div>
 
-  <div class="container my-5">
+  <section class="container my-5">
+    <h2 class="mb-4 fw-bold">Beneficios y descuentos</h2>
+
     <div class="row g-4">
 
-      <!-- CARD -->
-      <div class="col-xl-4 col-lg-6">
-        <div class="card h-100 benefit-card">
-          <div class="card-body d-flex align-items-start gap-3">
-            <img src="img/nomade.png" class="benefit-icon" alt="">
-            <div>
-              <p class="fw-bold mb-1">Nómade</p>
-              <p class="text-muted mb-0">20% de descuento en entradas</p>
-            </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="benefit-card">
+          <div class="benefit-icon" style="background-image:url('img/nomade.png')"></div>
+          <div class="benefit-content">
+            <h6>Nómade</h6>
+            <p>20% de descuento en entradas</p>
           </div>
         </div>
       </div>
 
-      <!-- CARD -->
-      <div class="col-xl-4 col-lg-6">
-        <div class="card h-100 benefit-card">
-          <div class="card-body d-flex align-items-start gap-3">
-            <img src="img/ronda.png" class="benefit-icon" alt="">
-            <div>
-              <p class="fw-bold mb-1">Ronda</p>
-              <ul class="text-muted ps-3 mb-0">
-                <li>25% de descuento en café</li>
-                <li>10% de descuento en alimentos</li>
-                <li>25% de descuento en libros</li>
-              </ul>
-            </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="benefit-card">
+          <div class="benefit-icon" style="background-image:url('img/ronda.png')"></div>
+          <div class="benefit-content">
+            <h6>Ronda</h6>
+            <ul>
+              <li>25% en café</li>
+              <li>10% en alimentos</li>
+              <li>25% en libros</li>
+            </ul>
           </div>
         </div>
       </div>
 
-      <!-- CARD -->
-      <div class="col-xl-4 col-lg-6">
-        <div class="card h-100 benefit-card">
-          <div class="card-body d-flex align-items-start gap-3">
-            <img src="img/salvo.png" class="benefit-icon" alt="">
-            <div>
-              <p class="fw-bold mb-1">Palacio Salvo</p>
-              <p class="text-muted mb-0">20% de descuento en visitas</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- CARD -->
-      <div class="col-xl-4 col-lg-6">
-        <div class="card h-100 benefit-card">
-          <div class="card-body d-flex align-items-start gap-3">
-            <img src="https://mdbootstrap.com/img/new/avatars/9.jpg" class="benefit-icon" alt="">
-            <div>
-              <p class="fw-bold mb-1">Soraya Letto</p>
-              <p class="text-muted mb-0">Beneficio exclusivo</p>
-            </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="benefit-card">
+          <div class="benefit-icon" style="background-image:url('img/salvo.png')"></div>
+          <div class="benefit-content">
+            <h6>Palacio Salvo</h6>
+            <p>20% de descuento en visitas</p>
           </div>
         </div>
       </div>
 
     </div>
-  </div>
+  </section>
 
   <script src="js/init.js"></script>
 </body>

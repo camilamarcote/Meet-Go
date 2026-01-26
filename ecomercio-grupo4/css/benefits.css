@@ -1,22 +1,45 @@
-/* Cards de beneficios */
+/* ===== BENEFICIOS ===== */
+
 .benefit-card {
-  min-height: 160px;
+  display: flex;
+  gap: 16px;
+  padding: 20px;
   border-radius: 16px;
+  background: #fff;
+  min-height: 140px;
+  align-items: flex-start;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .benefit-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
 }
 
-/* 🔒 FIX DEFINITIVO PARA BENEFICIOS */
-.benefit-card img.benefit-icon {
-  width: 64px !important;
-  height: 64px !important;
-  max-width: 64px !important;
-  max-height: 64px !important;
-  object-fit: contain;
+/* ICONO */
+.benefit-icon {
+  width: 64px;
+  height: 64px;
+  min-width: 64px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
   border-radius: 12px;
-  flex-shrink: 0;
+}
+
+/* TEXTO */
+.benefit-content h6 {
+  margin: 0 0 4px 0;
+  font-weight: 600;
+}
+
+.benefit-content p,
+.benefit-content ul {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.benefit-content ul {
+  padding-left: 16px;
 }
