@@ -1,6 +1,6 @@
 /* Cards de beneficios */
 .benefit-card {
-  min-height: 160px; /* todas iguales */
+  min-height: 160px;
   border-radius: 16px;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
@@ -11,10 +11,10 @@
 }
 
 /* Imágenes */
-.benefit-img {
-  width: 70px;
-  height: 70px;
+.benefit-icon {
+  width: 64px;
+  height: 64px;
   object-fit: cover;
-  border-radius: 12px;
-  
+  border-radius: 50%;
+  flex-shrink: 0; /* 🔑 evita que se deformen */
 }
