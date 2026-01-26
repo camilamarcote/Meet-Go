@@ -1,7 +1,8 @@
 import QRCode from "qrcode";
 
 export async function generateSubscriptionQR(user) {
-  const publicUrl = `${process.env.API_URL}/users/public/subscription-status/${user._id}`;
+  const publicUrl =
+    `https://meetandgouy.com/verify-subscription.html?uid=${user._id}`;
 
   const qrImage = await QRCode.toDataURL(publicUrl);
 
