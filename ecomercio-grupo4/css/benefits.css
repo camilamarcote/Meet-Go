@@ -43,3 +43,18 @@
 .benefit-content ul {
   padding-left: 16px;
 }
+
+/* ===============================
+   FIX FINAL BENEFICIOS – ICONOS
+================================ */
+
+.benefit-card img.benefit-icon {
+  width: 56px !important;
+  height: 56px !important;
+  max-width: 56px !important;
+  max-height: 56px !important;
+
+  object-fit: contain !important;
+  display: block !important;
+  flex-shrink: 0 !important;
+}
