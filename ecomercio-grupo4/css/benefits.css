@@ -10,11 +10,13 @@
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
 
-/* Imágenes */
-.benefit-icon {
-  width: 64px;
-  height: 64px;
-  object-fit: cover;
-  border-radius: 50%;
-  flex-shrink: 0; /* 🔑 evita que se deformen */
+/* 🔒 FIX DEFINITIVO PARA BENEFICIOS */
+.benefit-card img.benefit-icon {
+  width: 64px !important;
+  height: 64px !important;
+  max-width: 64px !important;
+  max-height: 64px !important;
+  object-fit: contain;
+  border-radius: 12px;
+  flex-shrink: 0;
 }
