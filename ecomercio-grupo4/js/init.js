@@ -40,11 +40,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             ⭐ Suscribite
           </a>
         </li>
-      </ul>
-
-           <li class="nav-item" id="nav-users" style="display:none">
+      <li class="nav-item" id="nav-users" style="display:none">
           <a class="nav-link" href="benefits.html">Beneficios</a>
         </li>
+      </ul>
 
       <div class="ms-auto d-flex align-items-center gap-2" id="nav-right"></div>
 
