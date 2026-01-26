@@ -1,63 +1,51 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Beneficios</title>
 
-  <link href="css/bootstrap.min.css" rel="stylesheet" />
-  <link href="css/styles.css" rel="stylesheet" />
-  <style>
-  img { width: auto !important; }
-</style>
-
+  <!-- SOLO TU CSS -->
+  <link rel="stylesheet" href="css/benefits.css">
 </head>
 
 <body>
-  <div id="navbar-container"></div>
 
-  <section class="container my-5">
-    <h2 class="mb-4 fw-bold">Beneficios y descuentos</h2>
+  <section class="benefits-section">
+    <h2>Beneficios y descuentos</h2>
 
-    <div class="row g-4">
+    <div class="benefits-grid">
 
-      <div class="col-md-6 col-lg-4">
-        <div class="benefit-card">
-           <img src="img/nomade.png" alt="Nómade" class="benefit-icon">
-          <div class="benefit-content">
-            <h6>Nómade</h6>
-            <p>20% de descuento en entradas</p>
-          </div>
+      <div class="benefit-card">
+        <img src="img/nomade.png" alt="Nómade">
+        <div class="benefit-text">
+          <h3>Nómade</h3>
+          <p>20% de descuento en entradas</p>
         </div>
       </div>
 
-      <div class="col-md-6 col-lg-4">
-        <div class="benefit-card">
-           <img src="img/ronda.png" alt="Ronda" class="benefit-icon">
-          <div class="benefit-content">
-            <h6>Ronda</h6>
-            <ul>
-              <li>25% en café</li>
-              <li>10% en alimentos</li>
-              <li>25% en libros</li>
-            </ul>
-          </div>
+      <div class="benefit-card">
+        <img src="img/ronda.png" alt="Ronda">
+        <div class="benefit-text">
+          <h3>Ronda</h3>
+          <ul>
+            <li>25% en café</li>
+            <li>10% en alimentos</li>
+            <li>25% en libros</li>
+          </ul>
         </div>
       </div>
 
-      <div class="col-md-6 col-lg-4">
-        <div class="benefit-card">
-           <img src="img/salvo.png" alt="Palacio Salvo" class="benefit-icon">
-          <div class="benefit-content">
-            <h6>Palacio Salvo</h6>
-            <p>20% de descuento en visitas</p>
-          </div>
+      <div class="benefit-card">
+        <img src="img/salvo.png" alt="Palacio Salvo">
+        <div class="benefit-text">
+          <h3>Palacio Salvo</h3>
+          <p>20% de descuento en visitas</p>
         </div>
       </div>
 
     </div>
   </section>
 
-  <script src="js/init.js"></script>
 </body>
 </html>
