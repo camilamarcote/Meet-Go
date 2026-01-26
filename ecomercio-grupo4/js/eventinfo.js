@@ -74,7 +74,8 @@ async function loadEventInfo() {
     const isRegistered =
       !!authUser && event.participants?.includes(authUser._id);
 
-    const isSubscribed = !!authUser?.isSubscribed;
+    // ⭐ MISMA LÓGICA QUE LA NAVBAR
+    const isSubscribed = authUser?.subscription?.isActive === true;
 
     if (!isLogged) {
       actionSection = `
@@ -100,7 +101,11 @@ async function loadEventInfo() {
           🙋‍♀️ Unirme al evento
         </button>
 
-        <div id="joinInfo" class="mt-3" style="display:none; border:1px solid #ccc; padding:15px; border-radius:5px; background:#f9f9f9;">
+        <div
+          id="joinInfo"
+          class="mt-3"
+          style="display:none; border:1px solid #ccc; padding:15px; border-radius:5px; background:#f9f9f9;"
+        >
           ${
             isSubscribed
               ? `
@@ -127,7 +132,11 @@ async function loadEventInfo() {
           <hr>
 
           <p>📧 Si tenés dudas o problemas:</p>
-          <p><a href="mailto:meetandgouy@gmail.com">meetandgouy@gmail.com</a></p>
+          <p>
+            <a href="mailto:meetandgouy@gmail.com">
+              meetandgouy@gmail.com
+            </a>
+          </p>
         </div>
       `;
     }
@@ -192,7 +201,7 @@ async function registerToEvent() {
       throw new Error(data.message || "Error al inscribirse");
     }
 
-    loadEventInfo();
+    loadEventInfo(); // refresca estado
   } catch (error) {
     console.error("❌ Error inscripción:", error);
     alert("No se pudo completar la inscripción");
