@@ -62,6 +62,8 @@ app.use("/api/users", usersRoutes);
 app.use("/api", paymentsRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/public", publicRoutes);
+
 
 // =============================
 // 🔁 WebSockets
