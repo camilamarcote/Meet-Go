@@ -4,7 +4,7 @@ const params = new URLSearchParams(window.location.search);
 const eventId = params.get("id");
 const eventDetails = document.getElementById("eventDetails");
 
-// 🔑 sesión SOLO por token (para registrar si están logueados)
+// 🔑 sesión SOLO por token
 const storedUser = JSON.parse(localStorage.getItem("currentUser")) || null;
 let authUser = null;
 
@@ -74,6 +74,8 @@ async function loadEventInfo() {
     const isRegistered =
       !!authUser && event.participants?.includes(authUser._id);
 
+    const isSubscribed = !!authUser?.isSubscribed;
+
     if (!isLogged) {
       actionSection = `
         <div class="alert alert-info mt-4">
@@ -99,17 +101,33 @@ async function loadEventInfo() {
         </button>
 
         <div id="joinInfo" class="mt-3" style="display:none; border:1px solid #ccc; padding:15px; border-radius:5px; background:#f9f9f9;">
-          <p>📌 Para unirte al grupo de WhatsApp del evento:</p>
-          <p><a href="${event.whatsappLink || '#'}" target="_blank">
-            ${event.whatsappLink || 'Link no disponible'}
-          </a></p>
+          ${
+            isSubscribed
+              ? `
+                <p>📌 Grupo de WhatsApp del evento:</p>
+                <p>
+                  <a href="${event.whatsappLink}" target="_blank">
+                    👉 Unirme al grupo
+                  </a>
+                </p>
+              `
+              : `
+                <p style="color:red; font-weight:bold;">
+                  ⚠️ El grupo de WhatsApp es exclusivo para usuarios suscriptos.
+                </p>
+                <p>
+                  👉 Suscribite para acceder al grupo y a todos los beneficios del evento.
+                </p>
+                <a href="suscripcion.html" class="btn btn-warning w-100">
+                  Quiero suscribirme
+                </a>
+              `
+          }
 
-          <p>📧 Si tenés dudas o problemas para ingresar al grupo:</p>
+          <hr>
+
+          <p>📧 Si tenés dudas o problemas:</p>
           <p><a href="mailto:meetandgouy@gmail.com">meetandgouy@gmail.com</a></p>
-
-          <p style="color:red; font-weight:bold;">
-            ⚠️ Solo permitiremos el ingreso al grupo de WhatsApp a aquellos usuarios que estén suscriptos. 
-          </p>
         </div>
       `;
     }
@@ -174,7 +192,7 @@ async function registerToEvent() {
       throw new Error(data.message || "Error al inscribirse");
     }
 
-    loadEventInfo(); // refresca estado
+    loadEventInfo();
   } catch (error) {
     console.error("❌ Error inscripción:", error);
     alert("No se pudo completar la inscripción");
@@ -182,12 +200,13 @@ async function registerToEvent() {
 }
 
 /* =============================
-   🖥️ MOSTRAR INFO DE UNIÓN AL EVENTO
+   🖥️ MOSTRAR INFO DE UNIÓN
 ============================= */
 function showEventJoinInfo() {
   const joinDiv = document.getElementById("joinInfo");
   if (joinDiv) {
-    joinDiv.style.display = joinDiv.style.display === "none" ? "block" : "none";
+    joinDiv.style.display =
+      joinDiv.style.display === "none" ? "block" : "none";
     joinDiv.scrollIntoView({ behavior: "smooth" });
   }
 }
