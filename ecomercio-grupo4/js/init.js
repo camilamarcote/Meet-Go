@@ -18,32 +18,35 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     <div class="collapse navbar-collapse" id="navbarNav">
 
-      <ul class="navbar-nav">
-        <li class="nav-item">
-          <a class="nav-link" href="explorar.html">Explorar</a>
-        </li>
+     <ul class="navbar-nav">
+  <li class="nav-item">
+    <a class="nav-link" href="explorar.html">Explorar</a>
+  </li>
 
-        <li class="nav-item">
-          <a class="nav-link" href="aboutus.html">Sobre nosotras</a>
-        </li>
+  <li class="nav-item">
+    <a class="nav-link" href="aboutus.html">Sobre nosotras</a>
+  </li>
 
-        <li class="nav-item" id="nav-create-event" style="display:none">
-          <a class="nav-link" href="createevent.html">Crear Evento</a>
-        </li>
+  <li class="nav-item" id="nav-create-event" style="display:none">
+    <a class="nav-link" href="createevent.html">Crear Evento</a>
+  </li>
 
-        <li class="nav-item" id="nav-users" style="display:none">
-          <a class="nav-link" href="admin-users.html">Usuarios</a>
-        </li>
+  <li class="nav-item" id="nav-users" style="display:none">
+    <a class="nav-link" href="admin-users.html">Usuarios</a>
+  </li>
 
-        <li class="nav-item" id="nav-suscripcion">
-          <a class="nav-link fw-semibold text-warning" href="suscripcion.html">
-            ⭐ Suscribite
-          </a>
-        </li>
-      <li class="nav-item" id="nav-users" style="display:none">
-          <a class="nav-link" href="benefits.html">Beneficios</a>
-        </li>
-      </ul>
+  <!-- ✅ BENEFICIOS -->
+  <li class="nav-item" id="nav-benefits">
+    <a class="nav-link" href="benefits.html">Beneficios</a>
+  </li>
+
+  <li class="nav-item" id="nav-suscripcion">
+    <a class="nav-link fw-semibold text-warning" href="suscripcion.html">
+      ⭐ Suscribite
+    </a>
+  </li>
+</ul>
+
 
       <div class="ms-auto d-flex align-items-center gap-2" id="nav-right"></div>
 
