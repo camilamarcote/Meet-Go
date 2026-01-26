@@ -2,7 +2,7 @@ import express from "express";
 import User from "../models/User.js";
 import { protect, adminOnly } from "../middlewares/auth.js";
 import { sendSubscriptionMail } from "../utils/mailer.js";
-import QRCode from "qrcode";
+import { generateSubscriptionQR } from "../utils/subscriptionQr.js";
 
 const router = express.Router();
 
@@ -11,7 +11,9 @@ const router = express.Router();
 =============================== */
 router.get("/users", protect, adminOnly, async (req, res) => {
   try {
-    const users = await User.find().select("-password -verificationToken");
+    const users = await User.find()
+      .select("-password -verificationToken");
+
     res.json(users);
   } catch (error) {
     console.error("❌ Error obteniendo usuarios:", error);
@@ -34,9 +36,8 @@ router.post(
         return res.status(404).json({ message: "Usuario no encontrado" });
       }
 
-      const qrImage = await QRCode.toDataURL(
-        `meetandgo-user:${user._id}`
-      );
+      // ✅ QR válido con URL pública
+      const { qrImage } = await generateSubscriptionQR(user);
 
       const whatsappLink = process.env.WHATSAPP_GROUP_LINK;
 
