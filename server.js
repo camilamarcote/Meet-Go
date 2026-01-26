@@ -4,8 +4,6 @@ import mongoose from "mongoose";
 import cors from "cors";
 import http from "http";
 import { Server } from "socket.io";
-import adminRoutes from "./routes/admin.js";
-
 
 // =============================
 // 🛣️ Rutas
@@ -15,6 +13,8 @@ import usersRoutes from "./routes/users.js";
 import ticketRoutes from "./routes/tickets.js";
 import paymentsRoutes from "./routes/payments.js";
 import subscriptionRoutes from "./routes/subscriptions.js";
+import adminRoutes from "./routes/admin.js";
+import publicRoutes from "./routes/public.js"; // ✅ ESTA ERA LA QUE FALTABA
 
 const app = express();
 const server = http.createServer(app);
@@ -29,7 +29,7 @@ const io = new Server(server, {
 });
 
 // =============================
-// 🧩 Middlewares (CLAVE)
+// 🧩 Middlewares
 // =============================
 
 // 🔐 CORS
@@ -38,7 +38,7 @@ app.use(
     origin: [
       "https://meetandgouy.com",
       "https://www.meetandgouy.com",
-      "https://meetandgof.netlify.app", // lo dejamos por transición
+      "https://meetandgof.netlify.app",
       "http://localhost:5500",
       "http://127.0.0.1:5500"
     ],
@@ -46,15 +46,14 @@ app.use(
   })
 );
 
-
-// 🔴 ESTO ES LO QUE TE FALTABA
+// Parse URL-encoded (Mercado Pago, forms)
 app.use(express.urlencoded({ extended: true }));
 
-// JSON (para login, pagos, etc.)
+// Parse JSON
 app.use(express.json({ limit: "10mb" }));
 
 // =============================
-// 🛣️ API
+// 🛣️ API ROUTES
 // =============================
 app.use("/api/events", eventsRouter);
 app.use("/api/events", ticketRoutes);
@@ -62,8 +61,7 @@ app.use("/api/users", usersRoutes);
 app.use("/api", paymentsRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
 app.use("/api/admin", adminRoutes);
-app.use("/api/public", publicRoutes);
-
+app.use("/api/public", publicRoutes); // ✅ QR público
 
 // =============================
 // 🔁 WebSockets
@@ -79,12 +77,6 @@ const PORT = process.env.PORT || 5000;
 
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB conectado"))
-  .catch((err) => console.error("❌ Mongo error:", err));
-
-
-  mongoose
-  .connect(process.env.MONGO_URI)
   .then(() => {
     console.log("✅ MongoDB conectado");
     console.log("🧪 DB NAME:", mongoose.connection.name);
@@ -92,11 +84,9 @@ mongoose
   })
   .catch((err) => console.error("❌ Mongo error:", err));
 
-
 // =============================
 // 🚀 Server
 // =============================
 server.listen(PORT, () => {
   console.log(`🚀 Servidor en puerto ${PORT}`);
 });
-
