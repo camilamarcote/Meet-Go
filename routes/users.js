@@ -2,14 +2,21 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import multer from "multer";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 
 import User from "../models/User.js";
 import { protect } from "../middlewares/auth.js";
 import { generateToken } from "../utils/jwt.js";
 import { sendVerificationEmail } from "../utils/sendverificationemail.js";
+import { sendResetPasswordEmail } from "../utils/sendResetPasswordEmail.js";
 import cloudinary from "../config/cloudinary.js";
 
 const router = express.Router();
+
+/* =============================
+   📦 MULTER (MEMORIA)
+============================= */
+const upload = multer({ storage: multer.memoryStorage() });
 
 /* =============================
    🔓 PUBLIC – ESTADO SUSCRIPCIÓN (QR)
@@ -32,11 +39,6 @@ router.get("/public/subscription-status/:id", async (req, res) => {
     res.status(500).json({ isActive: false });
   }
 });
-
-/* =============================
-   📦 MULTER (MEMORIA)
-============================= */
-const upload = multer({ storage: multer.memoryStorage() });
 
 /* =============================
    👤 PERFIL
@@ -232,6 +234,81 @@ router.post("/login", async (req, res) => {
 });
 
 /* =============================
+   🔁 FORGOT PASSWORD
+============================= */
+router.post("/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email requerido" });
+    }
+
+    const user = await User.findOne({ email });
+
+    // Seguridad: no revelar si existe
+    if (!user) {
+      return res.json({ message: "Si el email existe, se enviará un enlace" });
+    }
+
+    const token = crypto.randomBytes(32).toString("hex");
+
+    user.resetPasswordToken = token;
+    user.resetPasswordExpires = Date.now() + 1000 * 60 * 60; // 1 hora
+    await user.save();
+
+    await sendResetPasswordEmail(user.email, token);
+
+    res.json({ message: "Email de recuperación enviado" });
+  } catch (error) {
+    console.error("❌ Forgot password error:", error);
+    res.status(500).json({ message: "Error al procesar solicitud" });
+  }
+});
+
+/* =============================
+   🔐 RESET PASSWORD
+============================= */
+router.post("/reset-password", async (req, res) => {
+  try {
+    const { token, password } = req.body;
+
+    if (!token || !password) {
+      return res.status(400).json({ message: "Datos incompletos" });
+    }
+
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        message: "La contraseña no cumple los requisitos"
+      });
+    }
+
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Token inválido o expirado" });
+    }
+
+    user.password = await bcrypt.hash(password, 10);
+    user.resetPasswordToken = null;
+    user.resetPasswordExpires = null;
+
+    await user.save();
+
+    res.json({ message: "Contraseña actualizada correctamente" });
+  } catch (error) {
+    console.error("❌ Reset password error:", error);
+    res.status(500).json({ message: "Error al cambiar contraseña" });
+  }
+});
+
+/* =============================
    ✏️ UPDATE PROFILE
 ============================= */
 router.put("/me", protect, upload.single("profileImage"), async (req, res) => {
@@ -267,11 +344,9 @@ router.put("/me", protect, upload.single("profileImage"), async (req, res) => {
       updates.profileImage = uploadResult.secure_url;
     }
 
-    const user = await User.findByIdAndUpdate(
-      req.user.id,
-      updates,
-      { new: true }
-    ).select("-password");
+    const user = await User.findByIdAndUpdate(req.user.id, updates, {
+      new: true
+    }).select("-password");
 
     res.json(user);
   } catch (error) {
