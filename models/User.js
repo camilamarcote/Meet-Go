@@ -30,7 +30,6 @@ const UserSchema = new mongoose.Schema(
     department: { type: String, trim: true, default: "" },
     nationality: { type: String, trim: true, required: true },
 
-    // ✅ NUEVO: número de celular
     phone: { type: String, trim: true, default: "" },
 
     languages: { type: [String], default: [] },
@@ -52,7 +51,7 @@ const UserSchema = new mongoose.Schema(
       isActive: { type: Boolean, default: false },
       plan: {
         type: String,
-        enum: ["monthly", "annual", null],
+        enum: ["monthly", "annual", "manual", null], // ✅ FIX
         default: null
       },
       startedAt: { type: Date, default: null },
