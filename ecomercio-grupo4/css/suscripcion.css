@@ -1,62 +1,111 @@
 .subscription-section {
   min-height: calc(100vh - 80px);
+  display: flex;
+  align-items: center;
 }
 
+/* TÍTULOS */
 .subscription-title {
-  font-size: 2.5rem;
+  font-size: 2.6rem;
   font-weight: 700;
+  color: #1f1f1f;
 }
 
 .subscription-subtitle {
-  font-size: 1.2rem;
-  margin: 1rem 0 2rem;
+  font-size: 1.25rem;
+  margin: 1rem 0 1.5rem;
+  color: #6b4eff; /* toque humano */
+  font-weight: 500;
 }
 
+.subscription-description {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: #555;
+}
+
+/* BENEFICIOS */
 .benefits {
   list-style: none;
   padding: 0;
+  margin-top: 1rem;
 }
 
 .benefits li {
-  font-size: 1.1rem;
-  margin-bottom: 0.8rem;
+  font-size: 1.05rem;
+  margin-bottom: 0.9rem;
+  padding-left: 1.8rem;
+  position: relative;
+  color: #333;
 }
 
+.benefits li::before {
+  content: "✦";
+  position: absolute;
+  left: 0;
+  color: #ffb300;
+  font-size: 1rem;
+}
+
+/* CAJA DE PRECIO */
 .price-box {
   background: #fff;
-  border-radius: 16px;
-  padding: 2.5rem;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  border-radius: 20px;
+  padding: 2.8rem;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.08);
   text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.price-box:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 45px rgba(0,0,0,0.12);
+}
+
+/* PRECIO */
+.price-label {
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #777;
 }
 
 .price {
-  font-size: 3rem;
+  font-size: 3.2rem;
   font-weight: 700;
+  color: #1f1f1f;
 }
 
 .period {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   color: #666;
 }
 
-.payment-note {
-  font-size: 0.9rem;
-  color: #777;
-}
-/* 🚀 Botón Suscripción */
+/* BOTÓN */
 #subscribeBtn {
   background: linear-gradient(135deg, #9d26ff, #ffb300);
   border: none;
   color: #1f1f1f;
   font-weight: 700;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
   padding: 14px;
-  border-radius: 12px;
+  border-radius: 14px;
   transition: all 0.3s ease;
 }
 
+#subscribeBtn:hover {
+  transform: scale(1.03);
+  box-shadow: 0 10px 25px rgba(157,38,255,0.35);
+}
 
-.price {
-color: #1f1f1f;
+/* NOTAS */
+.subscription-note {
+  font-size: 0.95rem;
+  color: #666;
+  font-style: italic;
+}
+
+.payment-note {
+  font-size: 0.9rem;
+  color: #777;
 }
