@@ -1,15 +1,26 @@
+.card {
+  border-radius: 20px;
+  overflow: hidden; /* importante para que la imagen respete el borde */
+  transition: all 0.3s ease-in-out;
+}
+
+/* IMAGEN TIPO STORY */
+.card-img-top {
+  width: 100%;
+  aspect-ratio: 9 / 16;   /* 🔥 clave para formato historia */
+  object-fit: cover;
+}
+
+/* TEXTO LIMITADO */
 .card-text {
   display: -webkit-box;
-  -webkit-line-clamp: 3; /* muestra máximo 3 líneas */
-  -webkit-box-orient: vertical;  
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.card-img-top {
-  height: 180px;      /* altura uniforme */
-  object-fit: cover;  /* recortar la imagen si no encaja */
-}
+
+/* HOVER */
 .card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.2);
-  transition: all 0.3s ease-in-out;
+  transform: translateY(-6px);
+  box-shadow: 0 1rem 2rem rgba(0,0,0,0.18);
 }

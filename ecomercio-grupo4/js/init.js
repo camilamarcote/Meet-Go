@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   </li>
 
   <li class="nav-item">
-    <a class="nav-link" href="aboutus.html">Sobre nosotras</a>
+    <a class="nav-link" href="aboutus.html">Acerca de </a>
   </li>
 
   <li class="nav-item" id="nav-create-event" style="display:none">
