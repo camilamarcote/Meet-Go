@@ -451,12 +451,12 @@ a.custom-card:hover {
 
 /* Logos */
 .partners-logos img {
-  max-height: 130px;
+  height: 90px;       /* altura fija real */
+  max-height: 90px;
   width: auto;
-  filter: grayscale(100%);
-  opacity: 0.8;
-  transition: all 0.3s ease;
+  object-fit: contain;
 }
+
 
 /* Hover elegante */
 .partners-logos img:hover {
