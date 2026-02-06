@@ -457,6 +457,10 @@ a.custom-card:hover {
   opacity: 0.8;
   transition: all 0.3s ease;
 }
+.partners-logos img[src*="Sansueña (2).png"] {
+  max-height: 100px;
+}
+
 
 /* Hover elegante */
 .partners-logos img:hover {
