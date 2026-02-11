@@ -34,7 +34,10 @@ export async function sendSubscriptionMail({
         <p>
           Tu <strong>suscripción</strong> ya está activa 🎉  
           Desde ahora sos parte de la comunidad Meet&Go.
+          Para ingresar a nuestra comunidad de Whatsapp ve al siguiente enlace: 
+          https://chat.whatsapp.com/FzTLq6Yw84U3d6utoTaEFH
         </p>
+        
 
         ${
           attachments.length
