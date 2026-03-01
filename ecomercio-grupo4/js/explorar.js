@@ -12,40 +12,49 @@ if (subscriptionBanner && isSubscribed) {
   subscriptionBanner.style.display = "none";
 }
 
-
 const eventsContainer = document.getElementById("eventsContainer");
 
 async function loadEvents() {
   try {
     const res = await fetch(`${API_URL}/api/events`);
-    if (!res.ok) throw new Error();
+    if (!res.ok) throw new Error("Error al cargar eventos");
 
     const events = await res.json();
     eventsContainer.innerHTML = "";
 
     events.forEach(event => {
-      const price = Number(event.price) || 0;
-
       eventsContainer.innerHTML += `
         <div class="col-md-4 col-lg-3">
           <div class="card h-100 shadow-sm">
             <img src="${event.image || "img/default_event.jpg"}" class="card-img-top">
+
             <div class="card-body d-flex flex-column">
               <h5>${event.name}</h5>
-                <p>${event.category|| ""}</p>
-                <p>${event.department|| ""}</p> 
-                 <p>${event.date|| ""}</p>
-                  <p>${event.time|| ""}</p>
+
+              <p class="text-muted mb-1">${event.category || ""}</p>
+              <p class="text-muted mb-2">${event.department || ""}</p>
+
+              <p class="mb-1">
+                <i class="fa-regular fa-calendar me-2 text-muted"></i>
+                ${event.date || ""}
+              </p>
+
+              <p class="mb-3">
+                <i class="fa-regular fa-clock me-2 text-muted"></i>
+                ${event.time || ""}
+              </p>
+
               <a href="eventinfo.html?id=${event._id}" class="btn btn-primary btn-sm mt-auto">
                 Ver evento
               </a>
             </div>
           </div>
-        </div>`;
-    });
+        </div>
+      `;
+    }); // ✅ cierre correcto del forEach
 
   } catch (err) {
-    console.error(err);
+    console.error("❌ Error cargando eventos:", err);
   }
 }
 
