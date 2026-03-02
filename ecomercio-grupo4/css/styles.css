@@ -488,16 +488,21 @@ i[class*=" fa-"] {
   line-height: 1;
 }
 
-/* Carrusel eventos */
+/* Carrusel estilo vertical */
+#eventsCarousel .carousel-item {
+  height: 520px;
+}
+
 #eventsCarousel img {
-  height: 420px;
+  height: 100%;
+  width: 100%;
   object-fit: cover;
+  object-position: center;
   border-radius: 20px;
 }
 
-/* Overlay con texto */
-.carousel-caption {
-  background: rgba(0,0,0,0.45);
-  border-radius: 12px;
-  padding: 1rem;
+/* Limitar ancho para que no se vea achatado */
+#eventsCarousel {
+  max-width: 420px;
+  margin: 0 auto;
 }

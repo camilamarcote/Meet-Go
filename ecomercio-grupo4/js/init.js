@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
      <ul class="navbar-nav">
   <li class="nav-item">
-    <a class="nav-link" href="explorar.html">Explorar</a>
+    <a class="nav-link" href="explorar.html">Eventos</a>
   </li>
 
   <li class="nav-item">
