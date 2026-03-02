@@ -25,3 +25,11 @@
   transform: translateY(-6px);
   box-shadow: 0 1rem 2rem rgba(0,0,0,0.18);
 }
+
+/* ===========================
+   🔥 FIX FONT AWESOME ICONS
+   =========================== */
+.card i {
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+}
