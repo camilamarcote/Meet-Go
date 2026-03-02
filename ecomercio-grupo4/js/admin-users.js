@@ -222,3 +222,4 @@ async function sendMail(userId, email) {
     alert("Error al enviar el mail");
   }
 }
+

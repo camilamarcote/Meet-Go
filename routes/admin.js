@@ -93,4 +93,45 @@ router.post(
   }
 );
 
+import express from "express";
+import User from "../models/User.js";
+import { protect } from "../middlewares/auth.js";
+import { isAdmin } from "../middlewares/isAdmin.js";
+
+/* ===============================
+   🚫 DESACTIVAR SUSCRIPCIÓN (ADMIN)
+=============================== */
+router.post(
+  "/deactivate-subscription/:userId",
+  protect,
+  isAdmin,
+  async (req, res) => {
+    try {
+      const { userId } = req.params;
+
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ message: "Usuario no encontrado" });
+      }
+
+      user.subscription.isActive = false;
+      user.subscription.canceledAt = new Date();
+      user.subscription.validUntil = null;
+      user.subscription.plan = null;
+
+      await user.save();
+
+      res.json({
+        message: "Suscripción dada de baja correctamente"
+      });
+
+    } catch (error) {
+      console.error("❌ Error al dar de baja:", error);
+      res.status(500).json({
+        message: "Error al desactivar suscripción"
+      });
+    }
+  }
+);
+
 export default router;
