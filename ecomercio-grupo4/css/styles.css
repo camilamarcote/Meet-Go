@@ -487,3 +487,17 @@ i[class*=" fa-"] {
   display: inline-block;
   line-height: 1;
 }
+
+/* Carrusel eventos */
+#eventsCarousel img {
+  height: 420px;
+  object-fit: cover;
+  border-radius: 20px;
+}
+
+/* Overlay con texto */
+.carousel-caption {
+  background: rgba(0,0,0,0.45);
+  border-radius: 12px;
+  padding: 1rem;
+}
