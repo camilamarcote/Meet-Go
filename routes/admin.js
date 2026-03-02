@@ -36,9 +36,7 @@ router.post(
         return res.status(404).json({ message: "Usuario no encontrado" });
       }
 
-      // ✅ QR válido con URL pública
       const { qrImage } = await generateSubscriptionQR(user);
-
       const whatsappLink = process.env.WHATSAPP_GROUP_LINK;
 
       await sendSubscriptionMail({
@@ -56,7 +54,7 @@ router.post(
 );
 
 /* ===============================
-   ✅ ACTIVAR SUSCRIPCIÓN MANUAL
+   ✅ ACTIVAR SUSCRIPCIÓN
 =============================== */
 router.post(
   "/activate-subscription/:userId",
@@ -83,7 +81,7 @@ router.post(
       }
 
       res.json({
-        message: "Suscripción activada manualmente",
+        message: "Suscripción activada",
         subscription: user.subscription
       });
     } catch (error) {
@@ -93,43 +91,34 @@ router.post(
   }
 );
 
-import express from "express";
-import User from "../models/User.js";
-import { protect } from "../middlewares/auth.js";
-import { isAdmin } from "../middlewares/isAdmin.js";
-
 /* ===============================
-   🚫 DESACTIVAR SUSCRIPCIÓN (ADMIN)
+   🚫 DESACTIVAR SUSCRIPCIÓN
 =============================== */
 router.post(
   "/deactivate-subscription/:userId",
   protect,
-  isAdmin,
+  adminOnly,
   async (req, res) => {
     try {
-      const { userId } = req.params;
+      const user = await User.findById(req.params.userId);
 
-      const user = await User.findById(userId);
       if (!user) {
         return res.status(404).json({ message: "Usuario no encontrado" });
       }
 
       user.subscription.isActive = false;
-      user.subscription.canceledAt = new Date();
-      user.subscription.validUntil = null;
       user.subscription.plan = null;
+      user.subscription.validUntil = null;
+      user.subscription.canceledAt = new Date();
 
       await user.save();
 
       res.json({
         message: "Suscripción dada de baja correctamente"
       });
-
     } catch (error) {
-      console.error("❌ Error al dar de baja:", error);
-      res.status(500).json({
-        message: "Error al desactivar suscripción"
-      });
+      console.error("❌ Error dando de baja:", error);
+      res.status(500).json({ message: "Error desactivando suscripción" });
     }
   }
 );
