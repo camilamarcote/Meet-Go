@@ -1,5 +1,5 @@
 const API_URL = "https://api.meetandgouy.com";
-const carouselInner = document.getElementById("eventsCarouselInner");
+const carouselContainer = document.getElementById("carouselEvents");
 
 async function loadEventsCarousel() {
   try {
@@ -7,29 +7,36 @@ async function loadEventsCarousel() {
     if (!res.ok) throw new Error("Error al cargar eventos");
 
     const events = await res.json();
-    carouselInner.innerHTML = "";
+    carouselContainer.innerHTML = "";
 
-    // Igual que explorar.js: recorremos eventos
-    events.forEach((event, index) => {
-      if (!event.image) return; // solo eventos con imagen
+    // Agrupar eventos de a 3
+    for (let i = 0; i < events.length; i += 3) {
+      const group = events.slice(i, i + 3);
 
-      carouselInner.innerHTML += `
-        <div class="carousel-item ${index === 0 ? "active" : ""}">
-          <img
-            src="${event.image}"
-            class="d-block w-100"
-            alt="${event.name}"
-          >
-          <div class="carousel-caption d-none d-md-block">
-            <h5>${event.name}</h5>
-            <p>${event.category || ""} · ${event.department || ""}</p>
+      carouselContainer.innerHTML += `
+        <div class="carousel-item ${i === 0 ? "active" : ""}">
+          <div class="row g-3 justify-content-center">
+            ${group.map(event => `
+              <div class="col-10 col-md-6 col-lg-4">
+                <div class="event-card">
+                  <img 
+                    src="${event.image || "img/default_event.jpg"}" 
+                    alt="${event.name}"
+                  >
+                  <div class="event-card-body">
+                    <h6>${event.name}</h6>
+                    <p>${event.date || ""}</p>
+                  </div>
+                </div>
+              </div>
+            `).join("")}
           </div>
         </div>
       `;
-    });
+    }
 
-  } catch (error) {
-    console.error("❌ Error cargando carrusel:", error);
+  } catch (err) {
+    console.error("❌ Error carrusel eventos:", err);
   }
 }
 
