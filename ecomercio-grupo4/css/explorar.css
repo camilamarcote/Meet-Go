@@ -6,9 +6,10 @@
 
 /* IMAGEN TIPO STORY */
 .card-img-top {
-  width: 100%;
-  aspect-ratio: 9 / 16;   /* 🔥 clave para formato historia */
+  height: 220px;
   object-fit: cover;
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
 }
 
 /* TEXTO LIMITADO */

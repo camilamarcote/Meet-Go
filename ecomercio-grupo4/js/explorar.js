@@ -31,18 +31,22 @@ async function loadEvents() {
             <div class="card-body d-flex flex-column">
               <h5>${event.name}</h5>
 
-              <p class="text-muted mb-1">${event.category || ""}</p>
-              <p class="text-muted mb-2">${event.department || ""}</p>
+       <p class="mb-1">
+  <i class="fa-solid fa-tag me-2 text-muted"></i>
+  ${event.category || ""}
+</p>
 
-              <p class="mb-1">
-                <i class="fa-regular fa-calendar me-2 text-muted"></i>
-                ${event.date || ""}
-              </p>
+<p class="mb-2">
+  <i class="fa-solid fa-location-dot me-2 text-muted"></i>
+  ${event.department || ""}
+</p>
 
-              <p class="mb-3">
-                <i class="fa-regular fa-clock me-2 text-muted"></i>
-                ${event.time || ""}
-              </p>
+       <p class="mb-2 text-muted">
+  <i class="fa-regular fa-calendar me-1"></i>
+  ${event.date || ""} ·
+  <i class="fa-regular fa-clock ms-2 me-1"></i>
+  ${event.time || ""}
+</p>
 
               <a href="eventinfo.html?id=${event._id}" class="btn btn-primary btn-sm mt-auto">
                 Ver evento
