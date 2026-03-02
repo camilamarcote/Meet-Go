@@ -475,3 +475,15 @@ a.custom-card:hover {
     max-height: 80px;
   }
 }
+
+/* =========================
+   FIX DEFINITIVO FONT AWESOME
+   ========================= */
+
+i[class^="fa-"],
+i[class*=" fa-"] {
+  font-family: "Font Awesome 6 Free" !important;
+  font-weight: 900 !important;
+  display: inline-block;
+  line-height: 1;
+}
