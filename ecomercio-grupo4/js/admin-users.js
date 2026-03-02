@@ -1,5 +1,8 @@
 const API_URL = "https://api.meetandgouy.com";
 
+/* ===============================
+   🔐 CONTROL DE ACCESO
+=============================== */
 document.addEventListener("DOMContentLoaded", () => {
   const currentUser = JSON.parse(localStorage.getItem("currentUser"));
 
@@ -16,6 +19,9 @@ document.addEventListener("DOMContentLoaded", () => {
   loadUsers(currentUser.token);
 });
 
+/* ===============================
+   👥 CARGAR USUARIOS
+=============================== */
 async function loadUsers(token) {
   try {
     const res = await fetch(`${API_URL}/api/admin/users`, {
@@ -35,6 +41,9 @@ async function loadUsers(token) {
   }
 }
 
+/* ===============================
+   🧩 RENDER USUARIOS
+=============================== */
 function renderUsers(users) {
   const container = document.getElementById("usersContainer");
   container.innerHTML = "";
@@ -44,6 +53,7 @@ function renderUsers(users) {
 
     container.innerHTML += `
       <div class="user-card">
+
         <div class="user-header">
           <h3>${user.username}</h3>
 
@@ -89,23 +99,31 @@ function renderUsers(users) {
           ${
             !isSubscribed
               ? `
-              <button
-                class="subscribe-btn"
-                onclick="activateSubscription('${user._id}')"
-              >
-                ⭐ Marcar como suscripta
-              </button>
-            `
-              : ""
+                <button
+                  class="subscribe-btn"
+                  onclick="activateSubscription('${user._id}')"
+                >
+                  ⭐ Marcar como suscripta
+                </button>
+              `
+              : `
+                <button
+                  class="unsubscribe-btn"
+                  onclick="deactivateSubscription('${user._id}')"
+                >
+                  🚫 Dar de baja
+                </button>
+              `
           }
         </div>
+
       </div>
     `;
   });
 }
 
 /* ===============================
-   ⭐ ACTIVAR SUSCRIPCIÓN MANUAL
+   ⭐ ACTIVAR SUSCRIPCIÓN
 =============================== */
 async function activateSubscription(userId) {
   if (!confirm("¿Marcar este usuario como suscripta?")) return;
@@ -130,13 +148,45 @@ async function activateSubscription(userId) {
     }
 
     alert("✅ Suscripción activada");
-
-    // 🔄 recargar estado real desde backend
     loadUsers(currentUser.token);
 
   } catch (err) {
     console.error("❌ Error:", err);
     alert("Error activando suscripción");
+  }
+}
+
+/* ===============================
+   🚫 DESACTIVAR SUSCRIPCIÓN
+=============================== */
+async function deactivateSubscription(userId) {
+  if (!confirm("¿Dar de baja la suscripción de este usuario?")) return;
+
+  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+
+  try {
+    const res = await fetch(
+      `${API_URL}/api/admin/deactivate-subscription/${userId}`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${currentUser.token}`
+        }
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || "Error dando de baja suscripción");
+    }
+
+    alert("🚫 Suscripción dada de baja");
+    loadUsers(currentUser.token);
+
+  } catch (err) {
+    console.error("❌ Error:", err);
+    alert("Error al dar de baja la suscripción");
   }
 }
 
