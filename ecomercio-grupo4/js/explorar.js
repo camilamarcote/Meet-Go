@@ -6,13 +6,18 @@ const API_URL = "https://api.meetandgouy.com";
 const token = localStorage.getItem("token");
 console.log("TOKEN EN EXPLORAR:", token);
 
-// Si no hay token → login
 if (!token) {
   window.location.href = "login.html";
 }
 
 // ============================
-// 📅 CONTENEDOR EVENTOS
+// 📍 EVENTO SELECCIONADO DESDE CARRUSEL
+// ============================
+const params = new URLSearchParams(window.location.search);
+const selectedEventId = params.get("eventId");
+
+// ============================
+// 📦 CONTENEDOR
 // ============================
 const eventsContainer = document.getElementById("eventsContainer");
 
@@ -27,13 +32,9 @@ async function loadEvents() {
       }
     });
 
-    console.log("STATUS EVENTS:", res.status);
-
     // 🔒 PERFIL INCOMPLETO
     if (res.status === 403) {
       const data = await res.json();
-      console.log("403 DATA:", data);
-
       if (data.code === "PROFILE_INCOMPLETE") {
         window.location.href = "complete-profile.html";
         return;
@@ -57,9 +58,11 @@ async function loadEvents() {
     }
 
     events.forEach(event => {
+      const isSelected = event._id === selectedEventId;
+
       eventsContainer.innerHTML += `
         <div class="col-md-4 col-lg-3">
-          <div class="card h-100 shadow-sm">
+          <div class="card h-100 shadow-sm ${isSelected ? "selected-event" : ""}">
 
             <img 
               src="${event.image || "img/default_event.jpg"}"
@@ -87,6 +90,14 @@ async function loadEvents() {
         </div>
       `;
     });
+
+    // 🧭 Scroll automático al evento seleccionado
+    if (selectedEventId) {
+      const selectedCard = document.querySelector(".selected-event");
+      if (selectedCard) {
+        selectedCard.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
 
   } catch (err) {
     console.error("❌ Error cargando eventos:", err);

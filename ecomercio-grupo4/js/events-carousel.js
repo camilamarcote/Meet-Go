@@ -15,7 +15,6 @@ async function loadEventsCarousel() {
     const events = await res.json();
     carouselContainer.innerHTML = "";
 
-    // Si hay menos de 3 eventos, no mostramos carrusel
     if (events.length < 3) return;
 
     events.forEach((event, index) => {
@@ -39,13 +38,13 @@ async function loadEventsCarousel() {
 }
 
 // ============================
-// 🧱 CARD EVENTO (CLICKABLE)
+// 🧱 CARD EVENTO (CLICK → EXPLORAR)
 // ============================
 function renderEventCard(event) {
   return `
     <div class="col-10 col-md-6 col-lg-4">
       <a 
-        href="eventinfo.html?id=${event._id}"
+        href="explorar.html?eventId=${event._id}"
         class="text-decoration-none text-dark"
       >
         <div class="event-card h-100">

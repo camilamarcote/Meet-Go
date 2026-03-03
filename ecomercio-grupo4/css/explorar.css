@@ -33,3 +33,9 @@
   font-family: "Font Awesome 6 Free";
   font-weight: 900;
 }
+
+.selected-event {
+  border: 2px solid #ff5a5f;
+  box-shadow: 0 0 18px rgba(255, 90, 95, 0.45);
+  transform: scale(1.02);
+}
