@@ -1,11 +1,20 @@
 const API_URL = "https://api.meetandgouy.com";
 
 // ============================
-// ⭐ OCULTAR BANNER SI ESTÁ SUSCRIPTO
+// 🔐 USUARIO ACTUAL
 // ============================
 const currentUser = JSON.parse(localStorage.getItem("currentUser"));
-const subscriptionBanner = document.getElementById("subscription-banner");
+const token = localStorage.getItem("token");
 
+// Si no está logueado → login
+if (!token || !currentUser) {
+  window.location.href = "login.html";
+}
+
+// ============================
+// ⭐ OCULTAR BANNER SI ESTÁ SUSCRIPTO
+// ============================
+const subscriptionBanner = document.getElementById("subscription-banner");
 const isSubscribed = currentUser?.subscription?.isActive === true;
 
 if (subscriptionBanner && isSubscribed) {
@@ -13,17 +22,47 @@ if (subscriptionBanner && isSubscribed) {
 }
 
 // ============================
-// 📅 CARGAR EVENTOS
+// 📅 CONTENEDOR EVENTOS
 // ============================
 const eventsContainer = document.getElementById("eventsContainer");
 
+// ============================
+// 📅 CARGAR EVENTOS
+// ============================
 async function loadEvents() {
   try {
-    const res = await fetch(`${API_URL}/api/events`);
-    if (!res.ok) throw new Error("Error al cargar eventos");
+    const res = await fetch(`${API_URL}/api/events`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    // 🔒 PERFIL INCOMPLETO
+    if (res.status === 403) {
+      const data = await res.json();
+
+      if (data.code === "PROFILE_INCOMPLETE") {
+        window.location.href = "complete-profile.html";
+        return;
+      }
+    }
+
+    // ❌ OTROS ERRORES
+    if (!res.ok) {
+      throw new Error("Error al cargar eventos");
+    }
 
     const events = await res.json();
     eventsContainer.innerHTML = "";
+
+    if (events.length === 0) {
+      eventsContainer.innerHTML = `
+        <p class="text-center text-muted">
+          No hay eventos disponibles por el momento.
+        </p>
+      `;
+      return;
+    }
 
     events.forEach(event => {
       eventsContainer.innerHTML += `
@@ -31,7 +70,7 @@ async function loadEvents() {
           <div class="card h-100 shadow-sm">
 
             <img 
-              src="${event.image || "img/default_event.jpg"}" 
+              src="${event.image || "img/default_event.jpg"}"
               class="card-img-top"
               alt="${event.name}"
             >
@@ -60,7 +99,7 @@ async function loadEvents() {
               </p>
 
               <a 
-                href="eventinfo.html?id=${event._id}" 
+                href="eventinfo.html?id=${event._id}"
                 class="btn btn-primary btn-sm mt-auto"
               >
                 Ver evento

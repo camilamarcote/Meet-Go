@@ -355,4 +355,28 @@ router.put("/me", protect, upload.single("profileImage"), async (req, res) => {
   }
 });
 
+router.put("/me/experience", protect, async (req, res) => {
+  try {
+    const updates = {
+      experienceProfile: {
+        completed: true,
+        icebreakers: req.body.icebreakers,
+        socialStyle: req.body.socialStyle,
+        expectations: req.body.expectations
+      }
+    };
+
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      updates,
+      { new: true }
+    ).select("-password");
+
+    res.json(user);
+  } catch (error) {
+    console.error("❌ Experience profile error:", error);
+    res.status(500).json({ message: "Error al guardar perfil de experiencia" });
+  }
+});
+
 export default router;

@@ -51,7 +51,7 @@ const UserSchema = new mongoose.Schema(
       isActive: { type: Boolean, default: false },
       plan: {
         type: String,
-        enum: ["monthly", "annual", "manual", null], // ✅ FIX
+        enum: ["monthly", "annual", "manual", null],
         default: null
       },
       startedAt: { type: Date, default: null },
@@ -60,7 +60,44 @@ const UserSchema = new mongoose.Schema(
     },
 
     roles: { type: [String], default: ["user"] },
-    isOrganizer: { type: Boolean, default: false }
+    isOrganizer: { type: Boolean, default: false },
+
+    /* =============================
+       🎯 PERFIL DE EXPERIENCIA
+    ============================= */
+    experienceProfile: {
+      completed: { type: Boolean, default: false },
+
+      icebreakers: {
+        favoriteMovie: { type: String, trim: true },
+        favoriteSong: { type: String, trim: true },
+        favoriteFood: { type: String, trim: true },
+        dreamTrip: { type: String, trim: true }
+      },
+
+      socialStyle: {
+        groupPreference: {
+          type: String,
+          enum: ["small", "medium", "large", ""],
+          default: ""
+        },
+        conversationStyle: {
+          type: String,
+          enum: ["deep", "light", "mixed", ""],
+          default: ""
+        },
+        initiatesConversation: {
+          type: String,
+          enum: ["yes", "no", "depends", ""],
+          default: ""
+        }
+      },
+
+      expectations: {
+        lookingFor: { type: [String], default: [] },
+        discomforts: { type: [String], default: [] }
+      }
+    }
   },
   { timestamps: true }
 );

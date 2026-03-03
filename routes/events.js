@@ -2,6 +2,7 @@ import express from "express";
 import multer from "multer";
 import Event from "../models/event.js";
 import cloudinary from "../config/cloudinary.js";
+import { protect } from "../middlewares/auth.js";
 
 const router = express.Router();
 
@@ -13,37 +14,62 @@ const upload = multer({
 });
 
 // =============================
-// 🟢 TODOS LOS EVENTOS
+// 🟢 TODOS LOS EVENTOS (PROTEGIDO)
 // =============================
-router.get("/", async (req, res) => {
+router.get("/", protect, async (req, res) => {
   try {
+    const user = req.user;
+
+    // 🔒 PERFIL DE EXPERIENCIA OBLIGATORIO
+    if (!user.experienceProfile?.completed) {
+      return res.status(403).json({
+        code: "PROFILE_INCOMPLETE",
+        message: "Perfil de experiencia incompleto"
+      });
+    }
+
     const events = await Event.find().sort({ createdAt: -1 });
     res.json(events);
+
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("❌ Error cargando eventos:", err);
+    res.status(500).json({ message: "Error al cargar eventos" });
   }
 });
 
 // =============================
-// 🔵 EVENTO POR ID
+// 🔵 EVENTO POR ID (PROTEGIDO)
 // =============================
-router.get("/:id", async (req, res) => {
+router.get("/:id", protect, async (req, res) => {
   try {
+    const user = req.user;
+
+    if (!user.experienceProfile?.completed) {
+      return res.status(403).json({
+        code: "PROFILE_INCOMPLETE",
+        message: "Perfil de experiencia incompleto"
+      });
+    }
+
     const event = await Event.findById(req.params.id);
     if (!event) {
       return res.status(404).json({ message: "Evento no encontrado" });
     }
+
     res.json(event);
+
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("❌ Error evento:", err);
+    res.status(500).json({ message: "Error al cargar evento" });
   }
 });
 
 // =============================
-// 🟣 CREAR EVENTO (CLOUDINARY)
+// 🟣 CREAR EVENTO (SOLO ORGANIZADORAS)
 // =============================
 router.post(
   "/",
+  protect,
   upload.fields([
     { name: "image", maxCount: 1 },
     { name: "whatsappQR", maxCount: 1 }
@@ -65,9 +91,7 @@ router.post(
       let imageUrl = "";
       let qrUrl = "";
 
-      // =============================
-      // 🖼️ SUBIR IMAGEN PRINCIPAL
-      // =============================
+      // 🖼️ IMAGEN PRINCIPAL
       if (req.files?.image?.[0]) {
         const imageUpload = await new Promise((resolve, reject) => {
           cloudinary.uploader.upload_stream(
@@ -78,13 +102,10 @@ router.post(
             }
           ).end(req.files.image[0].buffer);
         });
-
         imageUrl = imageUpload.secure_url;
       }
 
-      // =============================
-      // 📲 SUBIR QR DE WHATSAPP
-      // =============================
+      // 📲 QR WHATSAPP
       if (req.files?.whatsappQR?.[0]) {
         const qrUpload = await new Promise((resolve, reject) => {
           cloudinary.uploader.upload_stream(
@@ -95,13 +116,9 @@ router.post(
             }
           ).end(req.files.whatsappQR[0].buffer);
         });
-
         qrUrl = qrUpload.secure_url;
       }
 
-      // =============================
-      // 🧾 GUARDAR EVENTO
-      // =============================
       const newEvent = new Event({
         name,
         description,
