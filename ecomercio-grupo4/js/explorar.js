@@ -11,7 +11,7 @@ if (!token) {
 }
 
 // ============================
-// 📍 EVENTO SELECCIONADO DESDE CARRUSEL
+// 📍 EVENTO SELECCIONADO
 // ============================
 const params = new URLSearchParams(window.location.search);
 const selectedEventId = params.get("eventId");
@@ -22,21 +22,33 @@ const selectedEventId = params.get("eventId");
 const eventsContainer = document.getElementById("eventsContainer");
 
 // ============================
+// 🔒 MODAL PERFIL
+// ============================
+function showProfileModal() {
+  const modal = document.getElementById("profileModal");
+  if (modal) modal.classList.remove("hidden");
+}
+
+function goToProfile() {
+  window.location.href = "complete-profile.html";
+}
+
+// ============================
 // 📅 CARGAR EVENTOS
 // ============================
 async function loadEvents() {
   try {
     const res = await fetch(`${API_URL}/api/events`, {
       headers: {
-        Authorization: `Bearer ${token}`
-      }
+        Authorization: `Bearer ${token}`,
+      },
     });
 
-    // 🔒 PERFIL INCOMPLETO
+    // 🔒 PERFIL INCOMPLETO → mostrar modal
     if (res.status === 403) {
       const data = await res.json();
       if (data.code === "PROFILE_INCOMPLETE") {
-        window.location.href = "complete-profile.html";
+        showProfileModal();
         return;
       }
     }
@@ -63,13 +75,11 @@ async function loadEvents() {
       eventsContainer.innerHTML += `
         <div class="col-md-4 col-lg-3">
           <div class="card h-100 shadow-sm ${isSelected ? "selected-event" : ""}">
-
-            <img 
+            <img
               src="${event.image || "img/default_event.jpg"}"
               class="card-img-top"
               alt="${event.name}"
             >
-
             <div class="card-body d-flex flex-column">
               <h5 class="mb-2">${event.name}</h5>
 
@@ -78,14 +88,13 @@ async function loadEvents() {
               <p class="mb-1 text-muted">${event.date || ""}</p>
               <p class="mb-3 text-muted">${event.time || ""}</p>
 
-              <a 
+              <a
                 href="eventinfo.html?id=${event._id}"
                 class="btn btn-primary btn-sm mt-auto"
               >
                 Ver evento
               </a>
             </div>
-
           </div>
         </div>
       `;
@@ -95,7 +104,10 @@ async function loadEvents() {
     if (selectedEventId) {
       const selectedCard = document.querySelector(".selected-event");
       if (selectedCard) {
-        selectedCard.scrollIntoView({ behavior: "smooth", block: "center" });
+        selectedCard.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
       }
     }
 
@@ -109,4 +121,7 @@ async function loadEvents() {
   }
 }
 
+// ============================
+// 🚀 INIT
+// ============================
 loadEvents();
