@@ -7,7 +7,7 @@ const token = localStorage.getItem("token");
 console.log("TOKEN EN EXPLORAR:", token);
 
 if (!token) {
-  window.location.href = "login.html";
+  window.location.href = "welcome.html";
 }
 
 // ============================
