@@ -39,21 +39,26 @@ async function loadEventsCarousel() {
 }
 
 // ============================
-// 🧱 CARD EVENTO
+// 🧱 CARD EVENTO (CLICKABLE)
 // ============================
 function renderEventCard(event) {
   return `
     <div class="col-10 col-md-6 col-lg-4">
-      <div class="event-card">
-        <img 
-          src="${event.image || "img/default_event.jpg"}"
-          alt="${event.name}"
-        >
-        <div class="event-card-body">
-          <h6>${event.name}</h6>
-          <p>${event.date || ""}</p>
+      <a 
+        href="eventinfo.html?id=${event._id}"
+        class="text-decoration-none text-dark"
+      >
+        <div class="event-card h-100">
+          <img 
+            src="${event.image || "img/default_event.jpg"}"
+            alt="${event.name}"
+          >
+          <div class="event-card-body">
+            <h6>${event.name}</h6>
+            <p>${event.date || ""}</p>
+          </div>
         </div>
-      </div>
+      </a>
     </div>
   `;
 }
