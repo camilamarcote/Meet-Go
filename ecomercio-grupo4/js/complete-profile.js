@@ -1,45 +1,51 @@
-const API_URL = "https://api.meetandgouy.com";
-
-document.getElementById("experienceForm").addEventListener("submit", async e => {
-  e.preventDefault();
-
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("experienceForm");
   const token = localStorage.getItem("token");
-  if (!token) return location.href = "login.html";
 
-  const form = e.target;
-
-  const body = {
-    icebreakers: {
-      favoriteMovie: form.favoriteMovie.value,
-      favoriteSong: form.favoriteSong.value,
-      favoriteFood: form.favoriteFood.value,
-      dreamTrip: form.dreamTrip.value
-    },
-    socialStyle: {
-      groupPreference: form.groupPreference.value,
-      conversationStyle: form.conversationStyle.value,
-      initiatesConversation: form.initiatesConversation.value
-    },
-    expectations: {
-      lookingFor: [...form.querySelectorAll("input[name='lookingFor']:checked")]
-        .map(i => i.value),
-      discomforts: []
-    }
-  };
-
-  const res = await fetch(`${API_URL}/api/users/me/experience`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify(body)
-  });
-
-  if (!res.ok) {
-    alert("Error al guardar perfil");
+  if (!form) {
+    console.error("❌ No se encontró el formulario");
     return;
   }
 
-  window.location.href = "events.html";
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(form);
+
+    const lookingFor = [];
+    formData.getAll("lookingFor").forEach(v => lookingFor.push(v));
+
+    const payload = {
+      favoriteMovie: formData.get("favoriteMovie"),
+      favoriteSong: formData.get("favoriteSong"),
+      favoriteFood: formData.get("favoriteFood"),
+      dreamTrip: formData.get("dreamTrip"),
+      groupPreference: formData.get("groupPreference"),
+      conversationStyle: formData.get("conversationStyle"),
+      initiatesConversation: formData.get("initiatesConversation"),
+      lookingFor
+    };
+
+    try {
+      const res = await fetch("https://api.meetandgouy.com/api/users/experience-profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        throw new Error("Error guardando perfil");
+      }
+
+      // ✅ REDIRECCIÓN CLARA
+      window.location.href = "explorar.html";
+
+    } catch (err) {
+      console.error("❌ Error:", err);
+      alert("Ocurrió un error guardando tu perfil. Intentá de nuevo.");
+    }
+  });
 });

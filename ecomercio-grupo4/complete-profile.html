@@ -1,76 +1,78 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Complete profile</title>
+
   <link rel="stylesheet" href="css/complete-profile.css">
-  <script src="js/complete-profile.js"></script>
+
+  <!-- Cargar JS al final -->
 </head>
 <body>
-  
+
+  <form id="experienceForm">
+    <h2>✨ Tu perfil de experiencia</h2>
+    <p>Estas respuestas se usan para juegos y dinámicas en los encuentros.</p>
+
+    <h3>🎲 Para romper el hielo</h3>
+
+    <label>Película favorita</label>
+    <input name="favoriteMovie" required>
+
+    <label>Canción que te representa</label>
+    <input name="favoriteSong" required>
+
+    <label>Comida que te hace feliz</label>
+    <input name="favoriteFood">
+
+    <label>Viaje soñado</label>
+    <input name="dreamTrip">
+
+    <h3>🧠 Cómo te sentís en grupos</h3>
+
+    <label>Preferís grupos:</label>
+    <select name="groupPreference" required>
+      <option value="">Elegir...</option>
+      <option value="small">Chicos</option>
+      <option value="medium">Medianos</option>
+      <option value="large">Grandes</option>
+    </select>
+
+    <label>Te gustan más las charlas:</label>
+    <select name="conversationStyle">
+      <option value="">Elegir...</option>
+      <option value="deep">Profundas</option>
+      <option value="light">Livianas</option>
+      <option value="mixed">Un poco de todo</option>
+    </select>
+
+    <label>¿Solés iniciar conversaciones?</label>
+    <select name="initiatesConversation">
+      <option value="">Elegir...</option>
+      <option value="yes">Sí</option>
+      <option value="no">No</option>
+      <option value="depends">Depende</option>
+    </select>
+
+    <h3>🎯 Qué buscás</h3>
+
+    <label>
+      <input type="checkbox" name="lookingFor" value="friends">
+      Hacer amistades
+    </label>
+    <label>
+      <input type="checkbox" name="lookingFor" value="dating">
+      Conocer a alguien especial
+    </label>
+    <label>
+      <input type="checkbox" name="lookingFor" value="networking">
+      Conectar personas afines
+    </label>
+
+    <button type="submit">Guardar y continuar</button>
+  </form>
+
+  <script src="js/complete-profile.js"></script>
 </body>
-</html><form id="experienceForm">
-  <h2>✨ Tu perfil de experiencia</h2>
-  <p>Estas respuestas se usan para juegos y dinámicas en los encuentros.</p>
-
-  <!-- 🧊 ICEBREAKERS -->
-  <h3>🎲 Para romper el hielo</h3>
-
-  <label>Película favorita</label>
-  <input name="favoriteMovie" required>
-
-  <label>Canción que te representa</label>
-  <input name="favoriteSong" required>
-
-  <label>Comida que te hace feliz</label>
-  <input name="favoriteFood">
-
-  <label>Viaje soñado</label>
-  <input name="dreamTrip">
-
-  <!-- 🧠 ESTILO SOCIAL -->
-  <h3>🧠 Cómo te sentís en grupos</h3>
-
-  <label>Preferís grupos:</label>
-  <select name="groupPreference" required>
-    <option value="">Elegir...</option>
-    <option value="small">Chicos</option>
-    <option value="medium">Medianos</option>
-    <option value="large">Grandes</option>
-  </select>
-
-  <label>Te gustan más las charlas:</label>
-  <select name="conversationStyle">
-    <option value="">Elegir...</option>
-    <option value="deep">Profundas</option>
-    <option value="light">Livianas</option>
-    <option value="mixed">Un poco de todo</option>
-  </select>
-
-  <label>¿Solés iniciar conversaciones?</label>
-  <select name="initiatesConversation">
-    <option value="">Elegir...</option>
-    <option value="yes">Sí</option>
-    <option value="no">No</option>
-    <option value="depends">Depende</option>
-  </select>
-
-  <!-- 🎯 EXPECTATIVAS -->
-  <h3>🎯 Qué buscás</h3>
-
-  <label>
-    <input type="checkbox" name="lookingFor" value="friends">
-    Hacer amistades
-  </label>
-  <label>
-    <input type="checkbox" name="lookingFor" value="dating">
-    Conocer a alguien especial
-  </label>
-  <label>
-    <input type="checkbox" name="lookingFor" value="networking">
-    Conectar personas afines
-  </label>
-
-  <button type="submit">Guardar y continuar</button>
-</form>
+</html>
