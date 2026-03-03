@@ -1,0 +1,124 @@
+/* =========================
+   🌿 CONTENEDOR GENERAL
+========================= */
+#experienceForm {
+  max-width: 520px;
+  margin: 4rem auto;
+  padding: 2.5rem 2.8rem;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+  font-family: "Inter", system-ui, sans-serif;
+  color: #333;
+}
+
+/* =========================
+   ✨ TÍTULOS
+========================= */
+#experienceForm h2 {
+  font-size: 1.7rem;
+  margin-bottom: 0.5rem;
+  text-align: center;
+  font-weight: 600;
+}
+
+#experienceForm > p {
+  text-align: center;
+  font-size: 0.95rem;
+  color: #666;
+  margin-bottom: 2rem;
+}
+
+#experienceForm h3 {
+  font-size: 1.1rem;
+  margin: 2.2rem 0 1rem;
+  color: #444;
+  font-weight: 600;
+}
+
+/* =========================
+   🏷️ LABELS
+========================= */
+#experienceForm label {
+  display: block;
+  font-size: 0.9rem;
+  margin-bottom: 0.3rem;
+  color: #555;
+}
+
+/* =========================
+   ✏️ INPUTS & SELECTS
+========================= */
+#experienceForm input[type="text"],
+#experienceForm input:not([type="checkbox"]),
+#experienceForm select {
+  width: 100%;
+  padding: 0.7rem 0.75rem;
+  margin-bottom: 1.1rem;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  background: #fafafa;
+  font-size: 0.95rem;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+
+#experienceForm input:focus,
+#experienceForm select:focus {
+  outline: none;
+  border-color: #8b7dff;
+  box-shadow: 0 0 0 3px rgba(139, 125, 255, 0.15);
+  background: #fff;
+}
+
+/* =========================
+   ☑️ CHECKBOXES
+========================= */
+#experienceForm label input[type="checkbox"] {
+  margin-right: 0.5rem;
+  accent-color: #8b7dff;
+}
+
+#experienceForm label:has(input[type="checkbox"]) {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.6rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+/* =========================
+   🚀 BOTÓN
+========================= */
+#experienceForm button {
+  width: 100%;
+  margin-top: 2rem;
+  padding: 0.85rem;
+  border-radius: 14px;
+  border: none;
+  background: linear-gradient(135deg, #8b7dff, #6a5cff);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+#experienceForm button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(106, 92, 255, 0.3);
+}
+
+#experienceForm button:active {
+  transform: translateY(0);
+  box-shadow: 0 6px 12px rgba(106, 92, 255, 0.25);
+}
+
+/* =========================
+   📱 RESPONSIVE
+========================= */
+@media (max-width: 600px) {
+  #experienceForm {
+    margin: 2rem 1rem;
+    padding: 2rem;
+  }
+}
