@@ -9,13 +9,17 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
+  if (!token) {
+    window.location.href = "login.html";
+    return;
+  }
+
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const formData = new FormData(form);
 
-    const lookingFor = [];
-    formData.getAll("lookingFor").forEach(v => lookingFor.push(v));
+    const lookingFor = formData.getAll("lookingFor");
 
     const payload = {
       favoriteMovie: formData.get("favoriteMovie"),
@@ -29,7 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     try {
-      const res = await fetch("https://api.meetandgouy.com/api/users/experience-profile", {
+      const res = await fetch(`${API_URL}/api/users/me/experience`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -42,7 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
         throw new Error("Error guardando perfil");
       }
 
-      // ✅ REDIRECCIÓN CLARA
+      // ✅ REDIRIGE A EVENTOS
       window.location.href = "explorar.html";
 
     } catch (err) {
