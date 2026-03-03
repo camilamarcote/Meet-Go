@@ -4,6 +4,7 @@ const API_URL = "https://api.meetandgouy.com";
 // 🔐 TOKEN
 // ============================
 const token = localStorage.getItem("token");
+console.log("TOKEN EN EXPLORAR:", token);
 
 // Si no hay token → login
 if (!token) {
@@ -26,9 +27,12 @@ async function loadEvents() {
       }
     });
 
-    // 🔒 PERFIL DE EXPERIENCIA INCOMPLETO
+    console.log("STATUS EVENTS:", res.status);
+
+    // 🔒 PERFIL INCOMPLETO
     if (res.status === 403) {
       const data = await res.json();
+      console.log("403 DATA:", data);
 
       if (data.code === "PROFILE_INCOMPLETE") {
         window.location.href = "complete-profile.html";
@@ -36,7 +40,6 @@ async function loadEvents() {
       }
     }
 
-    // ❌ OTRO ERROR
     if (!res.ok) {
       throw new Error("Error al cargar eventos");
     }
@@ -67,25 +70,10 @@ async function loadEvents() {
             <div class="card-body d-flex flex-column">
               <h5 class="mb-2">${event.name}</h5>
 
-              <p class="mb-1 text-muted">
-                <i class="fa-solid fa-tag me-2"></i>
-                ${event.category || ""}
-              </p>
-
-              <p class="mb-2 text-muted">
-                <i class="fa-solid fa-location-dot me-2"></i>
-                ${event.department || ""}
-              </p>
-
-              <p class="mb-1 text-muted">
-                <i class="fa-solid fa-calendar-days me-2"></i>
-                ${event.date || ""}
-              </p>
-
-              <p class="mb-3 text-muted">
-                <i class="fa-solid fa-clock me-2"></i>
-                ${event.time || ""}
-              </p>
+              <p class="mb-1 text-muted">${event.category || ""}</p>
+              <p class="mb-1 text-muted">${event.department || ""}</p>
+              <p class="mb-1 text-muted">${event.date || ""}</p>
+              <p class="mb-3 text-muted">${event.time || ""}</p>
 
               <a 
                 href="eventinfo.html?id=${event._id}"

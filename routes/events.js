@@ -7,7 +7,7 @@ import { protect } from "../middlewares/auth.js";
 const router = express.Router();
 
 // =============================
-// 📦 MULTER (MEMORIA, NO DISCO)
+// 📦 MULTER (MEMORIA)
 // =============================
 const upload = multer({
   storage: multer.memoryStorage()
@@ -31,8 +31,8 @@ router.get("/", protect, async (req, res) => {
     const events = await Event.find().sort({ createdAt: -1 });
     res.json(events);
 
-  } catch (err) {
-    console.error("❌ Error cargando eventos:", err);
+  } catch (error) {
+    console.error("❌ Error cargando eventos:", error);
     res.status(500).json({ message: "Error al cargar eventos" });
   }
 });
@@ -52,20 +52,21 @@ router.get("/:id", protect, async (req, res) => {
     }
 
     const event = await Event.findById(req.params.id);
+
     if (!event) {
       return res.status(404).json({ message: "Evento no encontrado" });
     }
 
     res.json(event);
 
-  } catch (err) {
-    console.error("❌ Error evento:", err);
+  } catch (error) {
+    console.error("❌ Error cargando evento:", error);
     res.status(500).json({ message: "Error al cargar evento" });
   }
 });
 
 // =============================
-// 🟣 CREAR EVENTO (SOLO ORGANIZADORAS)
+// 🟣 CREAR EVENTO
 // =============================
 router.post(
   "/",
@@ -91,13 +92,13 @@ router.post(
       let imageUrl = "";
       let qrUrl = "";
 
-      // 🖼️ IMAGEN PRINCIPAL
+      // 🖼️ IMAGEN
       if (req.files?.image?.[0]) {
         const imageUpload = await new Promise((resolve, reject) => {
           cloudinary.uploader.upload_stream(
             { folder: "events" },
-            (error, result) => {
-              if (error) reject(error);
+            (err, result) => {
+              if (err) reject(err);
               else resolve(result);
             }
           ).end(req.files.image[0].buffer);
@@ -110,8 +111,8 @@ router.post(
         const qrUpload = await new Promise((resolve, reject) => {
           cloudinary.uploader.upload_stream(
             { folder: "whatsapp_qr" },
-            (error, result) => {
-              if (error) reject(error);
+            (err, result) => {
+              if (err) reject(err);
               else resolve(result);
             }
           ).end(req.files.whatsappQR[0].buffer);
