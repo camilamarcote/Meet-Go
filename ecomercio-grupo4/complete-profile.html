@@ -1,47 +1,91 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Complete profile</title>
+<form id="experienceForm">
 
-  <link rel="stylesheet" href="css/complete-profile.css">
+  <h2>✨ Tu perfil de experiencia</h2>
+  <p class="subtitle">
+    Estas respuestas nos ayudan a crear dinámicas y encuentros donde te sientas cómoda.
+  </p>
 
-  <!-- Cargar JS al final -->
-</head>
-<body>
+  <!-- ===================== -->
+  <!-- 🌟 INTERESES -->
+  <!-- ===================== -->
+  <section class="form-section">
+    <h3>🌟 Intereses</h3>
+    <p>Elegí los temas que más te representan</p>
 
-  <form id="experienceForm">
-    <h2>✨ Tu perfil de experiencia</h2>
-    <p>Estas respuestas se usan para juegos y dinámicas en los encuentros.</p>
+    <div class="checkbox-grid">
+      <label><input type="checkbox" name="interests" value="musica"> Música</label>
+      <label><input type="checkbox" name="interests" value="cine"> Cine</label>
+      <label><input type="checkbox" name="interests" value="lectura"> Lectura</label>
+      <label><input type="checkbox" name="interests" value="arte"> Arte</label>
+      <label><input type="checkbox" name="interests" value="viajes"> Viajes</label>
+      <label><input type="checkbox" name="interests" value="naturaleza"> Naturaleza</label>
+      <label><input type="checkbox" name="interests" value="activismo"> Activismo</label>
+      <label><input type="checkbox" name="interests" value="juegos"> Juegos</label>
+      <label><input type="checkbox" name="interests" value="cafe"> Café</label>
+      <label><input type="checkbox" name="interests" value="senderismo"> Senderismo</label>
+      <label><input type="checkbox" name="interests" value="museos"> Museos</label>
+      <label><input type="checkbox" name="interests" value="social"> Redes sociales</label>
+    </div>
+  </section>
 
-    <h3>🎲 Para romper el hielo</h3>
+  <!-- ===================== -->
+  <!-- 🌿 PERSONALIDAD -->
+  <!-- ===================== -->
+  <section class="form-section">
+    <h3>🌿 Tu forma de ser</h3>
 
-    <label>Película favorita</label>
-    <input name="favoriteMovie" required>
-
-    <label>Canción que te representa</label>
-    <input name="favoriteSong" required>
-
-    <label>Comida que te hace feliz</label>
-    <input name="favoriteFood">
-
-    <label>Viaje soñado</label>
-    <input name="dreamTrip">
-
-    <h3>🧠 Cómo te sentís en grupos</h3>
-
-    <label>Preferís grupos:</label>
-    <select name="groupPreference" required>
-      <option value="">Elegir...</option>
-      <option value="small">Chicos</option>
-      <option value="medium">Medianos</option>
-      <option value="large">Grandes</option>
+    <label>¿Cómo describirías tu energía social?</label>
+    <select name="personality" required>
+      <option value="">Seleccionar…</option>
+      <option value="introvertida">Introvertida</option>
+      <option value="ambivertida">Ambivertida</option>
+      <option value="extrovertida">Extrovertida</option>
     </select>
 
-    <label>Te gustan más las charlas:</label>
+    <label>¿Cómo preferís vincularte?</label>
+    <div class="radio-group">
+      <label><input type="radio" name="style" value="grupos"> Grupos grandes</label>
+      <label><input type="radio" name="style" value="pequenos"> Grupos pequeños</label>
+      <label><input type="radio" name="style" value="uno"> 1 a 1</label>
+    </div>
+  </section>
+
+  <!-- ===================== -->
+  <!-- 🎲 ICEBREAKERS -->
+  <!-- ===================== -->
+  <section class="form-section">
+    <h3>🎲 Para romper el hielo</h3>
+
+    <label>🎬 Película o serie que amás</label>
+    <input name="favoriteMovie" required>
+
+    <label>🎵 Canción que te representa</label>
+    <input name="favoriteSong" required>
+
+    <label>🍝 Comida que te hace feliz</label>
+    <input name="favoriteFood">
+
+    <label>✈️ Viaje soñado</label>
+    <input name="dreamTrip">
+  </section>
+
+  <!-- ===================== -->
+  <!-- 🧠 DINÁMICA SOCIAL -->
+  <!-- ===================== -->
+  <section class="form-section">
+    <h3>🧠 En los encuentros</h3>
+
+    <label>¿Cómo te sentís en grupos?</label>
+    <select name="groupPreference" required>
+      <option value="">Elegir…</option>
+      <option value="small">Me siento mejor en grupos chicos</option>
+      <option value="medium">Me adapto según el contexto</option>
+      <option value="large">Me gustan los grupos grandes</option>
+    </select>
+
+    <label>Preferís charlas:</label>
     <select name="conversationStyle">
-      <option value="">Elegir...</option>
+      <option value="">Elegir…</option>
       <option value="deep">Profundas</option>
       <option value="light">Livianas</option>
       <option value="mixed">Un poco de todo</option>
@@ -49,30 +93,29 @@
 
     <label>¿Solés iniciar conversaciones?</label>
     <select name="initiatesConversation">
-      <option value="">Elegir...</option>
+      <option value="">Elegir…</option>
       <option value="yes">Sí</option>
       <option value="no">No</option>
-      <option value="depends">Depende</option>
+      <option value="depends">Depende del ambiente</option>
     </select>
+  </section>
 
-    <h3>🎯 Qué buscás</h3>
+  <!-- ===================== -->
+  <!-- 🎯 EXPECTATIVAS -->
+  <!-- ===================== -->
+  <section class="form-section">
+    <h3>🎯 Qué buscás en los encuentros</h3>
 
-    <label>
-      <input type="checkbox" name="lookingFor" value="friends">
-      Hacer amistades
-    </label>
-    <label>
-      <input type="checkbox" name="lookingFor" value="dating">
-      Conocer a alguien especial
-    </label>
-    <label>
-      <input type="checkbox" name="lookingFor" value="networking">
-      Conectar personas afines
-    </label>
+    <div class="checkbox-grid">
+      <label><input type="checkbox" name="lookingFor" value="friends"> Hacer amistades</label>
+      <label><input type="checkbox" name="lookingFor" value="dating"> Conocer a alguien especial</label>
+      <label><input type="checkbox" name="lookingFor" value="networking"> Conectar con personas afines</label>
+      <label><input type="checkbox" name="lookingFor" value="experiences"> Vivir experiencias nuevas</label>
+    </div>
+  </section>
 
-    <button type="submit">Guardar y continuar</button>
-  </form>
+  <button type="submit" class="primary-btn">
+    Guardar y continuar ✨
+  </button>
 
-  <script src="js/complete-profile.js"></script>
-</body>
-</html>
+</form>
