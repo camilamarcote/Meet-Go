@@ -1,3 +1,5 @@
+const API_URL = "https://api.meetandgouy.com";
+
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("experienceForm");
   const token = localStorage.getItem("token");
