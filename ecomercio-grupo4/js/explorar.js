@@ -1,24 +1,13 @@
 const API_URL = "https://api.meetandgouy.com";
 
 // ============================
-// 🔐 USUARIO ACTUAL
+// 🔐 TOKEN
 // ============================
-const currentUser = JSON.parse(localStorage.getItem("currentUser"));
 const token = localStorage.getItem("token");
 
-// Si no está logueado → login
-if (!token || !currentUser) {
+// Si no hay token → login
+if (!token) {
   window.location.href = "login.html";
-}
-
-// ============================
-// ⭐ OCULTAR BANNER SI ESTÁ SUSCRIPTO
-// ============================
-const subscriptionBanner = document.getElementById("subscription-banner");
-const isSubscribed = currentUser?.subscription?.isActive === true;
-
-if (subscriptionBanner && isSubscribed) {
-  subscriptionBanner.style.display = "none";
 }
 
 // ============================
@@ -37,7 +26,7 @@ async function loadEvents() {
       }
     });
 
-    // 🔒 PERFIL INCOMPLETO
+    // 🔒 PERFIL DE EXPERIENCIA INCOMPLETO
     if (res.status === 403) {
       const data = await res.json();
 
@@ -47,7 +36,7 @@ async function loadEvents() {
       }
     }
 
-    // ❌ OTROS ERRORES
+    // ❌ OTRO ERROR
     if (!res.ok) {
       throw new Error("Error al cargar eventos");
     }
@@ -55,7 +44,7 @@ async function loadEvents() {
     const events = await res.json();
     eventsContainer.innerHTML = "";
 
-    if (events.length === 0) {
+    if (!events.length) {
       eventsContainer.innerHTML = `
         <p class="text-center text-muted">
           No hay eventos disponibles por el momento.
