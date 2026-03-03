@@ -4,20 +4,19 @@ const params = new URLSearchParams(window.location.search);
 const eventId = params.get("id");
 const eventDetails = document.getElementById("eventDetails");
 
-// 🔑 sesión SOLO por token
-const storedUser = JSON.parse(localStorage.getItem("currentUser")) || null;
-let authUser = null;
+// 🔐 TOKEN ÚNICO (MISMA LÓGICA QUE EXPLORAR)
+const token = localStorage.getItem("token");
 
 /* =============================
-   👤 USUARIO ACTUAL (BACKEND)
+   👤 USUARIO ACTUAL
 ============================= */
 async function loadCurrentUser() {
-  if (!storedUser?.token) return null;
+  if (!token) return null;
 
   try {
     const res = await fetch(`${API_URL}/api/users/me`, {
       headers: {
-        Authorization: `Bearer ${storedUser.token}`
+        Authorization: `Bearer ${token}`
       }
     });
 
@@ -53,10 +52,17 @@ async function loadEventInfo() {
   }
 
   try {
-    authUser = await loadCurrentUser();
+    const authUser = await loadCurrentUser();
 
-    const res = await fetch(`${API_URL}/api/events/${eventId}`);
-    if (!res.ok) throw new Error("Evento no encontrado");
+    const res = await fetch(`${API_URL}/api/events/${eventId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    if (!res.ok) {
+      throw new Error("Evento no encontrado");
+    }
 
     const event = await res.json();
 
@@ -65,17 +71,13 @@ async function loadEventInfo() {
         ? event.image
         : getCategoryImage(event.category);
 
-    /* =============================
-       🔐 LÓGICA DE ACCIÓN
-    ============================= */
-    let actionSection = "";
-
-    const isLogged = !!storedUser?.token;
+    const isLogged = !!token;
     const isRegistered =
       !!authUser && event.participants?.includes(authUser._id);
 
-    // ⭐ MISMA LÓGICA QUE LA NAVBAR
     const isSubscribed = authUser?.subscription?.isActive === true;
+
+    let actionSection = "";
 
     if (!isLogged) {
       actionSection = `
@@ -110,40 +112,23 @@ async function loadEventInfo() {
             isSubscribed
               ? `
                 <p>📌 Grupo de WhatsApp del evento:</p>
-                <p>
-                  <a href="${event.whatsappLink}" target="_blank">
-                    👉 Unirme al grupo
-                  </a>
-                </p>
+                <a href="${event.whatsappLink}" target="_blank">
+                  👉 Unirme al grupo
+                </a>
               `
               : `
                 <p style="color:red; font-weight:bold;">
                   ⚠️ El grupo de WhatsApp es exclusivo para usuarios suscriptos.
-                </p>
-                <p>
-                  👉 Suscribite para acceder al grupo y a todos los beneficios del evento.
                 </p>
                 <a href="suscripcion.html" class="btn btn-warning w-100">
                   Quiero suscribirme
                 </a>
               `
           }
-
-          <hr>
-
-          <p>📧 Si tenés dudas o problemas:</p>
-          <p>
-            <a href="mailto:meetandgouy@gmail.com">
-              meetandgouy@gmail.com
-            </a>
-          </p>
         </div>
       `;
     }
 
-    /* =============================
-       🖼️ RENDER
-    ============================= */
     eventDetails.innerHTML = `
       <div class="row g-4">
         <div class="col-md-6">
@@ -174,39 +159,6 @@ async function loadEventInfo() {
 }
 
 loadEventInfo();
-
-/* =============================
-   📝 INSCRIPCIÓN AL EVENTO
-============================= */
-async function registerToEvent() {
-  try {
-    if (!storedUser?.token) {
-      alert("Tenés que iniciar sesión");
-      return;
-    }
-
-    const res = await fetch(
-      `${API_URL}/api/events/${eventId}/register`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${storedUser.token}`
-        }
-      }
-    );
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.message || "Error al inscribirse");
-    }
-
-    loadEventInfo(); // refresca estado
-  } catch (error) {
-    console.error("❌ Error inscripción:", error);
-    alert("No se pudo completar la inscripción");
-  }
-}
 
 /* =============================
    🖥️ MOSTRAR INFO DE UNIÓN
