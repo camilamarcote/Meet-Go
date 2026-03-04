@@ -51,6 +51,8 @@ function renderUsers(users) {
   users.forEach(user => {
     const isSubscribed = user.subscription?.isActive === true;
 
+    console.log("USUARIO COMPLETO:", user);
+
     container.innerHTML += `
       <div class="user-card">
 
