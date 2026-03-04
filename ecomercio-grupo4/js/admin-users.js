@@ -51,9 +51,15 @@ function renderUsers(users) {
   users.forEach(user => {
     const isSubscribed = user.subscription?.isActive === true;
 
-    // 👉 PERFIL DE EXPERIENCIA (ESTRUCTURA REAL)
+    // 🔁 PERFIL DE EXPERIENCIA + FALLBACK REGISTER
     const exp = user.experienceProfile || {};
-    const social = exp.socialStyle || {};
+    const social = exp.socialStyle || {
+      personality: user.personality || "",
+      style: user.style || "",
+      groupPreference: user.groupPreference || "",
+      conversationStyle: user.conversationStyle || "",
+      initiatesConversation: user.initiatesConversation || ""
+    };
     const expectations = exp.expectations || {};
 
     container.innerHTML += `
