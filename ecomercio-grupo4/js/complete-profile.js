@@ -4,11 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("experienceForm");
   const token = localStorage.getItem("token");
 
-  if (!form) {
-    console.error("❌ No se encontró el formulario");
-    return;
-  }
-
+  if (!form) return;
   if (!token) {
     window.location.href = "login.html";
     return;
@@ -19,17 +15,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const formData = new FormData(form);
 
-    const lookingFor = formData.getAll("lookingFor");
-
     const payload = {
+      // 🎲 Ice breakers
       favoriteMovie: formData.get("favoriteMovie"),
       favoriteSong: formData.get("favoriteSong"),
       favoriteFood: formData.get("favoriteFood"),
       dreamTrip: formData.get("dreamTrip"),
+
+      // 🧠 Dinámicas sociales
       groupPreference: formData.get("groupPreference"),
       conversationStyle: formData.get("conversationStyle"),
       initiatesConversation: formData.get("initiatesConversation"),
-      lookingFor
+
+      // 🎯 Qué busca
+      lookingFor: formData.getAll("lookingFor"),
+
+      // ✨ PERFIL DE EXPERIENCIA
+      interests: formData.getAll("interests"),
+      personality: formData.get("personality"),
+      style: formData.get("style"),
+      languages: formData.getAll("languages"),
+      bio: formData.get("bio")
     };
 
     try {
@@ -42,16 +48,13 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify(payload)
       });
 
-      if (!res.ok) {
-        throw new Error("Error guardando perfil");
-      }
+      if (!res.ok) throw new Error("Error guardando perfil");
 
-      // ✅ REDIRIGE A EVENTOS
       window.location.href = "explorar.html";
 
     } catch (err) {
       console.error("❌ Error:", err);
-      alert("Ocurrió un error guardando tu perfil. Intentá de nuevo.");
+      alert("Ocurrió un error guardando tu perfil.");
     }
   });
 });

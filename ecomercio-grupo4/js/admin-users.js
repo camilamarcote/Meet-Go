@@ -88,6 +88,38 @@ function renderUsers(users) {
           ${user.languages?.length ? user.languages.join(", ") : "—"}
         </p>
 
+        <p><strong>🌿 Personalidad:</strong><br>
+  ${user.personality ?? "—"}
+</p>
+
+<p><strong>👥 Estilo social:</strong><br>
+  ${user.style ?? "—"}
+</p>
+
+<p><strong>🧠 Preferencia de grupo:</strong><br>
+  ${user.groupPreference ?? "—"}
+</p>
+
+<p><strong>💬 Tipo de charla:</strong><br>
+  ${user.conversationStyle ?? "—"}
+</p>
+
+<p><strong>🙋‍♀️ Inicia conversaciones:</strong><br>
+  ${user.initiatesConversation ?? "—"}
+</p>
+
+<p><strong>🎯 Qué busca:</strong><br>
+  ${
+    user.lookingFor?.length
+      ? user.lookingFor.join(", ")
+      : "—"
+  }
+</p>
+
+<p><strong>📝 Bio:</strong><br>
+  ${user.bio || "<em>Sin biografía</em>"}
+</p>
+
         <div class="user-actions">
           <button
             class="mail-btn"
