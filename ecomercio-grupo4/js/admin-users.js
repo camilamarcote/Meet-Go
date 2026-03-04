@@ -51,7 +51,10 @@ function renderUsers(users) {
   users.forEach(user => {
     const isSubscribed = user.subscription?.isActive === true;
 
-    console.log("USUARIO COMPLETO:", user);
+    // 👉 PERFIL DE EXPERIENCIA (ESTRUCTURA REAL)
+    const exp = user.experienceProfile || {};
+    const social = exp.socialStyle || {};
+    const expectations = exp.expectations || {};
 
     container.innerHTML += `
       <div class="user-card">
@@ -66,6 +69,10 @@ function renderUsers(users) {
 
             <span class="badge ${isSubscribed ? "success" : "neutral"}">
               ${isSubscribed ? "⭐ Suscripta" : "Sin suscripción"}
+            </span>
+
+            <span class="badge ${exp.completed ? "success" : "warning"}">
+              ${exp.completed ? "Perfil completo" : "Perfil incompleto"}
             </span>
           </div>
         </div>
@@ -82,6 +89,8 @@ function renderUsers(users) {
           </span>
         </p>
 
+        <hr>
+
         <p><strong>⭐ Intereses:</strong><br>
           ${user.interests?.length ? user.interests.join(", ") : "—"}
         </p>
@@ -90,37 +99,39 @@ function renderUsers(users) {
           ${user.languages?.length ? user.languages.join(", ") : "—"}
         </p>
 
+        <p><strong>📝 Bio:</strong><br>
+          ${user.bio || "<em>Sin biografía</em>"}
+        </p>
+
+        <hr>
+
         <p><strong>🌿 Personalidad:</strong><br>
-  ${user.personality ?? "—"}
-</p>
+          ${social.personality || "—"}
+        </p>
 
-<p><strong>👥 Estilo social:</strong><br>
-  ${user.style ?? "—"}
-</p>
+        <p><strong>👥 Estilo social:</strong><br>
+          ${social.style || "—"}
+        </p>
 
-<p><strong>🧠 Preferencia de grupo:</strong><br>
-  ${user.groupPreference ?? "—"}
-</p>
+        <p><strong>🧠 Preferencia de grupo:</strong><br>
+          ${social.groupPreference || "—"}
+        </p>
 
-<p><strong>💬 Tipo de charla:</strong><br>
-  ${user.conversationStyle ?? "—"}
-</p>
+        <p><strong>💬 Tipo de charla:</strong><br>
+          ${social.conversationStyle || "—"}
+        </p>
 
-<p><strong>🙋‍♀️ Inicia conversaciones:</strong><br>
-  ${user.initiatesConversation ?? "—"}
-</p>
+        <p><strong>🙋‍♀️ Inicia conversaciones:</strong><br>
+          ${social.initiatesConversation || "—"}
+        </p>
 
-<p><strong>🎯 Qué busca:</strong><br>
-  ${
-    user.lookingFor?.length
-      ? user.lookingFor.join(", ")
-      : "—"
-  }
-</p>
-
-<p><strong>📝 Bio:</strong><br>
-  ${user.bio || "<em>Sin biografía</em>"}
-</p>
+        <p><strong>🎯 Qué busca:</strong><br>
+          ${
+            expectations.lookingFor?.length
+              ? expectations.lookingFor.join(", ")
+              : "—"
+          }
+        </p>
 
         <div class="user-actions">
           <button
@@ -256,4 +267,3 @@ async function sendMail(userId, email) {
     alert("Error al enviar el mail");
   }
 }
-
