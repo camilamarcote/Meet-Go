@@ -2,17 +2,31 @@
 // 🌐 API BASE
 // =============================
 const API_URL = "https://api.meetandgouy.com";
-;
 
 const eventForm = document.getElementById("eventForm");
 const departmentSelect = document.getElementById("eventDepartment");
 const neighborhoodSelect = document.getElementById("eventNeighborhood");
 
 // =============================
+// 🔐 CONTROL DE USUARIO
+// =============================
+const user = JSON.parse(localStorage.getItem("currentUser"));
+
+if (!user || !user.token) {
+  alert("Debes iniciar sesión");
+  window.location.href = "login.html";
+}
+
+if (!user.isOrganizer && !user.roles?.includes("admin")) {
+  alert("Solo organizadores pueden crear eventos");
+  window.location.href = "events.html";
+}
+
+// =============================
 // 📍 Barrios por departamento
 // =============================
 const neighborhoodsByDepartment = {
-  Montevideo: [ 
+  Montevideo: [
     "Centro",
     "Cordón",
     "Pocitos",
@@ -50,39 +64,45 @@ const neighborhoodsByDepartment = {
 // 🔄 Cargar barrios dinámicos
 // =============================
 departmentSelect.addEventListener("change", () => {
+
   const department = departmentSelect.value;
+
   neighborhoodSelect.innerHTML = "";
 
   if (!department || !neighborhoodsByDepartment[department]) {
+
     neighborhoodSelect.disabled = true;
+
     neighborhoodSelect.innerHTML =
       `<option value="">Seleccioná un departamento primero</option>`;
+
     return;
   }
 
   neighborhoodSelect.disabled = false;
+
   neighborhoodSelect.innerHTML =
     `<option value="">Seleccionar</option>`;
 
   neighborhoodsByDepartment[department].forEach(neighborhood => {
+
     const option = document.createElement("option");
+
     option.value = neighborhood;
     option.textContent = neighborhood;
+
     neighborhoodSelect.appendChild(option);
+
   });
+
 });
 
 // =============================
-// 📝 Enviar formulario
+// 📝 ENVIAR FORMULARIO
 // =============================
 eventForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
 
-  const user = JSON.parse(localStorage.getItem("currentUser"));
-  if (!user) {
-    alert("Debes iniciar sesión");
-    return;
-  }
+  e.preventDefault();
 
   const formData = new FormData();
 
@@ -95,42 +115,56 @@ eventForm.addEventListener("submit", async (e) => {
   formData.append("time", eventTime.value);
   formData.append("price", Number(eventPrice.value) || 0);
 
-  // Precio alternativo (opcional)
+  // Precio alternativo
   if (eventAltPrice.value) {
     formData.append("altPrice", Number(eventAltPrice.value));
   }
 
+  // Imagen del evento
   if (eventImage.files.length) {
     formData.append("image", eventImage.files[0]);
   }
 
+  // Link de whatsapp
   if (eventWhatsapp.value.trim()) {
     formData.append("whatsappLink", eventWhatsapp.value.trim());
   }
 
+  // QR de whatsapp
   if (eventQR.files.length) {
     formData.append("whatsappQR", eventQR.files[0]);
   }
 
   try {
+
     const res = await fetch(`${API_URL}/api/events`, {
       method: "POST",
+      headers: {
+        Authorization: `Bearer ${user.token}`
+      },
       body: formData
     });
 
+    const data = await res.json();
+
     if (!res.ok) {
-      const text = await res.text();
-      console.error("❌ Error backend:", text);
-      alert("❌ Error creando evento");
+
+      console.error("❌ Error backend:", data);
+      alert(data.message || "Error creando evento");
+
       return;
     }
 
     alert("✅ Evento creado correctamente");
+
     eventForm.reset();
     neighborhoodSelect.disabled = true;
 
   } catch (error) {
+
     console.error("❌ Error de red:", error);
     alert("Error de conexión con el servidor");
+
   }
+
 });
