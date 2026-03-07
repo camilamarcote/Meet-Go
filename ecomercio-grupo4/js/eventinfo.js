@@ -4,7 +4,7 @@ const params = new URLSearchParams(window.location.search);
 const eventId = params.get("id");
 const eventDetails = document.getElementById("eventDetails");
 
-// 🔐 TOKEN ÚNICO (MISMA LÓGICA QUE EXPLORAR)
+// 🔐 TOKEN
 const token = localStorage.getItem("token");
 
 /* =============================
@@ -43,6 +43,52 @@ function getCategoryImage(category) {
 }
 
 /* =============================
+   💳 PAGAR EVENTO
+============================= */
+async function payEvent(eventId) {
+
+  try {
+
+    const resTicket = await fetch(`${API_URL}/api/events/${eventId}/tickets`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    const ticketData = await resTicket.json();
+
+    if (!resTicket.ok) {
+      alert(ticketData.message || "Error creando ticket");
+      return;
+    }
+
+    const ticketId = ticketData.ticket._id;
+
+    const resPayment = await fetch(`${API_URL}/api/payments/create/${ticketId}`, {
+      method: "POST"
+    });
+
+    const paymentData = await resPayment.json();
+
+    if (!resPayment.ok) {
+      alert("Error iniciando pago");
+      return;
+    }
+
+    window.location.href = paymentData.init_point;
+
+  } catch (error) {
+
+    console.error("❌ Error pago evento:", error);
+    alert("No se pudo iniciar el pago");
+
+  }
+
+}
+
+/* =============================
    📄 EVENTO
 ============================= */
 async function loadEventInfo() {
@@ -52,6 +98,7 @@ async function loadEventInfo() {
   }
 
   try {
+
     const authUser = await loadCurrentUser();
 
     const res = await fetch(`${API_URL}/api/events/${eventId}`, {
@@ -60,9 +107,7 @@ async function loadEventInfo() {
       }
     });
 
-    if (!res.ok) {
-      throw new Error("Evento no encontrado");
-    }
+    if (!res.ok) throw new Error("Evento no encontrado");
 
     const event = await res.json();
 
@@ -81,11 +126,12 @@ async function loadEventInfo() {
     const isFull =
       event.capacity && event.participants?.length >= event.capacity;
 
+    const price = event.price || 300;
+
     let actionSection = "";
 
-    /* =============================
-       🚫 NO LOGUEADA
-    ============================= */
+    /* NO LOGIN */
+
     if (!isLogged) {
 
       actionSection = `
@@ -97,12 +143,10 @@ async function loadEventInfo() {
           Iniciar sesión
         </a>
       `;
-
     }
 
-    /* =============================
-       ✅ YA REGISTRADA
-    ============================= */
+    /* YA REGISTRADA */
+
     else if (isRegistered) {
 
       actionSection = `
@@ -110,12 +154,10 @@ async function loadEventInfo() {
           ✅ Ya estás inscripta a este evento
         </div>
       `;
-
     }
 
-    /* =============================
-       🚫 EVENTO LLENO
-    ============================= */
+    /* EVENTO LLENO */
+
     else if (isFull) {
 
       actionSection = `
@@ -123,13 +165,11 @@ async function loadEventInfo() {
           ⚠️ Este evento ya alcanzó su capacidad máxima.
         </div>
       `;
-
     }
 
-    /* =============================
-       👤 USUARIA NORMAL
-    ============================= */
-    else {
+    /* SUSCRIPTA */
+
+    else if (isSubscribed) {
 
       actionSection = `
         <button
@@ -145,42 +185,43 @@ async function loadEventInfo() {
           style="display:none; border:1px solid #ccc; padding:15px; border-radius:5px; background:#f9f9f9;"
         >
 
+          <p>📌 Grupo de WhatsApp del evento:</p>
+
           ${
-            isSubscribed
-              ? `
-                <p>📌 Grupo de WhatsApp del evento:</p>
-
-                ${
-                  event.whatsappLink
-                    ? `
-                      <a href="${event.whatsappLink}" target="_blank" class="btn btn-success w-100">
-                        👉 Unirme al grupo
-                      </a>
-                    `
-                    : `
-                      <p>El enlace al grupo se publicará pronto.</p>
-                    `
-                }
-
-              `
-              : `
-                <p style="color:red; font-weight:bold;">
-                  ⚠️ El grupo de WhatsApp es exclusivo para usuarios suscriptos.
-                </p>
-
-                <a href="suscripcion.html" class="btn btn-warning w-100">
-                  Quiero suscribirme
-                </a>
-              `
+            event.whatsappLink
+              ? `<a href="${event.whatsappLink}" target="_blank" class="btn btn-success w-100">
+                  👉 Unirme al grupo
+                </a>`
+              : `<p>El enlace se publicará pronto.</p>`
           }
 
         </div>
       `;
     }
 
-    /* =============================
-       🧱 RENDER
-    ============================= */
+    /* NO SUSCRIPTA */
+
+    else {
+
+      actionSection = `
+        <div class="mt-3">
+
+          <button
+            class="btn btn-success w-100 mb-2"
+            onclick="payEvent('${event._id}')"
+          >
+            🎟️ Pagar este evento - $${price}
+          </button>
+
+          <a href="suscripcion.html" class="btn btn-warning w-100">
+            ⭐ Suscribirme y acceder a todos los eventos
+          </a>
+
+        </div>
+      `;
+    }
+
+    /* RENDER */
 
     eventDetails.innerHTML = `
       <div class="row g-4">
@@ -217,25 +258,32 @@ async function loadEventInfo() {
     `;
 
   } catch (error) {
+
     console.error("❌ Error cargando evento:", error);
     eventDetails.innerHTML = "<p>Error cargando evento</p>";
+
   }
 }
 
 loadEventInfo();
 
 /* =============================
-   🖥️ MOSTRAR INFO DE UNIÓN
+   MOSTRAR INFO
 ============================= */
+
 function showEventJoinInfo() {
+
   const joinDiv = document.getElementById("joinInfo");
 
   if (joinDiv) {
+
     joinDiv.style.display =
       joinDiv.style.display === "none" ? "block" : "none";
 
     joinDiv.scrollIntoView({
       behavior: "smooth"
     });
+
   }
+
 }
