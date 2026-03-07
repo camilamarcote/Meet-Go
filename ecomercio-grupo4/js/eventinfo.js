@@ -9,10 +9,13 @@ const token = localStorage.getItem("token");
 /* =============================
    👤 USUARIO ACTUAL
 ============================= */
+
 async function loadCurrentUser() {
+
   if (!token) return null;
 
   try {
+
     const res = await fetch(`${API_URL}/api/users/me`, {
       headers: {
         Authorization: `Bearer ${token}`
@@ -21,42 +24,46 @@ async function loadCurrentUser() {
 
     if (!res.ok) return null;
 
-    return await res.json();
+    const user = await res.json();
+
+    return user;
 
   } catch (err) {
+
     console.error("❌ Error cargando usuario:", err);
     return null;
+
   }
-}
 
-/* =============================
-   🖼️ IMAGENES CATEGORÍA
-============================= */
-function getCategoryImage(category) {
-
-  const images = {
-    Cultural: "img/default_cultural.jpg",
-    Recreativa: "img/default_recreativa.jpg",
-    Deportiva: "img/default_deportiva.jpg",
-    Gastronómica: "img/default_gastronomica.jpg"
-  };
-
-  return images[category] || "img/default_event.jpg";
 }
 
 /* =============================
    💳 PAGAR EVENTO
 ============================= */
+
 async function payEvent(eventId) {
 
   try {
 
+    const currentUser = await loadCurrentUser();
+
+    if (!currentUser) {
+
+      alert("Debes iniciar sesión");
+
+      window.location.href = "login.html";
+
+      return;
+    }
+
     const resTicket = await fetch(`${API_URL}/api/events/${eventId}/tickets`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      }
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        userId: currentUser._id
+      })
     });
 
     const ticketData = await resTicket.json();
@@ -66,6 +73,7 @@ async function payEvent(eventId) {
       alert(ticketData.message || "Error creando ticket");
 
       return;
+
     }
 
     const ticketId = ticketData.ticket._id;
@@ -81,6 +89,7 @@ async function payEvent(eventId) {
       alert("Error iniciando pago");
 
       return;
+
     }
 
     window.location.href = paymentData.init_point;
@@ -96,8 +105,9 @@ async function payEvent(eventId) {
 }
 
 /* =============================
-   📄 CARGAR EVENTO
+   📄 EVENTO
 ============================= */
+
 async function loadEventInfo() {
 
   if (!eventId) {
@@ -121,11 +131,6 @@ async function loadEventInfo() {
 
     const event = await res.json();
 
-    const image =
-      event.image && event.image.startsWith("http")
-        ? event.image
-        : getCategoryImage(event.category);
-
     const isLogged = !!token;
 
     const isSubscribed = authUser?.subscription?.isActive === true;
@@ -133,10 +138,6 @@ async function loadEventInfo() {
     const price = event.price || 300;
 
     let actionSection = "";
-
-    /* =============================
-       NO LOGIN
-    ============================= */
 
     if (!isLogged) {
 
@@ -151,43 +152,26 @@ async function loadEventInfo() {
       `;
     }
 
-    /* =============================
-       SUSCRIPTA
-    ============================= */
-
     else if (isSubscribed) {
 
       actionSection = `
-        <button
-          class="btn btn-success w-100 mt-3"
-          onclick="showEventJoinInfo()"
-        >
+        <button class="btn btn-success w-100 mt-3" onclick="showEventJoinInfo()">
           🙋‍♀️ Unirme al evento
         </button>
 
-        <div
-          id="joinInfo"
-          class="mt-3"
-          style="display:none; border:1px solid #ccc; padding:15px; border-radius:5px; background:#f9f9f9;"
-        >
-
-          <p>📌 Grupo de WhatsApp del evento:</p>
+        <div id="joinInfo" class="mt-3" style="display:none">
 
           ${
             event.whatsappLink
               ? `<a href="${event.whatsappLink}" target="_blank" class="btn btn-success w-100">
                   👉 Unirme al grupo
                 </a>`
-              : `<p>El enlace se publicará pronto.</p>`
+              : `<p>El enlace se publicará pronto</p>`
           }
 
         </div>
       `;
     }
-
-    /* =============================
-       NO SUSCRIPTA
-    ============================= */
 
     else {
 
@@ -209,19 +193,12 @@ async function loadEventInfo() {
       `;
     }
 
-    /* =============================
-       RENDER
-    ============================= */
-
     eventDetails.innerHTML = `
+
       <div class="row g-4">
 
         <div class="col-md-6">
-          <img 
-            src="${image}" 
-            class="img-fluid rounded"
-            onerror="this.src='img/default_event.jpg'"
-          >
+          <img src="${event.image}" class="img-fluid rounded">
         </div>
 
         <div class="col-md-6">
@@ -231,9 +208,9 @@ async function loadEventInfo() {
           <p>${event.description || ""}</p>
 
           <ul class="list-unstyled mt-3">
-            <li>📍 ${event.department || "A confirmar"}</li>
+            <li>📍 ${event.department}</li>
             <li>📅 ${event.date}</li>
-            <li>⏰ ${event.time || "Horario a confirmar"}</li>
+            <li>⏰ ${event.time}</li>
             <li>🎯 ${event.category}</li>
           </ul>
 
@@ -244,6 +221,7 @@ async function loadEventInfo() {
         </div>
 
       </div>
+
     `;
 
   } catch (error) {
@@ -252,6 +230,7 @@ async function loadEventInfo() {
 
     eventDetails.innerHTML = "<p>Error cargando evento</p>";
   }
+
 }
 
 loadEventInfo();
@@ -269,8 +248,6 @@ function showEventJoinInfo() {
     joinDiv.style.display =
       joinDiv.style.display === "none" ? "block" : "none";
 
-    joinDiv.scrollIntoView({
-      behavior: "smooth"
-    });
   }
+
 }
