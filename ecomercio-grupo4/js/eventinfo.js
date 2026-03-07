@@ -72,65 +72,29 @@ async function loadEventInfo() {
         : getCategoryImage(event.category);
 
     const isLogged = !!token;
-
     const isRegistered =
       !!authUser && event.participants?.includes(authUser._id);
 
     const isSubscribed = authUser?.subscription?.isActive === true;
 
-    const isFull =
-      event.capacity && event.participants?.length >= event.capacity;
-
     let actionSection = "";
 
-    /* =============================
-       🚫 NO LOGUEADA
-    ============================= */
     if (!isLogged) {
-
       actionSection = `
         <div class="alert alert-info mt-4">
           Para unirte al evento necesitás iniciar sesión.
         </div>
-
         <a href="login.html" class="btn btn-primary w-100">
           Iniciar sesión
         </a>
       `;
-
-    }
-
-    /* =============================
-       ✅ YA REGISTRADA
-    ============================= */
-    else if (isRegistered) {
-
+    } else if (isRegistered) {
       actionSection = `
         <div class="alert alert-success mt-4">
           ✅ Ya estás inscripta a este evento
         </div>
       `;
-
-    }
-
-    /* =============================
-       🚫 EVENTO LLENO
-    ============================= */
-    else if (isFull) {
-
-      actionSection = `
-        <div class="alert alert-danger mt-4">
-          ⚠️ Este evento ya alcanzó su capacidad máxima.
-        </div>
-      `;
-
-    }
-
-    /* =============================
-       👤 USUARIA NORMAL
-    ============================= */
-    else {
-
+    } else {
       actionSection = `
         <button
           class="btn btn-success w-100 mt-3"
@@ -144,75 +108,47 @@ async function loadEventInfo() {
           class="mt-3"
           style="display:none; border:1px solid #ccc; padding:15px; border-radius:5px; background:#f9f9f9;"
         >
-
           ${
             isSubscribed
               ? `
                 <p>📌 Grupo de WhatsApp del evento:</p>
-
-                ${
-                  event.whatsappLink
-                    ? `
-                      <a href="${event.whatsappLink}" target="_blank" class="btn btn-success w-100">
-                        👉 Unirme al grupo
-                      </a>
-                    `
-                    : `
-                      <p>El enlace al grupo se publicará pronto.</p>
-                    `
-                }
-
+                <a href="${event.whatsappLink}" target="_blank">
+                  👉 Unirme al grupo
+                </a>
               `
               : `
                 <p style="color:red; font-weight:bold;">
                   ⚠️ El grupo de WhatsApp es exclusivo para usuarios suscriptos.
                 </p>
-
                 <a href="suscripcion.html" class="btn btn-warning w-100">
                   Quiero suscribirme
                 </a>
               `
           }
-
         </div>
       `;
     }
 
-    /* =============================
-       🧱 RENDER
-    ============================= */
-
     eventDetails.innerHTML = `
       <div class="row g-4">
-
         <div class="col-md-6">
           <img src="${image}" class="img-fluid rounded">
         </div>
 
         <div class="col-md-6">
-
           <h2>${event.name}</h2>
-
           <p>${event.description || ""}</p>
 
           <ul class="list-unstyled mt-3">
             <li>📍 ${event.department || "A confirmar"}</li>
             <li>📅 ${event.date}</li>
-            <li>⏰ ${event.time || "Horario a confirmar"}</li>
+            <li>⏰ ${event.time}</li>
             <li>🎯 ${event.category}</li>
-            ${
-              event.capacity
-                ? `<li>👥 Cupos: ${event.participants?.length || 0} / ${event.capacity}</li>`
-                : ""
-            }
           </ul>
 
           <hr>
-
           ${actionSection}
-
         </div>
-
       </div>
     `;
 
@@ -229,13 +165,9 @@ loadEventInfo();
 ============================= */
 function showEventJoinInfo() {
   const joinDiv = document.getElementById("joinInfo");
-
   if (joinDiv) {
     joinDiv.style.display =
       joinDiv.style.display === "none" ? "block" : "none";
-
-    joinDiv.scrollIntoView({
-      behavior: "smooth"
-    });
+    joinDiv.scrollIntoView({ behavior: "smooth" });
   }
 }
