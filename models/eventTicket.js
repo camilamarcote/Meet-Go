@@ -48,7 +48,11 @@ const EventTicketSchema = new mongoose.Schema({
     paidAt: {
       type: Date,
       default: null
-    }
+    },
+      paymentId: {
+    type: String,
+    default: null
+  }
   },
 
   // =========================

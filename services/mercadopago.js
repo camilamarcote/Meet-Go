@@ -8,7 +8,7 @@ import {
 // 🔐 Configuración base
 // =============================
 const mpClient = new MercadoPagoConfig({
-  accessToken: process.env.MP_ACCESS_TOKEN // ⚠️ TOKEN DE PRODUCCIÓN
+  accessToken: process.env.MP_ACCESS_TOKEN
 });
 
 // =============================
@@ -26,11 +26,12 @@ export async function createPaymentPreference({ event, user, ticketId }) {
 
     const response = await preferenceClient.create({
       body: {
-        // 🔒 Recomendado por MP
+
         binary_mode: true,
         statement_descriptor: "MEETANDGO",
 
-        external_reference: `ticket_${ticketId}`,
+        // ⚠️ IMPORTANTE
+        external_reference: ticketId.toString(),
 
         items: [
           {
@@ -49,11 +50,12 @@ export async function createPaymentPreference({ event, user, ticketId }) {
           first_name: user.firstName || "Usuario",
           last_name: user.lastName || "Meet&Go"
         },
-back_urls: {
-  success: `${process.env.FRONT_URL}/payment-success.html`,
-  failure: `${process.env.FRONT_URL}/payment-failure.html`,
-  pending: `${process.env.FRONT_URL}/payment-pending.html`
-},
+
+        back_urls: {
+          success: `${process.env.FRONT_URL}/payment-success.html`,
+          failure: `${process.env.FRONT_URL}/payment-failure.html`,
+          pending: `${process.env.FRONT_URL}/payment-pending.html`
+        },
 
         auto_return: "approved",
 
@@ -68,10 +70,9 @@ back_urls: {
       }
     });
 
-    // 🔎 ÚTIL PARA DEBUG / SOPORTE MP
-    console.log("🧾 Preference ID:", response.id);
+    console.log("🧾 Preference creada:", response.body.id);
 
-    return response;
+    return response.body;
 
   } catch (error) {
     console.error("❌ Error creando pago Mercado Pago:", error);
@@ -86,9 +87,12 @@ const preapprovalClient = new PreApproval(mpClient);
 
 export async function createSubscription({ user }) {
   try {
+
     const response = await preapprovalClient.create({
       body: {
+
         reason: "Suscripción mensual Meet&Go",
+
         external_reference: `subscription_${user._id}`,
 
         payer_email: user.email,
@@ -101,19 +105,17 @@ export async function createSubscription({ user }) {
         },
 
         back_url: `${process.env.FRONT_URL}/suscripcion-success`,
+
         notification_url: `${process.env.BACKEND_URL}/api/subscriptions/webhook`,
 
         status: "pending"
       }
     });
 
-    console.log("🧾 Preference ID:", response.id);
-console.log("🔗 Init point:", response.init_point);
+    console.log("🧾 Subscription ID:", response.body.id);
+    console.log("🔗 Init point:", response.body.init_point);
 
-
-
-
-    return response;
+    return response.body;
 
   } catch (error) {
     console.error("❌ Error suscripción Mercado Pago:", error);

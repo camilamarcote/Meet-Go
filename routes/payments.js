@@ -11,6 +11,7 @@ const router = express.Router();
 // =============================
 router.post("/payments/create/:ticketId", async (req, res) => {
   try {
+
     const { ticketId } = req.params;
 
     const ticket = await EventTicket.findById(ticketId)
@@ -18,11 +19,15 @@ router.post("/payments/create/:ticketId", async (req, res) => {
       .populate("user");
 
     if (!ticket) {
-      return res.status(404).json({ message: "Ticket no encontrado" });
+      return res.status(404).json({
+        message: "Ticket no encontrado"
+      });
     }
 
-    if (ticket.payment?.status === "approved") {
-      return res.status(409).json({ message: "Ticket ya pagado" });
+    if (ticket.payment?.status === "paid") {
+      return res.status(409).json({
+        message: "Ticket ya pagado"
+      });
     }
 
     const preference = await createPaymentPreference({
@@ -31,32 +36,36 @@ router.post("/payments/create/:ticketId", async (req, res) => {
       ticketId: ticket._id
     });
 
-    // 🔎 Log útil para soporte MP
     console.log("🧾 Preference creada:", preference.id);
 
     return res.json({
-      init_point: preference.init_point // ⚠️ USAR ESTE EN PRODUCCIÓN
+      init_point: preference.init_point
     });
 
   } catch (error) {
     console.error("❌ Error creando pago:", error);
-    return res.status(500).json({ message: "Error creando pago" });
+    return res.status(500).json({
+      message: "Error creando pago"
+    });
   }
 });
+
 
 // =============================
 // 🔔 Webhook Mercado Pago
 // =============================
+
 const mpClient = new MercadoPagoConfig({
-  accessToken: process.env.MP_ACCESS_TOKEN // ✔ producción
+  accessToken: process.env.MP_ACCESS_TOKEN
 });
 
 router.post("/payments/webhook", async (req, res) => {
+
   try {
+
     const { type, data } = req.body;
 
-    // Aceptamos payment y merchant_order
-    if (type !== "payment" && type !== "merchant_order") {
+    if (type !== "payment") {
       return res.sendStatus(200);
     }
 
@@ -65,13 +74,21 @@ router.post("/payments/webhook", async (req, res) => {
     }
 
     const paymentClient = new Payment(mpClient);
-    const payment = await paymentClient.get({ id: data.id });
+
+    const paymentResponse = await paymentClient.get({
+      id: data.id
+    });
+
+    const payment = paymentResponse.body;
+
+    console.log("💳 Webhook pago:", payment.id, payment.status);
 
     if (payment.status === "approved") {
+
       const ticketId = payment.metadata?.ticketId;
 
       if (!ticketId) {
-        console.warn("⚠️ Pago aprobado sin ticketId en metadata");
+        console.warn("⚠️ Pago aprobado sin ticketId");
         return res.sendStatus(200);
       }
 
@@ -79,18 +96,20 @@ router.post("/payments/webhook", async (req, res) => {
         ticketId,
         {
           payment: {
-            status: "approved",
-            paymentId: payment.id,
+            status: "paid",
+            amount: payment.transaction_amount,
             paidAt: new Date()
           }
         },
         { new: true }
       )
-        .populate("user")
-        .populate("event");
+      .populate("user")
+      .populate("event");
 
-      // 📧 Enviar mail SOLO si hay usuario
-      if (ticket?.user?.email) {
+      console.log("🎟 Ticket actualizado:", ticket._id);
+
+      // ⚠️ solo si tienes sistema de mails
+      if (ticket?.user?.email && typeof sendTicketMail === "function") {
         await sendTicketMail({
           to: ticket.user.email,
           user: ticket.user,
@@ -99,15 +118,17 @@ router.post("/payments/webhook", async (req, res) => {
         });
       }
 
-      console.log("✅ Pago aprobado y procesado:", payment.id);
     }
 
-    return res.sendStatus(200);
+    res.sendStatus(200);
 
   } catch (error) {
-    console.error("❌ Error en webhook Mercado Pago:", error);
-    return res.sendStatus(500);
+
+    console.error("❌ Error webhook MercadoPago:", error);
+
+    res.sendStatus(500);
   }
+
 });
 
 export default router;
