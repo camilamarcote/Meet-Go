@@ -30,7 +30,7 @@ export async function createPaymentPreference({ event, user, ticketId }) {
       throw new Error("Precio inválido");
     }
 
-    const response = await preferenceClient.create({
+    const preference = await preferenceClient.create({
       body: {
 
         statement_descriptor: "MEETANDGO",
@@ -74,15 +74,7 @@ export async function createPaymentPreference({ event, user, ticketId }) {
       }
     });
 
-    // 🔎 DEBUG COMPLETO
-    console.log("🔎 Respuesta MercadoPago:", response);
-
-    if (!response || !response.body) {
-      throw new Error("MercadoPago devolvió una respuesta inválida");
-    }
-
-    const preference = response.body;
-
+    // 🔎 DEBUG
     console.log("🧾 Preference creada:", preference.id);
     console.log("🔗 Init point:", preference.init_point);
 
@@ -92,8 +84,8 @@ export async function createPaymentPreference({ event, user, ticketId }) {
 
     console.error("❌ Error creando pago Mercado Pago");
 
-    if (error.response?.data) {
-      console.error("MP Error:", error.response.data);
+    if (error.cause) {
+      console.error("MP Error:", error.cause);
     } else {
       console.error(error);
     }
@@ -116,7 +108,7 @@ export async function createSubscription({ user }) {
       throw new Error("Usuario inválido para suscripción");
     }
 
-    const response = await preapprovalClient.create({
+    const subscription = await preapprovalClient.create({
       body: {
 
         reason: "Suscripción mensual Meet&Go",
@@ -140,14 +132,6 @@ export async function createSubscription({ user }) {
       }
     });
 
-    console.log("🔎 Respuesta suscripción MP:", response);
-
-    if (!response || !response.body) {
-      throw new Error("MercadoPago devolvió una respuesta inválida en suscripción");
-    }
-
-    const subscription = response.body;
-
     console.log("🧾 Subscription ID:", subscription.id);
     console.log("🔗 Init point:", subscription.init_point);
 
@@ -157,8 +141,8 @@ export async function createSubscription({ user }) {
 
     console.error("❌ Error suscripción Mercado Pago");
 
-    if (error.response?.data) {
-      console.error("MP Error:", error.response.data);
+    if (error.cause) {
+      console.error("MP Error:", error.cause);
     } else {
       console.error(error);
     }
