@@ -12,12 +12,18 @@ const mpClient = new MercadoPagoConfig({
 });
 
 // =============================
-// 🎟️ PAGO DE EVENTO (ONE-TIME)
+// 🎟️ PAGO DE EVENTO
 // =============================
 const preferenceClient = new Preference(mpClient);
 
 export async function createPaymentPreference({ event, user, ticketId }) {
+
   try {
+
+    if (!event || !user || !ticketId) {
+      throw new Error("Datos insuficientes para crear el pago");
+    }
+
     const price = Number(event.price);
 
     if (!price || price <= 0) {
@@ -27,10 +33,8 @@ export async function createPaymentPreference({ event, user, ticketId }) {
     const response = await preferenceClient.create({
       body: {
 
-        binary_mode: true,
         statement_descriptor: "MEETANDGO",
 
-        // ⚠️ IMPORTANTE
         external_reference: ticketId.toString(),
 
         items: [
@@ -70,15 +74,34 @@ export async function createPaymentPreference({ event, user, ticketId }) {
       }
     });
 
-    console.log("🧾 Preference creada:", response.body.id);
+    // 🔎 DEBUG COMPLETO
+    console.log("🔎 Respuesta MercadoPago:", response);
 
-    return response.body;
+    if (!response || !response.body) {
+      throw new Error("MercadoPago devolvió una respuesta inválida");
+    }
+
+    const preference = response.body;
+
+    console.log("🧾 Preference creada:", preference.id);
+    console.log("🔗 Init point:", preference.init_point);
+
+    return preference;
 
   } catch (error) {
-    console.error("❌ Error creando pago Mercado Pago:", error);
+
+    console.error("❌ Error creando pago Mercado Pago");
+
+    if (error.response?.data) {
+      console.error("MP Error:", error.response.data);
+    } else {
+      console.error(error);
+    }
+
     throw error;
   }
 }
+
 
 // =============================
 // 🔁 SUSCRIPCIÓN MENSUAL
@@ -86,7 +109,12 @@ export async function createPaymentPreference({ event, user, ticketId }) {
 const preapprovalClient = new PreApproval(mpClient);
 
 export async function createSubscription({ user }) {
+
   try {
+
+    if (!user || !user.email) {
+      throw new Error("Usuario inválido para suscripción");
+    }
 
     const response = await preapprovalClient.create({
       body: {
@@ -112,13 +140,29 @@ export async function createSubscription({ user }) {
       }
     });
 
-    console.log("🧾 Subscription ID:", response.body.id);
-    console.log("🔗 Init point:", response.body.init_point);
+    console.log("🔎 Respuesta suscripción MP:", response);
 
-    return response.body;
+    if (!response || !response.body) {
+      throw new Error("MercadoPago devolvió una respuesta inválida en suscripción");
+    }
+
+    const subscription = response.body;
+
+    console.log("🧾 Subscription ID:", subscription.id);
+    console.log("🔗 Init point:", subscription.init_point);
+
+    return subscription;
 
   } catch (error) {
-    console.error("❌ Error suscripción Mercado Pago:", error);
+
+    console.error("❌ Error suscripción Mercado Pago");
+
+    if (error.response?.data) {
+      console.error("MP Error:", error.response.data);
+    } else {
+      console.error(error);
+    }
+
     throw error;
   }
 }
