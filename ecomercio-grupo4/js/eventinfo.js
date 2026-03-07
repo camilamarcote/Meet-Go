@@ -4,7 +4,6 @@ const params = new URLSearchParams(window.location.search);
 const eventId = params.get("id");
 const eventDetails = document.getElementById("eventDetails");
 
-// 🔐 TOKEN
 const token = localStorage.getItem("token");
 
 /* =============================
@@ -21,6 +20,7 @@ async function loadCurrentUser() {
     });
 
     if (!res.ok) return null;
+
     return await res.json();
 
   } catch (err) {
@@ -30,15 +30,17 @@ async function loadCurrentUser() {
 }
 
 /* =============================
-   🖼️ CATEGORÍAS
+   🖼️ IMAGENES CATEGORÍA
 ============================= */
 function getCategoryImage(category) {
+
   const images = {
     Cultural: "img/default_cultural.jpg",
     Recreativa: "img/default_recreativa.jpg",
     Deportiva: "img/default_deportiva.jpg",
     Gastronómica: "img/default_gastronomica.jpg"
   };
+
   return images[category] || "img/default_event.jpg";
 }
 
@@ -60,7 +62,9 @@ async function payEvent(eventId) {
     const ticketData = await resTicket.json();
 
     if (!resTicket.ok) {
+
       alert(ticketData.message || "Error creando ticket");
+
       return;
     }
 
@@ -73,7 +77,9 @@ async function payEvent(eventId) {
     const paymentData = await resPayment.json();
 
     if (!resPayment.ok) {
+
       alert("Error iniciando pago");
+
       return;
     }
 
@@ -82,6 +88,7 @@ async function payEvent(eventId) {
   } catch (error) {
 
     console.error("❌ Error pago evento:", error);
+
     alert("No se pudo iniciar el pago");
 
   }
@@ -89,11 +96,14 @@ async function payEvent(eventId) {
 }
 
 /* =============================
-   📄 EVENTO
+   📄 CARGAR EVENTO
 ============================= */
 async function loadEventInfo() {
+
   if (!eventId) {
+
     eventDetails.innerHTML = "<p>Evento no válido</p>";
+
     return;
   }
 
@@ -118,19 +128,15 @@ async function loadEventInfo() {
 
     const isLogged = !!token;
 
-    const isRegistered =
-      !!authUser && event.participants?.includes(authUser._id);
-
     const isSubscribed = authUser?.subscription?.isActive === true;
-
-    const isFull =
-      event.capacity && event.participants?.length >= event.capacity;
 
     const price = event.price || 300;
 
     let actionSection = "";
 
-    /* NO LOGIN */
+    /* =============================
+       NO LOGIN
+    ============================= */
 
     if (!isLogged) {
 
@@ -145,29 +151,9 @@ async function loadEventInfo() {
       `;
     }
 
-    /* YA REGISTRADA */
-
-    else if (isRegistered) {
-
-      actionSection = `
-        <div class="alert alert-success mt-4">
-          ✅ Ya estás inscripta a este evento
-        </div>
-      `;
-    }
-
-    /* EVENTO LLENO */
-
-    else if (isFull) {
-
-      actionSection = `
-        <div class="alert alert-danger mt-4">
-          ⚠️ Este evento ya alcanzó su capacidad máxima.
-        </div>
-      `;
-    }
-
-    /* SUSCRIPTA */
+    /* =============================
+       SUSCRIPTA
+    ============================= */
 
     else if (isSubscribed) {
 
@@ -199,7 +185,9 @@ async function loadEventInfo() {
       `;
     }
 
-    /* NO SUSCRIPTA */
+    /* =============================
+       NO SUSCRIPTA
+    ============================= */
 
     else {
 
@@ -221,13 +209,19 @@ async function loadEventInfo() {
       `;
     }
 
-    /* RENDER */
+    /* =============================
+       RENDER
+    ============================= */
 
     eventDetails.innerHTML = `
       <div class="row g-4">
 
         <div class="col-md-6">
-          <img src="${image}" class="img-fluid rounded">
+          <img 
+            src="${image}" 
+            class="img-fluid rounded"
+            onerror="this.src='img/default_event.jpg'"
+          >
         </div>
 
         <div class="col-md-6">
@@ -241,11 +235,6 @@ async function loadEventInfo() {
             <li>📅 ${event.date}</li>
             <li>⏰ ${event.time || "Horario a confirmar"}</li>
             <li>🎯 ${event.category}</li>
-            ${
-              event.capacity
-                ? `<li>👥 Cupos: ${event.participants?.length || 0} / ${event.capacity}</li>`
-                : ""
-            }
           </ul>
 
           <hr>
@@ -260,8 +249,8 @@ async function loadEventInfo() {
   } catch (error) {
 
     console.error("❌ Error cargando evento:", error);
-    eventDetails.innerHTML = "<p>Error cargando evento</p>";
 
+    eventDetails.innerHTML = "<p>Error cargando evento</p>";
   }
 }
 
@@ -283,7 +272,5 @@ function showEventJoinInfo() {
     joinDiv.scrollIntoView({
       behavior: "smooth"
     });
-
   }
-
 }
