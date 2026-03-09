@@ -71,7 +71,6 @@ async function payEvent(eventId) {
     if (!resTicket.ok) {
 
       alert(ticketData.message || "Error creando ticket");
-
       return;
 
     }
@@ -87,7 +86,6 @@ async function payEvent(eventId) {
     if (!resPayment.ok) {
 
       alert("Error iniciando pago");
-
       return;
 
     }
@@ -97,7 +95,6 @@ async function payEvent(eventId) {
   } catch (error) {
 
     console.error("❌ Error pago evento:", error);
-
     alert("No se pudo iniciar el pago");
 
   }
@@ -113,8 +110,8 @@ async function loadEventInfo() {
   if (!eventId) {
 
     eventDetails.innerHTML = "<p>Evento no válido</p>";
-
     return;
+
   }
 
   try {
@@ -132,12 +129,15 @@ async function loadEventInfo() {
     const event = await res.json();
 
     const isLogged = !!token;
-
     const isSubscribed = authUser?.subscription?.isActive === true;
 
-    const price = event.price || 0;
+    const price = event.price ?? 0;
 
     let actionSection = "";
+
+    /* =============================
+       USUARIO NO LOGUEADO
+    ============================= */
 
     if (!isLogged) {
 
@@ -151,6 +151,10 @@ async function loadEventInfo() {
         </a>
       `;
     }
+
+    /* =============================
+       USUARIO SUSCRITO
+    ============================= */
 
     else if (isSubscribed) {
 
@@ -172,6 +176,31 @@ async function loadEventInfo() {
         </div>
       `;
     }
+
+    /* =============================
+       EVENTO GRATIS
+    ============================= */
+
+    else if (price === 0) {
+
+      actionSection = `
+        <div class="mt-3">
+
+          <div class="alert alert-success">
+            🎉 Este evento es gratuito para suscriptores
+          </div>
+
+          <a href="suscripcion.html" class="btn btn-warning w-100">
+            ⭐ Suscribirme para acceder
+          </a>
+
+        </div>
+      `;
+    }
+
+    /* =============================
+       EVENTO PAGO
+    ============================= */
 
     else {
 
