@@ -186,12 +186,8 @@ async function loadEventInfo() {
       actionSection = `
         <div class="mt-3">
 
-          <div class="alert alert-success">
-            🎉 Este evento es gratuito para suscriptores
-          </div>
-
           <a href="suscripcion.html" class="btn btn-warning w-100">
-            ⭐ Suscribirme para acceder
+            ⭐ Suscribirme para accedera este evento
           </a>
 
         </div>
