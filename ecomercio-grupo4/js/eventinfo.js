@@ -135,7 +135,7 @@ async function loadEventInfo() {
 
     const isSubscribed = authUser?.subscription?.isActive === true;
 
-    const price = event.price || 300;
+    const price = event.price || 0;
 
     let actionSection = "";
 
