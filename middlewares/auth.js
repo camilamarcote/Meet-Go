@@ -28,6 +28,32 @@ export const protect = async (req, res, next) => {
 };
 
 // ===============================
+// 🔓 AUTENTICACIÓN OPCIONAL
+// ===============================
+export const optionalAuth = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.split(" ")[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await User.findById(decoded.id).select("-password");
+      
+      if (user) {
+        req.user = user;
+      }
+    }
+    
+    next(); // Continuar incluso si no hay usuario autenticado
+
+  } catch (error) {
+    // Si hay error con el token, continuamos sin usuario
+    console.log("⚠️ Token inválido, continuando como usuario anónimo");
+    next();
+  }
+};
+
+// ===============================
 // 👮 SOLO ORGANIZADORAS
 // ===============================
 export const adminOnly = (req, res, next) => {
