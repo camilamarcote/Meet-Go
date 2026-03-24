@@ -9,13 +9,10 @@ const token = localStorage.getItem("token");
 /* =============================
    👤 USUARIO ACTUAL
 ============================= */
-
 async function loadCurrentUser() {
-
   if (!token) return null;
 
   try {
-
     const res = await fetch(`${API_URL}/api/users/me`, {
       headers: {
         Authorization: `Bearer ${token}`
@@ -25,41 +22,32 @@ async function loadCurrentUser() {
     if (!res.ok) return null;
 
     const user = await res.json();
-
     return user;
 
   } catch (err) {
-
     console.error("❌ Error cargando usuario:", err);
     return null;
-
   }
-
 }
 
 /* =============================
    💳 PAGAR EVENTO
 ============================= */
-
 async function payEvent(eventId) {
-
   try {
-
     const currentUser = await loadCurrentUser();
 
     if (!currentUser) {
-
       alert("Debes iniciar sesión");
-
       window.location.href = "login.html";
-
       return;
     }
 
     const resTicket = await fetch(`${API_URL}/api/events/${eventId}/tickets`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
       },
       body: JSON.stringify({
         userId: currentUser._id
@@ -69,210 +57,319 @@ async function payEvent(eventId) {
     const ticketData = await resTicket.json();
 
     if (!resTicket.ok) {
-
       alert(ticketData.message || "Error creando ticket");
       return;
-
     }
 
     const ticketId = ticketData.ticket._id;
 
     const resPayment = await fetch(`${API_URL}/api/payments/create/${ticketId}`, {
-      method: "POST"
-    });
-
-    const paymentData = await resPayment.json();
-
-    if (!resPayment.ok) {
-
-      alert("Error iniciando pago");
-      return;
-
-    }
-
-    window.location.href = paymentData.init_point;
-
-  } catch (error) {
-
-    console.error("❌ Error pago evento:", error);
-    alert("No se pudo iniciar el pago");
-
-  }
-
-}
-
-/* =============================
-   📄 EVENTO
-============================= */
-
-async function loadEventInfo() {
-
-  if (!eventId) {
-
-    eventDetails.innerHTML = "<p>Evento no válido</p>";
-    return;
-
-  }
-
-  try {
-
-    const authUser = await loadCurrentUser();
-
-    const res = await fetch(`${API_URL}/api/events/${eventId}`, {
+      method: "POST",
       headers: {
         Authorization: `Bearer ${token}`
       }
     });
 
-    if (!res.ok) throw new Error("Evento no encontrado");
+    const paymentData = await resPayment.json();
+
+    if (!resPayment.ok) {
+      alert("Error iniciando pago");
+      return;
+    }
+
+    window.location.href = paymentData.init_point;
+
+  } catch (error) {
+    console.error("❌ Error pago evento:", error);
+    alert("No se pudo iniciar el pago");
+  }
+}
+
+/* =============================
+   🎟️ UNIRSE A EVENTO (SUSCRIPTORES)
+============================= */
+async function joinEvent(eventId) {
+  try {
+    const currentUser = await loadCurrentUser();
+    
+    if (!currentUser) {
+      alert("Debes iniciar sesión");
+      window.location.href = "login.html";
+      return;
+    }
+
+    // Aquí puedes agregar la lógica para unirse al evento
+    // Por ejemplo, crear un ticket gratuito o registrar asistencia
+    const res = await fetch(`${API_URL}/api/events/${eventId}/join`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        userId: currentUser._id
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.message || "Error al unirse al evento");
+      return;
+    }
+
+    alert("✅ Te has unido al evento exitosamente");
+    showEventJoinInfo();
+    
+  } catch (error) {
+    console.error("❌ Error uniéndose al evento:", error);
+    alert("Error al procesar tu solicitud");
+  }
+}
+
+/* =============================
+   📄 EVENTO (USANDO ENDPOINT PÚBLICO)
+============================= */
+async function loadEventInfo() {
+  if (!eventId) {
+    eventDetails.innerHTML = "<p class='text-center'>Evento no válido</p>";
+    return;
+  }
+
+  try {
+    // Mostrar loading
+    eventDetails.innerHTML = `
+      <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-2">Cargando información del evento...</p>
+      </div>
+    `;
+
+    // 🔥 USAR ENDPOINT PÚBLICO para cargar el evento
+    const res = await fetch(`${API_URL}/api/events/public/${eventId}`);
+    
+    if (!res.ok) {
+      if (res.status === 404) {
+        throw new Error("Evento no encontrado");
+      }
+      throw new Error(`Error al cargar evento: ${res.status}`);
+    }
 
     const event = await res.json();
-
+    
+    // Cargar usuario actual si está autenticado
+    const authUser = await loadCurrentUser();
     const isLogged = !!token;
     const isSubscribed = authUser?.subscription?.isActive === true;
-
+    const hasCompletedProfile = authUser?.experienceProfile?.completed === true;
+    
     const price = event.price ?? 0;
+    
+    // Formatear fecha
+    const formattedDate = event.date ? new Date(event.date).toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }) : 'Fecha por confirmar';
 
     let actionSection = "";
 
     /* =============================
        USUARIO NO LOGUEADO
     ============================= */
-
     if (!isLogged) {
-
       actionSection = `
         <div class="alert alert-info mt-4">
+          <i class="fas fa-info-circle"></i>
           Para unirte al evento necesitás iniciar sesión.
         </div>
-
         <a href="login.html" class="btn btn-primary w-100">
-          Iniciar sesión
+          🔐 Iniciar sesión
+        </a>
+        <div class="text-center mt-2">
+          <small class="text-muted">¿No tenés cuenta? <a href="register.html">Registrate</a></small>
+        </div>
+      `;
+    }
+    
+    /* =============================
+       USUARIO LOGUEADO CON PERFIL INCOMPLETO
+    ============================= */
+    else if (!hasCompletedProfile) {
+      actionSection = `
+        <div class="alert alert-warning mt-4">
+          <i class="fas fa-exclamation-triangle"></i>
+          Para participar en eventos, primero debes completar tu perfil de experiencia.
+        </div>
+        <a href="complete-profile.html" class="btn btn-warning w-100">
+          📝 Completar mi perfil
         </a>
       `;
     }
 
     /* =============================
-       USUARIO SUSCRITO
+       USUARIO SUSCRITO CON PERFIL COMPLETO
     ============================= */
-
-    else if (isSubscribed) {
-
+    else if (isSubscribed && hasCompletedProfile) {
       actionSection = `
-        <button class="btn btn-success w-100 mt-3" onclick="showEventJoinInfo()">
+        <div class="alert alert-success mt-4">
+          <i class="fas fa-star"></i>
+          <strong>¡Eres suscriptora!</strong> Puedes unirte a este evento sin costo adicional.
+        </div>
+        <button class="btn btn-success w-100 mt-2" onclick="joinEvent('${event._id}')">
           🙋‍♀️ Unirme al evento
         </button>
-
         <div id="joinInfo" class="mt-3" style="display:none">
-
-          ${
-            event.whatsappLink
-              ? `<a href="${event.whatsappLink}" target="_blank" class="btn btn-success w-100">
-                  👉 Unirme al grupo
-                </a>`
-              : `<p>El enlace se publicará pronto</p>`
-          }
-
+          ${event.whatsappLink ? `
+            <div class="alert alert-info">
+              <i class="fab fa-whatsapp"></i>
+              <strong>¡Ya estás en el evento!</strong>
+              <hr>
+              <a href="${event.whatsappLink}" target="_blank" class="btn btn-success w-100">
+                💬 Unirme al grupo de WhatsApp
+              </a>
+            </div>
+          ` : `
+            <div class="alert alert-info">
+              <p>✅ Te has unido al evento exitosamente.</p>
+              <p class="mb-0">El enlace al grupo se publicará próximamente.</p>
+            </div>
+          `}
         </div>
       `;
     }
 
     /* =============================
-       EVENTO GRATIS
+       EVENTO GRATIS (USUARIO NO SUSCRITO)
     ============================= */
-
     else if (price === 0) {
-
       actionSection = `
-        <div class="mt-3">
-
-          <a href="suscripcion.html" class="btn btn-warning w-100">
-            ⭐ Suscribirme para accedera este evento
-          </a>
-
+        <div class="alert alert-info mt-4">
+          <i class="fas fa-gift"></i>
+          Este evento es <strong>gratis</strong>. Como no eres suscriptora, puedes pagar solo este evento.
+        </div>
+        <button class="btn btn-primary w-100 mb-2" onclick="payEvent('${event._id}')">
+          🎟️ Obtener ticket gratis
+        </button>
+        <a href="suscripcion.html" class="btn btn-warning w-100">
+          ⭐ Suscribirme y acceder a todos los eventos
+        </a>
+        <div class="text-center mt-2">
+          <small class="text-muted">Con suscripción accedes a todos los eventos sin costo adicional</small>
         </div>
       `;
     }
 
     /* =============================
-       EVENTO PAGO
+       EVENTO DE PAGO (USUARIO NO SUSCRITO)
     ============================= */
-
     else {
-
       actionSection = `
-        <div class="mt-3">
-
-          <button
-            class="btn btn-success w-100 mb-2"
-            onclick="payEvent('${event._id}')"
-          >
-            🎟️ Pagar este evento - $${price}
-          </button>
-
-          <a href="suscripcion.html" class="btn btn-warning w-100">
-            ⭐ Suscribirme y acceder a todos los eventos
-          </a>
-
+        <div class="alert alert-info mt-4">
+          <i class="fas fa-ticket-alt"></i>
+          Este evento tiene un costo de <strong>$${price}</strong>.
+        </div>
+        <button
+          class="btn btn-success w-100 mb-2"
+          onclick="payEvent('${event._id}')"
+        >
+          🎟️ Pagar este evento - $${price}
+        </button>
+        <a href="suscripcion.html" class="btn btn-warning w-100">
+          ⭐ Suscribirme y ahorrar en todos los eventos
+        </a>
+        <div class="text-center mt-2">
+          <small class="text-muted">La suscripción te da acceso ilimitado a todos los eventos</small>
         </div>
       `;
     }
 
+    // Renderizar el evento
     eventDetails.innerHTML = `
-
       <div class="row g-4">
-
         <div class="col-md-6">
-          <img src="${event.image}" class="img-fluid rounded">
+          <div class="position-relative">
+            <img 
+              src="${event.image || "img/default_event.jpg"}" 
+              class="img-fluid rounded shadow-sm" 
+              alt="${event.name}"
+              style="width: 100%; object-fit: cover; max-height: 400px;"
+              onerror="this.src='img/default_event.jpg'"
+            >
+            ${price === 0 ? 
+              '<span class="badge bg-success position-absolute top-0 end-0 m-2">Gratis</span>' : 
+              `<span class="badge bg-primary position-absolute top-0 end-0 m-2">$${price}</span>`
+            }
+          </div>
         </div>
 
         <div class="col-md-6">
+          <h2 class="mb-3">${escapeHtml(event.name)}</h2>
+          
+          ${event.description ? `
+            <div class="mb-4">
+              <h5>📝 Descripción</h5>
+              <p class="text-muted">${escapeHtml(event.description)}</p>
+            </div>
+          ` : ''}
 
-          <h2>${event.name}</h2>
-
-          <p>${event.description || ""}</p>
-
-          <ul class="list-unstyled mt-3">
-            <li>📍 ${event.department}</li>
-            <li>📅 ${event.date}</li>
-            <li>⏰ ${event.time}</li>
-            <li>🎯 ${event.category}</li>
-          </ul>
+          <div class="event-info mb-4">
+            <h5>📍 Detalles del evento</h5>
+            <ul class="list-unstyled">
+              ${event.category ? `<li class="mb-2"><strong>🎯 Categoría:</strong> ${escapeHtml(event.category)}</li>` : ''}
+              ${event.department ? `<li class="mb-2"><strong>📍 Ubicación:</strong> ${escapeHtml(event.department)}</li>` : ''}
+              <li class="mb-2"><strong>📅 Fecha:</strong> ${formattedDate}</li>
+              ${event.time ? `<li class="mb-2"><strong>⏰ Hora:</strong> ${event.time}</li>` : ''}
+              ${event.groupMembersCount ? `<li class="mb-2"><strong>👥 Cupo:</strong> ${event.groupMembersCount} personas</li>` : ''}
+            </ul>
+          </div>
 
           <hr>
 
           ${actionSection}
-
         </div>
-
       </div>
-
     `;
 
   } catch (error) {
-
     console.error("❌ Error cargando evento:", error);
-
-    eventDetails.innerHTML = "<p>Error cargando evento</p>";
+    eventDetails.innerHTML = `
+      <div class="text-center py-5">
+        <div class="alert alert-danger">
+          <i class="fas fa-exclamation-circle"></i>
+          <p class="mb-0">${error.message === "Evento no encontrado" ? "El evento que buscas no existe" : "Error al cargar la información del evento"}</p>
+          <a href="explorar.html" class="btn btn-primary mt-3">← Volver a explorar eventos</a>
+        </div>
+      </div>
+    `;
   }
-
 }
-
-loadEventInfo();
 
 /* =============================
-   MOSTRAR INFO
+   MOSTRAR INFO DE UNIÓN
 ============================= */
-
 function showEventJoinInfo() {
-
   const joinDiv = document.getElementById("joinInfo");
-
   if (joinDiv) {
-
-    joinDiv.style.display =
-      joinDiv.style.display === "none" ? "block" : "none";
-
+    joinDiv.style.display = joinDiv.style.display === "none" ? "block" : "none";
   }
-
 }
+
+/* =============================
+   🔧 UTILIDAD: ESCAPAR HTML
+============================= */
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+/* =============================
+   🚀 INIT
+============================= */
+document.addEventListener("DOMContentLoaded", () => {
+  loadEventInfo();
+});
