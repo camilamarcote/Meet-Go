@@ -1,4 +1,4 @@
-const MP_SUBSCRIPTION_LINK = "https://www.mercadopago.com.uy/subscriptions/checkout?preapproval_plan_id=a6ceeb8e4d0a48e290a25863478fbc4b";
+const MP_SUBSCRIPTION_LINK = "https://www.mercadopago.com.uy/subscriptions/checkout?preapproval_plan_id=f803017fb62d41d4b7f4a405973af5c1";
 
 const subscribeBtn = document.getElementById("subscribeBtn");
 
