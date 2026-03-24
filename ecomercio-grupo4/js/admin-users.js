@@ -273,3 +273,18 @@ async function sendMail(userId, email) {
     alert("Error al enviar el mail");
   }
 }
+
+/*BARRA DE BUSQUEDA*/
+
+document.getElementById('search-box').addEventListener('input', function(e) {
+    const term = e.target.value.toLowerCase();
+    const items = document.querySelectorAll('#search-list li');
+
+    items.forEach(item => {
+        if (item.textContent.toLowerCase().includes(term)) {
+            item.style.display = 'block'; // Mostrar
+        } else {
+            item.style.display = 'none'; // Ocultar
+        }
+    });
+});
