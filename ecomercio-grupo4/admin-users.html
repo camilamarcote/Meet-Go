@@ -6,29 +6,58 @@
   <title>Panel de Organizadoras</title>
   <link rel="stylesheet" href="css/admin-users.css">
   <!-- Favicon básico -->
-<link rel="shortcut icon" href="img/favicon.ico">
-<link rel="icon" type="image/x-icon" href="img/favicon.ico">
+  <link rel="shortcut icon" href="img/favicon.ico">
+  <link rel="icon" type="image/x-icon" href="img/favicon.ico">
 
-<!-- Favicons PNG -->
-<link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="img/favicon-16x16.png">
+  <!-- Favicons PNG -->
+  <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="img/favicon-16x16.png">
 
-<!-- Apple Touch -->
-<link rel="apple-touch-icon" sizes="180x180" href="img/apple-touch-icon.png">
+  <!-- Apple Touch -->
+  <link rel="apple-touch-icon" sizes="180x180" href="img/apple-touch-icon.png">
 
-<!-- Manifest -->
-<link rel="manifest" href="img/site.webmanifest">
-
+  <!-- Manifest -->
+  <link rel="manifest" href="img/site.webmanifest">
 </head>
 
 <body>
-
-  <h1 style="text-align:center">Panel de organizadoras</h1>
-  <form action="/buscar" method="get">
-  <input type="search-box" name="q" placeholder="Buscar...">
-  <button type="submit">Buscar</button>
-</form>
-  <div id="usersContainer" class="grid"></div>
+  <div class="admin-container">
+    <h1 class="admin-title">Panel de organizadoras</h1>
+    
+    <!-- Barra de búsqueda mejorada -->
+    <div class="search-section">
+      <div class="search-wrapper">
+        <input 
+          type="text" 
+          id="searchInput" 
+          class="search-input" 
+          placeholder="🔍 Buscar por nombre, email, username, nacionalidad, intereses..."
+          autocomplete="off"
+        />
+        <button id="clearSearch" class="clear-search-btn" style="display: none;">✕</button>
+      </div>
+      
+      <!-- Filtros adicionales opcionales -->
+      <div class="filter-buttons">
+        <button class="filter-btn" data-filter="all">Todos</button>
+        <button class="filter-btn" data-filter="verified">Verificados</button>
+        <button class="filter-btn" data-filter="unverified">No verificados</button>
+        <button class="filter-btn" data-filter="subscribed">Suscriptos</button>
+        <button class="filter-btn" data-filter="organizer">Organizadoras</button>
+      </div>
+      
+      <div class="search-stats">
+        <span id="resultsCount">0</span> usuarios encontrados
+      </div>
+    </div>
+    
+    <div id="usersContainer" class="grid"></div>
+    
+    <!-- Mensaje cuando no hay resultados -->
+    <div id="noResults" class="no-results" style="display: none;">
+      <p>😕 No se encontraron usuarios que coincidan con tu búsqueda</p>
+    </div>
+  </div>
 
   <script src="js/admin-users.js"></script>
 </body>

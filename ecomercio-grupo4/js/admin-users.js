@@ -1,5 +1,9 @@
 const API_URL = "https://api.meetandgouy.com";
 
+// Variables globales para la búsqueda
+let allUsers = [];
+let currentFilter = "all";
+
 /* ===============================
    🔐 CONTROL DE ACCESO
 =============================== */
@@ -17,7 +21,46 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   loadUsers(currentUser.token);
+  
+  // Inicializar eventos de búsqueda
+  initSearchEvents();
 });
+
+/* ===============================
+   🔍 INICIALIZAR EVENTOS DE BÚSQUEDA
+=============================== */
+function initSearchEvents() {
+  const searchInput = document.getElementById("searchInput");
+  const clearBtn = document.getElementById("clearSearch");
+  const filterBtns = document.querySelectorAll(".filter-btn");
+
+  // Evento de búsqueda en tiempo real
+  searchInput.addEventListener("input", (e) => {
+    filterUsers(e.target.value, currentFilter);
+    clearBtn.style.display = e.target.value ? "flex" : "none";
+  });
+
+  // Botón para limpiar búsqueda
+  clearBtn.addEventListener("click", () => {
+    searchInput.value = "";
+    filterUsers("", currentFilter);
+    clearBtn.style.display = "none";
+    searchInput.focus();
+  });
+
+  // Filtros por categoría
+  filterBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      // Actualizar estado activo de los botones
+      filterBtns.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      
+      // Actualizar filtro actual
+      currentFilter = btn.dataset.filter;
+      filterUsers(searchInput.value, currentFilter);
+    });
+  });
+}
 
 /* ===============================
    👥 CARGAR USUARIOS
@@ -32,8 +75,8 @@ async function loadUsers(token) {
 
     if (!res.ok) throw new Error("No autorizado");
 
-    const users = await res.json();
-    renderUsers(users);
+    allUsers = await res.json();
+    filterUsers("", "all");
 
   } catch (error) {
     console.error("❌ Error cargando usuarios:", error);
@@ -42,14 +85,92 @@ async function loadUsers(token) {
 }
 
 /* ===============================
+   🔍 FILTRAR USUARIOS
+=============================== */
+function filterUsers(searchTerm, filterType) {
+  let filteredUsers = [...allUsers];
+  
+  // Aplicar filtro por categoría
+  switch(filterType) {
+    case "verified":
+      filteredUsers = filteredUsers.filter(user => user.isVerified === true);
+      break;
+    case "unverified":
+      filteredUsers = filteredUsers.filter(user => user.isVerified === false);
+      break;
+    case "subscribed":
+      filteredUsers = filteredUsers.filter(user => user.subscription?.isActive === true);
+      break;
+    case "organizer":
+      filteredUsers = filteredUsers.filter(user => user.isOrganizer === true);
+      break;
+    default:
+      // "all" - no filtrar por categoría
+      break;
+  }
+  
+  // Aplicar búsqueda por texto si hay término de búsqueda
+  if (searchTerm && searchTerm.trim() !== "") {
+    const term = searchTerm.toLowerCase().trim();
+    filteredUsers = filteredUsers.filter(user => {
+      // Buscar en múltiples campos
+      const searchableFields = [
+        user.firstName,
+        user.lastName,
+        user.username,
+        user.email,
+        user.nationality,
+        user.department,
+        user.phone,
+        user.bio,
+        ...(user.interests || []),
+        ...(user.languages || [])
+      ];
+      
+      // Verificar si algún campo contiene el término de búsqueda
+      return searchableFields.some(field => 
+        field && field.toString().toLowerCase().includes(term)
+      );
+    });
+  }
+  
+  // Actualizar contador de resultados
+  updateResultsCount(filteredUsers.length);
+  
+  // Renderizar usuarios filtrados
+  renderUsers(filteredUsers);
+  
+  // Mostrar/ocultar mensaje de no resultados
+  const noResultsDiv = document.getElementById("noResults");
+  if (filteredUsers.length === 0) {
+    noResultsDiv.style.display = "block";
+  } else {
+    noResultsDiv.style.display = "none";
+  }
+}
+
+/* ===============================
+   📊 ACTUALIZAR CONTADOR DE RESULTADOS
+=============================== */
+function updateResultsCount(count) {
+  const resultsSpan = document.getElementById("resultsCount");
+  if (resultsSpan) {
+    resultsSpan.textContent = count;
+  }
+}
+
+/* ===============================
    🧩 RENDER USUARIOS
 =============================== */
 function renderUsers(users) {
   const container = document.getElementById("usersContainer");
+  if (!container) return;
+  
   container.innerHTML = "";
 
   users.forEach(user => {
     const isSubscribed = user.subscription?.isActive === true;
+    const fullName = `${user.firstName} ${user.lastName}`.trim();
 
     // 🔁 PERFIL DE EXPERIENCIA + FALLBACK REGISTER
     const exp = user.experienceProfile || {};
@@ -63,42 +184,36 @@ function renderUsers(users) {
     const expectations = exp.expectations || {};
 
     container.innerHTML += `
-      <div class="user-card">
-
+      <div class="user-card" data-user-id="${user._id}">
         <div class="user-header">
-          <h3>${user.username}</h3>
-
+          <h3>${fullName} (@${user.username})</h3>
           <div class="badges">
             <span class="badge ${user.isVerified ? "success" : "warning"}">
-              ${user.isVerified ? "Verificada" : "No verificada"}
+              ${user.isVerified ? "✓ Verificada" : "✗ No verificada"}
             </span>
 
             <span class="badge ${isSubscribed ? "success" : "neutral"}">
-              ${isSubscribed ? "⭐ Suscripta" : "Sin suscripción"}
+              ${isSubscribed ? "⭐ Suscripta" : "○ Sin suscripción"}
             </span>
 
             <span class="badge ${exp.completed ? "success" : "warning"}">
-              ${exp.completed ? "Perfil completo" : "Perfil incompleto"}
+              ${exp.completed ? "📝 Perfil completo" : "⚠ Perfil incompleto"}
             </span>
+            
+            ${user.isOrganizer ? '<span class="badge success">👑 Organizadora</span>' : ''}
           </div>
         </div>
 
         <p><strong>📧 Email:</strong> ${user.email}</p>
-        <p><strong>📱 Celular:</strong> ${user.phone ?? "—"}</p>
-        <p><strong>🎂 Edad:</strong> ${user.age ?? "—"}</p>
-        <p><strong>🌎 Nacionalidad:</strong> ${user.nationality ?? "—"}</p>
-
-        <p>
-          <strong>👮 Rol:</strong>
-          <span class="badge admin">
-            ${user.isOrganizer ? "Organizadora" : "Usuaria"}
-          </span>
-        </p>
+        <p><strong>📱 Celular:</strong> ${user.phone || "—"}</p>
+        <p><strong>🎂 Edad:</strong> ${user.age ?? "—"} años</p>
+        <p><strong>🌎 Nacionalidad:</strong> ${user.nationality || "—"}</p>
+        <p><strong>🏢 Departamento:</strong> ${user.department || "—"}</p>
 
         <hr>
 
         <p><strong>⭐ Intereses:</strong><br>
-          ${user.interests?.length ? user.interests.join(", ") : "—"}
+          ${user.interests?.length ? user.interests.map(i => `<span class="interest-tag">${i}</span>`).join(" ") : "—"}
         </p>
 
         <p><strong>🗣️ Idiomas:</strong><br>
@@ -111,25 +226,11 @@ function renderUsers(users) {
 
         <hr>
 
-        <p><strong>🌿 Personalidad:</strong><br>
-          ${social.personality || "—"}
-        </p>
-
-        <p><strong>👥 Estilo social:</strong><br>
-          ${social.style || "—"}
-        </p>
-
-        <p><strong>🧠 Preferencia de grupo:</strong><br>
-          ${social.groupPreference || "—"}
-        </p>
-
-        <p><strong>💬 Tipo de charla:</strong><br>
-          ${social.conversationStyle || "—"}
-        </p>
-
-        <p><strong>🙋‍♀️ Inicia conversaciones:</strong><br>
-          ${social.initiatesConversation || "—"}
-        </p>
+        <p><strong>🌿 Personalidad:</strong> ${social.personality || "—"}</p>
+        <p><strong>👥 Estilo social:</strong> ${social.style || "—"}</p>
+        <p><strong>🧠 Preferencia de grupo:</strong> ${social.groupPreference || "—"}</p>
+        <p><strong>💬 Tipo de charla:</strong> ${social.conversationStyle || "—"}</p>
+        <p><strong>🙋‍♀️ Inicia conversaciones:</strong> ${social.initiatesConversation || "—"}</p>
 
         <p><strong>🎯 Qué busca:</strong><br>
           ${
@@ -167,7 +268,6 @@ function renderUsers(users) {
               `
           }
         </div>
-
       </div>
     `;
   });
@@ -273,18 +373,3 @@ async function sendMail(userId, email) {
     alert("Error al enviar el mail");
   }
 }
-
-/*BARRA DE BUSQUEDA*/
-
-document.getElementById('search-box').addEventListener('input', function(e) {
-    const term = e.target.value.toLowerCase();
-    const items = document.querySelectorAll('#search-list li');
-
-    items.forEach(item => {
-        if (item.textContent.toLowerCase().includes(term)) {
-            item.style.display = 'block'; // Mostrar
-        } else {
-            item.style.display = 'none'; // Ocultar
-        }
-    });
-});
