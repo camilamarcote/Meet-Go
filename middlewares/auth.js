@@ -62,3 +62,11 @@ export const adminOnly = (req, res, next) => {
   }
   next();
 };
+
+// ===============================
+// 🔓 MIDDLEWARE QUE NO BLOQUEA POR PERFIL INCOMPLETO
+// ===============================
+export const optionalProfile = async (req, res, next) => {
+  // Este middleware solo agrega el usuario si existe, pero nunca bloquea
+  await optionalAuth(req, res, next);
+};

@@ -57,7 +57,7 @@ router.get("/me", protect, async (req, res) => {
 });
 
 /* =============================
-   📝 REGISTER
+   📝 REGISTER (VERSIÓN SIMPLIFICADA)
 ============================= */
 router.post("/register", upload.single("profileImage"), async (req, res) => {
   try {
@@ -69,17 +69,15 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       phone,
       password,
       age,
-      nationality,
-      department,
-      personality,
-      style,
-      bio
+      interests
     } = req.body;
 
-    if (!password) {
-      return res.status(400).json({ message: "La contraseña es obligatoria" });
+    // Validaciones básicas
+    if (!firstName || !lastName || !email || !password || !age) {
+      return res.status(400).json({ message: "Todos los campos obligatorios deben estar completos" });
     }
 
+    // Validar contraseña
     const passwordRegex =
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 
@@ -90,17 +88,26 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       });
     }
 
+    // Verificar si el usuario ya existe
     const exists = await User.findOne({
-      $or: [{ email }, { username }]
+      $or: [{ email }, { username: username || email }]
     });
 
     if (exists) {
-      return res.status(400).json({ message: "Usuario o email ya existe" });
+      return res.status(400).json({ message: "El email ya está registrado" });
     }
 
-    const languages = req.body.languages ? JSON.parse(req.body.languages) : [];
-    const interests = req.body.interests ? JSON.parse(req.body.interests) : [];
+    // Parsear intereses si vienen como string JSON
+    let parsedInterests = [];
+    if (interests) {
+      try {
+        parsedInterests = typeof interests === 'string' ? JSON.parse(interests) : interests;
+      } catch (e) {
+        parsedInterests = [];
+      }
+    }
 
+    // Subir imagen de perfil si existe
     let profileImageUrl = "";
     if (req.file) {
       const uploadResult = await cloudinary.uploader.upload(
@@ -113,72 +120,66 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       profileImageUrl = uploadResult.secure_url;
     }
 
+    // Hashear contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Crear usuario con valores por defecto para campos obligatorios
     const user = await User.create({
       firstName,
       lastName,
-      username,
+      username: username || email, // Usar email como username si no se proporciona
       email,
       phone: phone || "",
       password: hashedPassword,
-      age,
-      nationality,
-      department: department || "",
-      personality: personality || "",
-      style: style || "",
-      bio: bio || "",
-      languages,
-      interests,
+      age: parseInt(age),
+      nationality: "Uruguay", // Valor por defecto
+      department: "", // Vacío por defecto
+      interests: parsedInterests,
+      languages: [], // Array vacío por defecto
+      personality: "",
+      style: "",
+      bio: "",
       profileImage: profileImageUrl,
       isVerified: false,
       roles: ["user"],
-      subscription: { isActive: false }
+      subscription: { isActive: false },
+      // Perfil de experiencia completado por defecto como falso
+      experienceProfile: {
+        completed: false,
+        icebreakers: {
+          favoriteMovie: "",
+          favoriteSong: "",
+          favoriteFood: "",
+          dreamTrip: ""
+        },
+        socialStyle: {
+          groupPreference: "",
+          conversationStyle: "",
+          initiatesConversation: ""
+        },
+        expectations: {
+          lookingFor: [],
+          discomforts: []
+        }
+      }
     });
 
+    // Generar token de verificación
     const token = generateToken(user);
     user.verificationToken = token;
     await user.save();
 
+    // Enviar email de verificación
     await sendVerificationEmail(user.email, token);
 
     res.status(201).json({
-      message: "Usuario creado. Revisá tu email para verificar la cuenta"
+      message: "Usuario creado exitosamente. Revisá tu email para verificar la cuenta",
+      userId: user._id
     });
+
   } catch (error) {
     console.error("❌ Register error:", error);
-    res.status(500).json({ message: "Error en registro" });
-  }
-});
-
-/* =============================
-   ✅ VERIFY ACCOUNT
-============================= */
-router.get("/verify", async (req, res) => {
-  try {
-    const { token } = req.query;
-
-    if (!token) {
-      return res.status(400).send("Token faltante");
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id);
-
-    if (!user) {
-      return res.status(400).send("Usuario no encontrado");
-    }
-
-    if (!user.isVerified) {
-      user.isVerified = true;
-      user.verificationToken = null;
-      await user.save();
-    }
-
-    return res.redirect(`${process.env.FRONT_URL}/login.html?verified=true`);
-  } catch (error) {
-    console.error("❌ Verify error:", error);
-    return res.redirect(`${process.env.FRONT_URL}/login.html?verified=false`);
+    res.status(500).json({ message: "Error en registro: " + error.message });
   }
 });
 

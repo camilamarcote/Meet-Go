@@ -28,7 +28,7 @@ const UserSchema = new mongoose.Schema(
 
     age: { type: Number, min: 0, required: true },
     department: { type: String, trim: true, default: "" },
-    nationality: { type: String, trim: true, required: true },
+    nationality: { type: String, trim: true, default: "Uruguay" }, // Valor por defecto
 
     phone: { type: String, trim: true, default: "" },
 
@@ -63,18 +63,16 @@ const UserSchema = new mongoose.Schema(
     isOrganizer: { type: Boolean, default: false },
 
     /* =============================
-       🎯 PERFIL DE EXPERIENCIA
+       🎯 PERFIL DE EXPERIENCIA (OPCIONAL)
     ============================= */
     experienceProfile: {
       completed: { type: Boolean, default: false },
-
       icebreakers: {
-        favoriteMovie: { type: String, trim: true },
-        favoriteSong: { type: String, trim: true },
-        favoriteFood: { type: String, trim: true },
-        dreamTrip: { type: String, trim: true }
+        favoriteMovie: { type: String, trim: true, default: "" },
+        favoriteSong: { type: String, trim: true, default: "" },
+        favoriteFood: { type: String, trim: true, default: "" },
+        dreamTrip: { type: String, trim: true, default: "" }
       },
-
       socialStyle: {
         groupPreference: {
           type: String,
@@ -92,7 +90,6 @@ const UserSchema = new mongoose.Schema(
           default: ""
         }
       },
-
       expectations: {
         lookingFor: { type: [String], default: [] },
         discomforts: { type: [String], default: [] }
