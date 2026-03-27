@@ -320,7 +320,7 @@ async function loadEventInfo() {
             <ul class="list-unstyled">
               ${event.category ? `<li class="mb-2"><strong>🎯 Categoría:</strong> ${escapeHtml(event.category)}</li>` : ''}
               ${event.department ? `<li class="mb-2"><strong>📍 Ubicación:</strong> ${escapeHtml(event.department)}</li>` : ''}
-              <li class="mb-2"><strong>📅 Fecha:</strong> ${formattedDate}</li>
+              <li class="mb-2"><strong>📅 Fecha:</strong> ${event.date}</li>
               ${event.time ? `<li class="mb-2"><strong>⏰ Hora:</strong> ${event.time}</li>` : ''}
               ${event.groupMembersCount ? `<li class="mb-2"><strong>👥 Cupo:</strong> ${event.groupMembersCount} personas</li>` : ''}
             </ul>

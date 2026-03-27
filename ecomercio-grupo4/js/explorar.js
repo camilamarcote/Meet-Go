@@ -79,7 +79,7 @@ async function loadEvents() {
 
               ${event.category ? `<p class="mb-1 text-muted small">📂 ${escapeHtml(event.category)}</p>` : ''}
               ${event.department ? `<p class="mb-1 text-muted small">📍 ${escapeHtml(event.department)}</p>` : ''}
-              <p class="mb-1 text-muted small">📅 ${formattedDate}</p>
+              <p class="mb-1 text-muted small">📅 ${event.date}</p>
               ${event.time ? `<p class="mb-3 text-muted small">⏰ ${event.time}</p>` : ''}
 
               <a
