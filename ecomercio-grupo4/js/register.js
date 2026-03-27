@@ -75,24 +75,18 @@ document.addEventListener("DOMContentLoaded", () => {
       password: password,
       age: age,
       phone: phone.trim(),
-      interests: interests,
-      // Campos requeridos por el modelo User
-      username: email.trim().toLowerCase(), // Usamos email como username temporal
-      nationality: "Uruguay", // Valor por defecto
-      department: "", // Vacío por defecto
-      languages: [], // Vacío por defecto
-      bio: "", // Vacío por defecto
-      personality: "", // Vacío por defecto
-      style: "" // Vacío por defecto
+      interests: interests
     };
 
-    console.log("📤 Enviando datos de registro:", userData);
+    console.log("📤 Enviando datos de registro a:", `${API_URL}/api/users/register`);
+    console.log("📦 Datos:", userData);
 
     try {
       /* ============================
          🚀 ENVIAR AL BACKEND
+         🔴 RUTA CORRECTA: /api/users/register (NO /api/auth/register)
       ============================ */
-      const response = await fetch(`${API_URL}/api/auth/register`, {
+      const response = await fetch(`${API_URL}/api/users/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -100,6 +94,8 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify(userData)
       });
 
+      console.log("📥 Status code:", response.status);
+      
       const data = await response.json();
       console.log("📥 Respuesta del servidor:", data);
 
@@ -108,8 +104,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (data.message) {
           if (data.message.includes("email") || data.message.includes("Email")) {
             alert("❌ Este email ya está registrado. Por favor, usa otro email o inicia sesión.");
-          } else if (data.message.includes("username")) {
-            alert("❌ Error con el nombre de usuario. Por favor, intenta de nuevo.");
+          } else if (data.message.includes("contraseña")) {
+            alert(`❌ ${data.message}`);
           } else {
             alert(`❌ Error: ${data.message}`);
           }
@@ -120,7 +116,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       // Registro exitoso
-      // 🧹 Limpieza preventiva
       localStorage.removeItem("token");
       localStorage.removeItem("currentUser");
 
@@ -128,7 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {
       
       // Redirigir al login después de 2 segundos
       setTimeout(() => {
-        window.location.href = "login.html";
+        window.location.href = "login.html?registered=true";
       }, 2000);
 
     } catch (error) {
