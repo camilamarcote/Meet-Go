@@ -233,7 +233,55 @@ router.post("/login", async (req, res) => {
     res.status(500).json({ message: "Error al iniciar sesión" });
   }
 });
+/* =============================
+   ✅ VERIFY ACCOUNT
+============================= */
+router.get("/verify", async (req, res) => {
+  console.log("🔍 Verify endpoint called");
+  console.log("📝 Token recibido:", req.query.token);
+  
+  try {
+    const { token } = req.query;
 
+    if (!token) {
+      console.log("❌ No token provided");
+      return res.status(400).json({ message: "Token faltante" });
+    }
+
+    // Verificar el token JWT
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log("🔓 Token decodificado:", decoded);
+
+    const user = await User.findById(decoded.id);
+    console.log("👤 Usuario encontrado:", user ? user.email : "No encontrado");
+
+    if (!user) {
+      console.log("❌ User not found");
+      return res.status(400).json({ message: "Usuario no encontrado" });
+    }
+
+    if (!user.isVerified) {
+      console.log("✅ Verificando usuario...");
+      user.isVerified = true;
+      user.verificationToken = null;
+      await user.save();
+      console.log("✅ Usuario verificado exitosamente");
+    } else {
+      console.log("ℹ️ Usuario ya estaba verificado");
+    }
+
+    const frontendUrl = process.env.FRONT_URL || "https://meetandgof.netlify.app";
+    console.log("🔄 Redirigiendo a:", `${frontendUrl}/login.html?verified=true`);
+    
+    // Redirigir al frontend
+    return res.redirect(`${frontendUrl}/login.html?verified=true`);
+    
+  } catch (error) {
+    console.error("❌ Verify error details:", error);
+    const frontendUrl = process.env.FRONT_URL || "https://meetandgof.netlify.app";
+    return res.redirect(`${frontendUrl}/login.html?verified=false`);
+  }
+});
 /* =============================
    🔁 FORGOT PASSWORD
 ============================= */
@@ -379,5 +427,8 @@ router.put("/me/experience", protect, async (req, res) => {
     res.status(500).json({ message: "Error al guardar perfil de experiencia" });
   }
 });
+
+
+
 
 export default router;
