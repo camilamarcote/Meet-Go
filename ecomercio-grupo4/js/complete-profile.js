@@ -1,4 +1,4 @@
-const API_URL = "https://api.meetandgouy.com";
+/*const API_URL = "https://api.meetandgouy.com";
 
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("experienceForm");
@@ -57,4 +57,4 @@ document.addEventListener("DOMContentLoaded", () => {
       alert("Ocurrió un error guardando tu perfil.");
     }
   });
-});
+});*/

@@ -1,4 +1,4 @@
-// middleware/experienceProfile.js
+/* middleware/experienceProfile.js
 
 export const requireExperienceProfile = (req, res, next) => {
   // seguridad extra
@@ -15,4 +15,4 @@ export const requireExperienceProfile = (req, res, next) => {
   }
 
   next();
-};
+};*/

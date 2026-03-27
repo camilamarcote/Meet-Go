@@ -183,7 +183,7 @@ async function loadEventInfo() {
       actionSection = `
         <div class="alert alert-info mt-4">
           <i class="fas fa-info-circle"></i>
-          Para unirte al evento necesitás iniciar sesión.
+          Registrate en menos de un minuto y participa del evento.
         </div>
         <a href="login.html" class="btn btn-primary w-100">
           🔐 Iniciar sesión

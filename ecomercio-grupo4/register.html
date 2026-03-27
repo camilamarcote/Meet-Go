@@ -33,9 +33,6 @@
   <label>Apellido*</label>
   <input name="lastName" required>
 
-  <label>Usuario*</label>
-  <input name="username" required>
-
   <label>Email*</label>
   <input type="email" name="email" required>
 
@@ -58,58 +55,25 @@
   <label>Celular*</label>
 <input type="text" name="phone" required placeholder="+598 9XXXXXXX">
 
-  <!-- 🌎 NACIONALIDAD -->
-  <label>Nacionalidad*</label>
-  <select name="nationality" required>
-    <option value="">Seleccionar...</option>
-    <option>Uruguaya</option>
-    <option>Argentina</option>
-    <option>Brasileña</option>
-    <option>Chilena</option>
-    <option>Paraguaya</option>
-    <option>Boliviana</option>
-    <option>Peruana</option>
-    <option>Colombiana</option>
-    <option>Venezolana</option>
-    <option>Mexicana</option>
-    <option>Española</option>
-    <option>Italiana</option>
-    <option>Francesa</option>
-    <option>Alemana</option>
-    <option>Estadounidense</option>
-    <option>Canadiense</option>
-    <option>Otra</option>
-  </select>
+<section class="form-section">
+    <h3>Intereses</h3>
+    <p>Elegí las actividades que mas te gustan</p>
 
-  <!-- 🏙️ DEPARTAMENTO -->
-  <label>Departamento</label>
-  <select name="department">
-    <option value="">Seleccionar...</option>
-    <option>Artigas</option>
-    <option>Canelones</option>
-    <option>Cerro Largo</option>
-    <option>Colonia</option>
-    <option>Durazno</option>
-    <option>Flores</option>
-    <option>Florida</option>
-    <option>Lavalleja</option>
-    <option>Maldonado</option>
-    <option>Montevideo</option>
-    <option>Paysandú</option>
-    <option>Río Negro</option>
-    <option>Rivera</option>
-    <option>Rocha</option>
-    <option>Salto</option>
-    <option>San José</option>
-    <option>Soriano</option>
-    <option>Tacuarembó</option>
-    <option>Treinta y Tres</option>
-  </select>
+    <div class="checkbox-grid">
+      <label><input type="checkbox" name="interests" value="musica"> Planes gastronómicos</label>
+      <label><input type="checkbox" name="interests" value="cine"> Cine</label>
+      <label><input type="checkbox" name="interests" value="lectura"> Musica</label>
+      <label><input type="checkbox" name="interests" value="arte"> Ir a museos</label>
+      <label><input type="checkbox" name="interests" value="viajes"> Teatro</label>
+      <label><input type="checkbox" name="interests" value="naturaleza"> Actividades al aire libre</label>
+      <label><input type="checkbox" name="interests" value="activismo"> Ir a librerías</label>
+      <label><input type="checkbox" name="interests" value="juegos"> Juegos de mesa</label>
+      <label><input type="checkbox" name="interests" value="cafe"> Tardes de café</label>
+      <label><input type="checkbox" name="interests" value="senderismo"> Actividades deportivas</label>
+    </div>
+  </section>
 
-  <label>Foto de perfil</label>
-  <input type="file" name="profileImage" accept="image/*">
-</div>
-
+ 
 <button type="submit" class="btn-primary">
   Finalizar registro
 </button>
