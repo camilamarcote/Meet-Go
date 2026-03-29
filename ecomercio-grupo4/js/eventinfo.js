@@ -293,7 +293,7 @@ async function loadEventInfo() {
               src="${event.image || "img/default_event.jpg"}" 
               class="img-fluid rounded shadow-sm" 
               alt="${event.name}"
-              style="width: 100%; height: 500px; object-fit: cover;"
+              style="width: 100%; height: 700px; object-fit: cover;"
               onerror="this.src='img/default_event.jpg'"
             >
             ${price === 0 ? 
