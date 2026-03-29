@@ -98,8 +98,6 @@ async function joinEvent(eventId) {
       return;
     }
 
-    // Aquí puedes agregar la lógica para unirse al evento
-    // Por ejemplo, crear un ticket gratuito o registrar asistencia
     const res = await fetch(`${API_URL}/api/events/${eventId}/join`, {
       method: "POST",
       headers: {
@@ -286,7 +284,7 @@ async function loadEventInfo() {
       `;
     }
 
-    // Renderizar el evento
+    // Renderizar el evento con IMAGEN MÁS ALTA
     eventDetails.innerHTML = `
       <div class="row g-4">
         <div class="col-md-6">
@@ -295,7 +293,7 @@ async function loadEventInfo() {
               src="${event.image || "img/default_event.jpg"}" 
               class="img-fluid rounded shadow-sm" 
               alt="${event.name}"
-              style="width: 100%; object-fit: cover; max-height: 400px;"
+              style="width: 100%; height: 500px; object-fit: cover;"
               onerror="this.src='img/default_event.jpg'"
             >
             ${price === 0 ? 
