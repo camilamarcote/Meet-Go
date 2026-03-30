@@ -268,17 +268,25 @@ async function loadEventInfo() {
       `;
     }
 
-    // Renderizar el evento con IMAGEN MÁS ALTA
+    // Determinar la URL de la imagen
+    let imageUrl = event.image;
+    
+    // Si la imagen es la ruta local por defecto, usar un placeholder
+    if (!imageUrl || imageUrl === "/img/default_event.jpg") {
+      imageUrl = "https://via.placeholder.com/800x600?text=Evento+Meet+%26+Go";
+    }
+
+    // Renderizar el evento
     eventDetails.innerHTML = `
       <div class="row g-4">
         <div class="col-md-6">
           <div class="position-relative">
             <img 
-              src="${event.image || "img/default_event.jpg"}" 
+              src="${imageUrl}" 
               class="img-fluid rounded shadow-sm" 
-              alt="${event.name}"
-              style="width: 100%; height: 700px; object-fit: cover;"
-              onerror="this.src='img/default_event.jpg'"
+              alt="${escapeHtml(event.name)}"
+              style="width: 100%; height: 700px; object-fit: cover; background-color: #f0f0f0;"
+              onerror="this.src='https://via.placeholder.com/800x600?text=Imagen+no+disponible'; this.onerror=null;"
             >
             ${price === 0 ? 
               '<span class="badge bg-success position-absolute top-0 end-0 m-2">Gratis</span>' : 
