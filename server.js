@@ -14,7 +14,7 @@ import ticketRoutes from "./routes/tickets.js";
 import paymentsRoutes from "./routes/payments.js";
 import subscriptionRoutes from "./routes/subscriptions.js";
 import adminRoutes from "./routes/admin.js";
-import publicRoutes from "./routes/public.js"; // ✅ ESTA ERA LA QUE FALTABA
+import publicRoutes from "./routes/public.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -32,25 +32,51 @@ const io = new Server(server, {
 // 🧩 Middlewares
 // =============================
 
-// 🔐 CORS
+// 🔐 CORS - CONFIGURACIÓN COMPLETA
+const allowedOrigins = [
+  "https://meetandgouy.com",
+  "https://www.meetandgouy.com",
+  "http://meetandgouy.com",
+  "http://www.meetandgouy.com",
+  "https://meetandgof.netlify.app",
+  "http://localhost:5500",
+  "http://127.0.0.1:5500",
+  "https://meetandgo-frontend.onrender.com" // por si acaso
+];
+
 app.use(
   cors({
-    origin: [
-      "https://meetandgouy.com",
-      "https://www.meetandgouy.com",
-      "https://meetandgof.netlify.app",
-      "http://localhost:5500",
-      "http://127.0.0.1:5500"
-    ],
-    credentials: true
+    origin: function (origin, callback) {
+      // Permitir requests sin origin (como mobile apps o Postman)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        console.log(`❌ CORS bloqueado: ${origin}`);
+        callback(null, true); // Cambiar a false si quieres bloquear estrictamente
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
   })
 );
+
+// Manejar preflight requests explícitamente
+app.options("*", cors());
 
 // Parse URL-encoded (Mercado Pago, forms)
 app.use(express.urlencoded({ extended: true }));
 
 // Parse JSON
 app.use(express.json({ limit: "10mb" }));
+
+// Logging para debuggear
+app.use((req, res, next) => {
+  console.log(`📝 ${req.method} ${req.url} - Origin: ${req.headers.origin}`);
+  next();
+});
 
 // =============================
 // 🛣️ API ROUTES
@@ -61,7 +87,16 @@ app.use("/api/users", usersRoutes);
 app.use("/api", paymentsRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
 app.use("/api/admin", adminRoutes);
-app.use("/api/public", publicRoutes); // ✅ QR público
+app.use("/api/public", publicRoutes);
+
+// Ruta de health check para mantener el servidor activo
+app.get("/health", (req, res) => {
+  res.status(200).json({ 
+    status: "ok", 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
 
 // =============================
 // 🔁 WebSockets
