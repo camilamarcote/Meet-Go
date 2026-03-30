@@ -161,7 +161,6 @@ async function loadEventInfo() {
     const authUser = await loadCurrentUser();
     const isLogged = !!token;
     const isSubscribed = authUser?.subscription?.isActive === true;
-    const hasCompletedProfile = authUser?.experienceProfile?.completed === true;
     
     const price = event.price ?? 0;
     
@@ -191,26 +190,11 @@ async function loadEventInfo() {
         </div>
       `;
     }
-    
-    /* =============================
-       USUARIO LOGUEADO CON PERFIL INCOMPLETO
-    ============================= */
-    else if (!hasCompletedProfile) {
-      actionSection = `
-        <div class="alert alert-warning mt-4">
-          <i class="fas fa-exclamation-triangle"></i>
-          Para participar en eventos, primero debes completar tu perfil de experiencia.
-        </div>
-        <a href="complete-profile.html" class="btn btn-warning w-100">
-          📝 Completar mi perfil
-        </a>
-      `;
-    }
 
     /* =============================
-       USUARIO SUSCRITO CON PERFIL COMPLETO
+       USUARIO SUSCRITO
     ============================= */
-    else if (isSubscribed && hasCompletedProfile) {
+    else if (isSubscribed) {
       actionSection = `
         <div class="alert alert-success mt-4">
           <i class="fas fa-star"></i>
