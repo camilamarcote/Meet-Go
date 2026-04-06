@@ -1,7 +1,6 @@
-// routes/tickets.js
 
 import express from "express";
-import EventTicket from "../models/EventTicket.js";
+import EventTicket from "../models/eventTicket.js";
 import Event from "../models/event.js";
 import { protect } from "../middlewares/auth.js";
 import crypto from "crypto";
