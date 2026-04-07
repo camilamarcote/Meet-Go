@@ -2,7 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 import QRCode from "qrcode";
-import { protect } from "../middlewares/auth.js"; // ← AGREGAR ESTO
+import { protect } from "../middlewares/auth.js";
 
 import Event from "../models/event.js";
 import User from "../models/User.js";
@@ -14,9 +14,9 @@ console.log("✅ ticketRoutes cargado");
 
 // =============================
 // 🎟️ CREAR / REUTILIZAR TICKET
-// POST /api/events/:eventId/tickets
+// POST /:eventId/tickets (se monta en /api/events)
 // =============================
-router.post("/api/events/:eventId/tickets", protect, async (req, res) => {  // ← CAMBIAR RUTA Y AGREGAR protect
+router.post("/:eventId/tickets", protect, async (req, res) => {
   try {
     const { userId } = req.body;
     const { eventId } = req.params;
@@ -50,7 +50,7 @@ router.post("/api/events/:eventId/tickets", protect, async (req, res) => {  // �
 
     if (existingTicket) {
       // 🟢 Ya pagado → no permitir otro
-      if (existingTicket.payment?.status === "paid") {  // ← CAMBIAR "approved" a "paid"
+      if (existingTicket.payment?.status === "paid") {
         return res.status(409).json({
           message: "Ya tenés una entrada para este evento"
         });
@@ -110,9 +110,9 @@ router.post("/api/events/:eventId/tickets", protect, async (req, res) => {  // �
 
 // =============================
 // 📋 MIS EVENTOS
-// GET /api/events/my/:userId
+// GET /my/:userId (se monta en /api/events)
 // =============================
-router.get("/api/events/my/:userId", protect, async (req, res) => {  // ← AGREGAR protect y ruta completa
+router.get("/my/:userId", protect, async (req, res) => {
   try {
     const { userId } = req.params;
 
