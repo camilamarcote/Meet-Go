@@ -268,29 +268,17 @@ async function loadEventInfo() {
       `;
     }
 
-    // =============================
-    // 🖼️ IMAGEN - Cloudinary o placeholder confiable
-    // =============================
-    let imageUrl = event.image;
-    
-    // Si no hay imagen (es null, undefined, o la ruta local por defecto)
-    if (!imageUrl || imageUrl === "/img/default_event.jpg") {
-      // Placeholder confiable de picsum.photos (siempre funciona)
-      imageUrl = "https://picsum.photos/id/104/800/600";
-    }
-    // Si la imagen viene de Cloudinary, se usa directamente
-
-    // Renderizar el evento
+    // Renderizar el evento con IMAGEN MÁS ALTA
     eventDetails.innerHTML = `
       <div class="row g-4">
         <div class="col-md-6">
           <div class="position-relative">
             <img 
-              src="${imageUrl}" 
+              src="${event.image || "img/default_event.jpg"}" 
               class="img-fluid rounded shadow-sm" 
-              alt="${escapeHtml(event.name)}"
-              style="width: 100%; height: 700px; object-fit: cover; background-color: #f0f0f0;"
-              onerror="this.src='https://picsum.photos/id/20/800/600'; this.onerror=null;"
+              alt="${event.name}"
+              style="width: 100%; height: 700px; object-fit: cover;"
+              onerror="this.src='img/default_event.jpg'"
             >
             ${price === 0 ? 
               '<span class="badge bg-success position-absolute top-0 end-0 m-2">Gratis</span>' : 
@@ -316,7 +304,6 @@ async function loadEventInfo() {
               ${event.department ? `<li class="mb-2"><strong>📍 Ubicación:</strong> ${escapeHtml(event.department)}</li>` : ''}
               <li class="mb-2"><strong>📅 Fecha:</strong> ${event.date}</li>
               ${event.time ? `<li class="mb-2"><strong>⏰ Hora:</strong> ${event.time}</li>` : ''}
-              ${event.price ? `<li class="mb-2"><strong>💵 Precio:</strong> $${event.price}</li>` : ''}
               ${event.groupMembersCount ? `<li class="mb-2"><strong>👥 Cupo:</strong> ${event.groupMembersCount} personas</li>` : ''}
             </ul>
           </div>
