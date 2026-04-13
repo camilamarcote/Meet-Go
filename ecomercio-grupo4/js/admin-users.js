@@ -120,11 +120,8 @@ function filterUsers(searchTerm, filterType) {
         user.username,
         user.email,
         user.nationality,
-        user.department,
         user.phone,
-        user.bio,
         ...(user.interests || []),
-        ...(user.languages || [])
       ];
       
       // Verificar si algún campo contiene el término de búsqueda
