@@ -268,13 +268,17 @@ async function loadEventInfo() {
       `;
     }
 
-    // Determinar la URL de la imagen
+    // =============================
+    // 🖼️ IMAGEN - Cloudinary o placeholder confiable
+    // =============================
     let imageUrl = event.image;
     
-    // Si la imagen es la ruta local por defecto, usar un placeholder
+    // Si no hay imagen (es null, undefined, o la ruta local por defecto)
     if (!imageUrl || imageUrl === "/img/default_event.jpg") {
-      imageUrl = "https://via.placeholder.com/800x600?text=Evento+Meet+%26+Go";
+      // Placeholder confiable de picsum.photos (siempre funciona)
+      imageUrl = "https://picsum.photos/id/104/800/600";
     }
+    // Si la imagen viene de Cloudinary, se usa directamente
 
     // Renderizar el evento
     eventDetails.innerHTML = `
@@ -286,8 +290,12 @@ async function loadEventInfo() {
               class="img-fluid rounded shadow-sm" 
               alt="${escapeHtml(event.name)}"
               style="width: 100%; height: 700px; object-fit: cover; background-color: #f0f0f0;"
-              onerror="this.src='https://via.placeholder.com/800x600?text=Imagen+no+disponible'; this.onerror=null;"
+              onerror="this.src='https://picsum.photos/id/20/800/600'; this.onerror=null;"
             >
+            ${price === 0 ? 
+              '<span class="badge bg-success position-absolute top-0 end-0 m-2">Gratis</span>' : 
+              `<span class="badge bg-primary position-absolute top-0 end-0 m-2">$${price}</span>`
+            }
           </div>
         </div>
 
@@ -308,7 +316,7 @@ async function loadEventInfo() {
               ${event.department ? `<li class="mb-2"><strong>📍 Ubicación:</strong> ${escapeHtml(event.department)}</li>` : ''}
               <li class="mb-2"><strong>📅 Fecha:</strong> ${event.date}</li>
               ${event.time ? `<li class="mb-2"><strong>⏰ Hora:</strong> ${event.time}</li>` : ''}
-              ${event.price ? `<li class="mb-2"><strong>💵 Precio:$</strong> ${event.price}</li>` : ''}
+              ${event.price ? `<li class="mb-2"><strong>💵 Precio:</strong> $${event.price}</li>` : ''}
               ${event.groupMembersCount ? `<li class="mb-2"><strong>👥 Cupo:</strong> ${event.groupMembersCount} personas</li>` : ''}
             </ul>
           </div>
