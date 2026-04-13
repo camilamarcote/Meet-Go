@@ -288,10 +288,6 @@ async function loadEventInfo() {
               style="width: 100%; height: 700px; object-fit: cover; background-color: #f0f0f0;"
               onerror="this.src='https://via.placeholder.com/800x600?text=Imagen+no+disponible'; this.onerror=null;"
             >
-            ${price === 0 ? 
-              '<span class="badge bg-success position-absolute top-0 end-0 m-2">Gratis</span>' : 
-              `<span class="badge bg-primary position-absolute top-0 end-0 m-2">$${price}</span>`
-            }
           </div>
         </div>
 
