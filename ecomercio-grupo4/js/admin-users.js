@@ -169,16 +169,6 @@ function renderUsers(users) {
     const isSubscribed = user.subscription?.isActive === true;
     const fullName = `${user.firstName} ${user.lastName}`.trim();
 
-    // 🔁 PERFIL DE EXPERIENCIA + FALLBACK REGISTER
-    const exp = user.experienceProfile || {};
-    const social = exp.socialStyle || {
-      personality: user.personality || "",
-      style: user.style || "",
-      groupPreference: user.groupPreference || "",
-      conversationStyle: user.conversationStyle || "",
-      initiatesConversation: user.initiatesConversation || ""
-    };
-    const expectations = exp.expectations || {};
 
     container.innerHTML += `
       <div class="user-card" data-user-id="${user._id}">
@@ -192,10 +182,6 @@ function renderUsers(users) {
             <span class="badge ${isSubscribed ? "success" : "neutral"}">
               ${isSubscribed ? "⭐ Suscripta" : "○ Sin suscripción"}
             </span>
-
-            <span class="badge ${exp.completed ? "success" : "warning"}">
-              ${exp.completed ? "📝 Perfil completo" : "⚠ Perfil incompleto"}
-            </span>
             
             ${user.isOrganizer ? '<span class="badge success">👑 Organizadora</span>' : ''}
           </div>
@@ -205,7 +191,6 @@ function renderUsers(users) {
         <p><strong>📱 Celular:</strong> ${user.phone || "—"}</p>
         <p><strong>🎂 Edad:</strong> ${user.age ?? "—"} años</p>
         <p><strong>🌎 Nacionalidad:</strong> ${user.nationality || "—"}</p>
-        <p><strong>🏢 Departamento:</strong> ${user.department || "—"}</p>
 
         <hr>
 
@@ -213,29 +198,7 @@ function renderUsers(users) {
           ${user.interests?.length ? user.interests.map(i => `<span class="interest-tag">${i}</span>`).join(" ") : "—"}
         </p>
 
-        <p><strong>🗣️ Idiomas:</strong><br>
-          ${user.languages?.length ? user.languages.join(", ") : "—"}
-        </p>
-
-        <p><strong>📝 Bio:</strong><br>
-          ${user.bio || "<em>Sin biografía</em>"}
-        </p>
-
         <hr>
-
-        <p><strong>🌿 Personalidad:</strong> ${social.personality || "—"}</p>
-        <p><strong>👥 Estilo social:</strong> ${social.style || "—"}</p>
-        <p><strong>🧠 Preferencia de grupo:</strong> ${social.groupPreference || "—"}</p>
-        <p><strong>💬 Tipo de charla:</strong> ${social.conversationStyle || "—"}</p>
-        <p><strong>🙋‍♀️ Inicia conversaciones:</strong> ${social.initiatesConversation || "—"}</p>
-
-        <p><strong>🎯 Qué busca:</strong><br>
-          ${
-            expectations.lookingFor?.length
-              ? expectations.lookingFor.join(", ")
-              : "—"
-          }
-        </p>
 
         <div class="user-actions">
           <button
