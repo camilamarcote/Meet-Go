@@ -312,7 +312,7 @@ async function loadEventInfo() {
               ${event.department ? `<li class="mb-2"><strong>📍 Ubicación:</strong> ${escapeHtml(event.department)}</li>` : ''}
               <li class="mb-2"><strong>📅 Fecha:</strong> ${event.date}</li>
               ${event.time ? `<li class="mb-2"><strong>⏰ Hora:</strong> ${event.time}</li>` : ''}
-              ${event.price ? `<li class="mb-2"><strong> Precio:</strong> ${event.price}</li>` : ''}
+              ${event.price ? `<li class="mb-2"><strong>💵 Precio:$</strong> ${event.price}</li>` : ''}
               ${event.groupMembersCount ? `<li class="mb-2"><strong>👥 Cupo:</strong> ${event.groupMembersCount} personas</li>` : ''}
             </ul>
           </div>
