@@ -38,7 +38,6 @@ async function payEvent(eventId) {
     const currentUser = await loadCurrentUser();
 
     if (!currentUser) {
-      alert("Debes iniciar sesión");
       window.location.href = "login.html";
       return;
     }
@@ -57,7 +56,6 @@ async function payEvent(eventId) {
     const ticketData = await resTicket.json();
 
     if (!resTicket.ok) {
-      alert(ticketData.message || "Error creando ticket");
       return;
     }
 
@@ -73,7 +71,6 @@ async function payEvent(eventId) {
     const paymentData = await resPayment.json();
 
     if (!resPayment.ok) {
-      alert("Error iniciando pago");
       return;
     }
 
@@ -81,7 +78,6 @@ async function payEvent(eventId) {
 
   } catch (error) {
     console.error("❌ Error pago evento:", error);
-    alert("No se pudo iniciar el pago");
   }
 }
 
@@ -93,7 +89,6 @@ async function joinEvent(eventId) {
     const currentUser = await loadCurrentUser();
     
     if (!currentUser) {
-      alert("Debes iniciar sesión");
       window.location.href = "login.html";
       return;
     }
@@ -112,16 +107,13 @@ async function joinEvent(eventId) {
     const data = await res.json();
 
     if (!res.ok) {
-      alert(data.message || "Error al unirse al evento");
       return;
     }
 
-    alert("✅ Te has unido al evento exitosamente");
     showEventJoinInfo();
     
   } catch (error) {
     console.error("❌ Error uniéndose al evento:", error);
-    alert("Error al procesar tu solicitud");
   }
 }
 
