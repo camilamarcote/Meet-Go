@@ -38,6 +38,7 @@ async function payEvent(eventId) {
     const currentUser = await loadCurrentUser();
 
     if (!currentUser) {
+      alert("Debes iniciar sesión");
       window.location.href = "login.html";
       return;
     }
@@ -56,6 +57,7 @@ async function payEvent(eventId) {
     const ticketData = await resTicket.json();
 
     if (!resTicket.ok) {
+      alert(ticketData.message || "Error creando ticket");
       return;
     }
 
@@ -71,6 +73,7 @@ async function payEvent(eventId) {
     const paymentData = await resPayment.json();
 
     if (!resPayment.ok) {
+      alert("Error iniciando pago");
       return;
     }
 
@@ -78,6 +81,7 @@ async function payEvent(eventId) {
 
   } catch (error) {
     console.error("❌ Error pago evento:", error);
+    alert("No se pudo iniciar el pago");
   }
 }
 
@@ -89,6 +93,7 @@ async function joinEvent(eventId) {
     const currentUser = await loadCurrentUser();
     
     if (!currentUser) {
+      alert("Debes iniciar sesión");
       window.location.href = "login.html";
       return;
     }
@@ -107,13 +112,16 @@ async function joinEvent(eventId) {
     const data = await res.json();
 
     if (!res.ok) {
+      alert(data.message || "Error al unirse al evento");
       return;
     }
 
+    alert("✅ Te has unido al evento exitosamente");
     showEventJoinInfo();
     
   } catch (error) {
     console.error("❌ Error uniéndose al evento:", error);
+    alert("Error al procesar tu solicitud");
   }
 }
 
@@ -170,10 +178,6 @@ async function loadEventInfo() {
     ============================= */
     if (!isLogged) {
       actionSection = `
-        <div class="alert alert-info mt-4">
-          <i class="fas fa-info-circle"></i>
-          Registrate en menos de un minuto y participa del evento.
-        </div>
         <a href="login.html" class="btn btn-primary w-100">
           🔐 Iniciar sesión
         </a>
@@ -188,10 +192,6 @@ async function loadEventInfo() {
     ============================= */
     else if (isSubscribed) {
       actionSection = `
-        <div class="alert alert-success mt-4">
-          <i class="fas fa-star"></i>
-          <strong>¡Eres suscriptora!</strong> Puedes unirte a este evento sin costo adicional.
-        </div>
         <button class="btn btn-success w-100 mt-2" onclick="joinEvent('${event._id}')">
           🙋‍♀️ Unirme al evento
         </button>
@@ -220,10 +220,6 @@ async function loadEventInfo() {
     ============================= */
     else if (price === 0) {
       actionSection = `
-        <div class="alert alert-info mt-4">
-          <i class="fas fa-gift"></i>
-          Este evento es <strong>gratis</strong>. Como no eres suscriptora, puedes pagar solo este evento.
-        </div>
         <button class="btn btn-primary w-100 mb-2" onclick="payEvent('${event._id}')">
           🎟️ Obtener ticket gratis
         </button>
@@ -241,10 +237,6 @@ async function loadEventInfo() {
     ============================= */
     else {
       actionSection = `
-        <div class="alert alert-info mt-4">
-          <i class="fas fa-ticket-alt"></i>
-          Este evento tiene un costo de <strong>$${price}</strong>.
-        </div>
         <button
           class="btn btn-success w-100 mb-2"
           onclick="payEvent('${event._id}')"
