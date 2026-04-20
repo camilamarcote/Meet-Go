@@ -2,7 +2,8 @@ import express from "express";
 import mongoose from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 import QRCode from "qrcode";
-import { protect } from "../middlewares/auth.js";
+// 1. Cambiamos protect por optionalAuth
+import { optionalAuth, protect } from "../middlewares/auth.js"; 
 
 import Event from "../models/event.js";
 import User from "../models/User.js";
@@ -10,53 +11,48 @@ import EventTicket from "../models/eventTicket.js";
 
 const router = express.Router();
 
-console.log("✅ ticketRoutes cargado");
+console.log("✅ ticketRoutes cargado (Modo Híbrido: Registro/Invitado)");
 
 // =============================
 // 🎟️ CREAR / REUTILIZAR TICKET
-// POST /:eventId/tickets (se monta en /api/events)
 // =============================
-router.post("/:eventId/tickets", protect, async (req, res) => {
+router.post("/:eventId/tickets", optionalAuth, async (req, res) => {
   try {
-    const { userId } = req.body;
     const { eventId } = req.params;
+    const { guestEmail, isGuest } = req.body; // Recibimos datos de invitado del frontend
 
-    // Verificar que el usuario autenticado sea el mismo
-    if (req.user._id.toString() !== userId) {
-      return res.status(403).json({ message: "No autorizado" });
+    // Validar ID del evento
+    if (!mongoose.Types.ObjectId.isValid(eventId)) {
+      return res.status(400).json({ message: "ID de evento inválido" });
     }
 
-    if (
-      !mongoose.Types.ObjectId.isValid(userId) ||
-      !mongoose.Types.ObjectId.isValid(eventId)
-    ) {
-      return res.status(400).json({ message: "IDs inválidos" });
-    }
-
-    const user = await User.findById(userId);
     const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ message: "Evento no encontrado" });
+    }
 
-    if (!user || !event) {
-      return res.status(404).json({
-        message: "Usuario o evento no encontrado"
+    // 🔎 Lógica de Búsqueda de Ticket Existente
+    let existingTicket = null;
+
+    if (req.user) {
+      // Si el usuario está logueado, buscamos por su ID
+      existingTicket = await EventTicket.findOne({
+        user: req.user._id,
+        event: eventId
+      });
+    } else if (guestEmail) {
+      // Si es invitado, buscamos por email
+      existingTicket = await EventTicket.findOne({
+        guestEmail: guestEmail,
+        event: eventId,
+        paymentStatus: { $ne: "paid" } // Solo reutilizar si no está pagado
       });
     }
 
-    // 🔎 Buscar ticket existente
-    const existingTicket = await EventTicket.findOne({
-      user: userId,
-      event: eventId
-    });
-
     if (existingTicket) {
-      // 🟢 Ya pagado → no permitir otro
-      if (existingTicket.payment?.status === "paid") {
-        return res.status(409).json({
-          message: "Ya tenés una entrada para este evento"
-        });
+      if (existingTicket.payment?.status === "paid" || existingTicket.payment?.status === "free") {
+        return res.status(409).json({ message: "Ya tienes una entrada para este evento" });
       }
-
-      // 🟡 Pendiente → reutilizar
       return res.status(200).json({
         message: "Ticket pendiente reutilizado",
         ticket: existingTicket
@@ -69,19 +65,15 @@ router.post("/:eventId/tickets", protect, async (req, res) => {
     const qrCode = uuidv4();
     const qrImage = await QRCode.toDataURL(qrCode);
     
-    // Calcular validUntil de manera segura
     let validUntil;
     if (event.date && event.time) {
       validUntil = new Date(`${event.date}T${event.time}`);
-    } else if (event.date) {
-      validUntil = new Date(event.date);
     } else {
       validUntil = new Date();
-      validUntil.setDate(validUntil.getDate() + 30);
+      validUntil.setMonth(validUntil.getMonth() + 1);
     }
 
-    const ticket = new EventTicket({
-      user: user._id,
+    const ticketData = {
       event: event._id,
       accessType: "single-event",
       payment: {
@@ -93,12 +85,23 @@ router.post("/:eventId/tickets", protect, async (req, res) => {
       qrImage,
       validUntil,
       used: false
-    });
+    };
 
+    // Asignar dueño: O usuario logueado o email de invitado
+    if (req.user) {
+      ticketData.user = req.user._id;
+    } else if (guestEmail) {
+      ticketData.guestEmail = guestEmail;
+      ticketData.isGuest = true;
+    } else {
+      return res.status(400).json({ message: "Se requiere un usuario o un email de invitado" });
+    }
+
+    const ticket = new EventTicket(ticketData);
     await ticket.save();
 
     res.status(201).json({
-      message: "🎟️ Ticket creado (pendiente de pago)",
+      message: "🎟️ Ticket creado",
       ticket
     });
 
@@ -109,20 +112,14 @@ router.post("/:eventId/tickets", protect, async (req, res) => {
 });
 
 // =============================
-// 📋 MIS EVENTOS
-// GET /my/:userId (se monta en /api/events)
+// 📋 MIS EVENTOS (Requiere estar logueado)
 // =============================
 router.get("/my/:userId", protect, async (req, res) => {
   try {
     const { userId } = req.params;
 
-    // Verificar que el usuario autenticado sea el mismo
     if (req.user._id.toString() !== userId) {
       return res.status(403).json({ message: "No autorizado" });
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({ message: "ID inválido" });
     }
 
     const tickets = await EventTicket.find({ user: userId })
@@ -130,9 +127,7 @@ router.get("/my/:userId", protect, async (req, res) => {
       .sort({ createdAt: -1 });
 
     res.json(tickets);
-
   } catch (error) {
-    console.error("❌ Error al obtener mis eventos:", error);
     res.status(500).json({ message: "Error al obtener mis eventos" });
   }
 });
