@@ -11,30 +11,25 @@ const mpClient = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN
 });
 
+const preferenceClient = new Preference(mpClient);
+
 // =============================
 // 🎟️ PAGO DE EVENTO
 // =============================
-const preferenceClient = new Preference(mpClient);
-
 export async function createPaymentPreference({ event, user, ticketId }) {
-
   try {
-
     if (!event || !user || !ticketId) {
       throw new Error("Datos insuficientes para crear el pago");
     }
 
     const price = Number(event.price);
-
-    if (!price || price <= 0) {
+    if (isNaN(price) || price <= 0) {
       throw new Error("Precio inválido");
     }
 
     const preference = await preferenceClient.create({
       body: {
-
         statement_descriptor: "MEETANDGO",
-
         external_reference: ticketId.toString(),
 
         items: [
@@ -51,8 +46,9 @@ export async function createPaymentPreference({ event, user, ticketId }) {
 
         payer: {
           email: user.email,
-          first_name: user.firstName || "Usuario",
-          last_name: user.lastName || "Meet&Go"
+          // Ajustamos para que use 'name' (del objeto invitado) o firstName (del usuario real)
+          first_name: user.firstName || user.name || "Usuario",
+          last_name: user.lastName || "Invitado"
         },
 
         back_urls: {
@@ -62,38 +58,33 @@ export async function createPaymentPreference({ event, user, ticketId }) {
         },
 
         auto_return: "approved",
-
         notification_url: `${process.env.BACKEND_URL}/api/payments/webhook`,
 
         metadata: {
           ticketId: ticketId.toString(),
           eventId: event._id.toString(),
-          userId: user._id.toString(),
+          // 🛠️ CORRECCIÓN AQUÍ:
+          // Si user._id existe (usuario registrado), lo convierte a string.
+          // Si no existe (invitado), usa user.id (que enviamos como "guest") o "guest_user".
+          userId: user._id ? user._id.toString() : (user.id ? user.id.toString() : "guest_user"),
           type: "event"
         }
       }
     });
 
-    // 🔎 DEBUG
     console.log("🧾 Preference creada:", preference.id);
-    console.log("🔗 Init point:", preference.init_point);
-
     return preference;
 
   } catch (error) {
-
     console.error("❌ Error creando pago Mercado Pago");
-
     if (error.cause) {
-      console.error("MP Error:", error.cause);
+      console.error("MP Error Details:", JSON.stringify(error.cause, null, 2));
     } else {
       console.error(error);
     }
-
     throw error;
   }
 }
-
 
 // =============================
 // 🔁 SUSCRIPCIÓN MENSUAL
@@ -101,52 +92,34 @@ export async function createPaymentPreference({ event, user, ticketId }) {
 const preapprovalClient = new PreApproval(mpClient);
 
 export async function createSubscription({ user }) {
-
   try {
-
     if (!user || !user.email) {
       throw new Error("Usuario inválido para suscripción");
     }
 
+    // Para suscripciones, usualmente sí necesitas un ID real de usuario
+    const userId = user._id ? user._id.toString() : user.id;
+
     const subscription = await preapprovalClient.create({
       body: {
-
         reason: "Suscripción mensual Meet&Go",
-
-        external_reference: `subscription_${user._id}`,
-
+        external_reference: `subscription_${userId}`,
         payer_email: user.email,
-
         auto_recurring: {
           frequency: 1,
           frequency_type: "months",
           transaction_amount: 390,
           currency_id: "UYU"
         },
-
         back_url: `${process.env.FRONT_URL}/suscripcion-success`,
-
         notification_url: `${process.env.BACKEND_URL}/api/subscriptions/webhook`,
-
         status: "pending"
       }
     });
 
-    console.log("🧾 Subscription ID:", subscription.id);
-    console.log("🔗 Init point:", subscription.init_point);
-
     return subscription;
-
   } catch (error) {
-
     console.error("❌ Error suscripción Mercado Pago");
-
-    if (error.cause) {
-      console.error("MP Error:", error.cause);
-    } else {
-      console.error(error);
-    }
-
     throw error;
   }
 }
