@@ -16,7 +16,7 @@ router.post("/payments/create/:ticketId", async (req, res) => {
 
     const ticket = await EventTicket.findById(ticketId)
       .populate("event")
-      .populate("user");
+      .populate("user"); // Si no hay user, será null
 
     if (!ticket) {
       return res.status(404).json({
@@ -30,9 +30,16 @@ router.post("/payments/create/:ticketId", async (req, res) => {
       });
     }
 
+    // Crear objeto de usuario anónimo si no existe user asociado
+    const userData = ticket.user || {
+      _id: ticket._id.toString(), // Usar ticketId como identificador
+      name: ticket.guestName || "Invitado",
+      email: ticket.guestEmail || `guest_${ticket._id}@temp.meetandgouy.com`
+    };
+
     const preference = await createPaymentPreference({
       event: ticket.event,
-      user: ticket.user,
+      user: userData,
       ticketId: ticket._id
     });
 
@@ -49,7 +56,6 @@ router.post("/payments/create/:ticketId", async (req, res) => {
     });
   }
 });
-
 
 // =============================
 // 🔔 Webhook Mercado Pago
@@ -70,6 +76,7 @@ router.post("/payments/webhook", async (req, res) => {
     }
 
     if (!data?.id) {
+      console.log("⚠️ Webhook sin data.id");
       return res.sendStatus(200);
     }
 
@@ -92,6 +99,7 @@ router.post("/payments/webhook", async (req, res) => {
         return res.sendStatus(200);
       }
 
+      // Actualizar ticket sin validar existencia de user
       const ticket = await EventTicket.findByIdAndUpdate(
         ticketId,
         {
@@ -103,19 +111,27 @@ router.post("/payments/webhook", async (req, res) => {
         },
         { new: true }
       )
-      .populate("user")
       .populate("event");
+
+      if (!ticket) {
+        console.warn("⚠️ Ticket no encontrado en webhook:", ticketId);
+        return res.sendStatus(200);
+      }
 
       console.log("🎟 Ticket actualizado:", ticket._id);
 
-      // ⚠️ solo si tienes sistema de mails
-      if (ticket?.user?.email && typeof sendTicketMail === "function") {
+      // Enviar email solo si el ticket tiene un email válido (registrado o invitado)
+      const userEmail = ticket.user?.email || ticket.guestEmail;
+      
+      if (userEmail && typeof sendTicketMail === "function") {
         await sendTicketMail({
-          to: ticket.user.email,
-          user: ticket.user,
+          to: userEmail,
+          user: ticket.user || { name: ticket.guestName || "Invitado", email: userEmail },
           event: ticket.event,
           ticket
         });
+      } else if (userEmail) {
+        console.log(`📧 Email no enviado: función sendTicketMail no disponible. Destinatario: ${userEmail}`);
       }
 
     }

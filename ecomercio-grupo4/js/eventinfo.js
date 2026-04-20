@@ -4,53 +4,27 @@ const params = new URLSearchParams(window.location.search);
 const eventId = params.get("id");
 const eventDetails = document.getElementById("eventDetails");
 
-const token = localStorage.getItem("token");
-
 /* =============================
-   👤 USUARIO ACTUAL
-============================= */
-async function loadCurrentUser() {
-  if (!token) return null;
-
-  try {
-    const res = await fetch(`${API_URL}/api/users/me`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-
-    if (!res.ok) return null;
-
-    const user = await res.json();
-    return user;
-
-  } catch (err) {
-    console.error("❌ Error cargando usuario:", err);
-    return null;
-  }
-}
-
-/* =============================
-   💳 PAGAR EVENTO
+   💳 PAGAR EVENTO (SIN REGISTRO)
 ============================= */
 async function payEvent(eventId) {
   try {
-    const currentUser = await loadCurrentUser();
+    // Mostrar loading en el botón (opcional)
+    const btn = event.target;
+    const originalText = btn.innerText;
+    btn.innerText = "Procesando...";
+    btn.disabled = true;
 
-    if (!currentUser) {
-      alert("Debes iniciar sesión");
-      window.location.href = "login.html";
-      return;
-    }
-
+    // 1. Crear ticket anónimo (backend debe permitir sin token)
     const resTicket = await fetch(`${API_URL}/api/events/${eventId}/tickets`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        userId: currentUser._id
+        // No enviamos userId, el backend debe crearlo anónimo
+        guestEmail: null, // Opcional: podrías pedir email al usuario
+        guestName: null
       })
     });
 
@@ -58,15 +32,18 @@ async function payEvent(eventId) {
 
     if (!resTicket.ok) {
       alert(ticketData.message || "Error creando ticket");
+      btn.innerText = originalText;
+      btn.disabled = false;
       return;
     }
 
     const ticketId = ticketData.ticket._id;
 
+    // 2. Crear preferencia de pago en Mercado Pago
     const resPayment = await fetch(`${API_URL}/api/payments/create/${ticketId}`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token}`
+        "Content-Type": "application/json"
       }
     });
 
@@ -74,54 +51,21 @@ async function payEvent(eventId) {
 
     if (!resPayment.ok) {
       alert("Error iniciando pago");
+      btn.innerText = originalText;
+      btn.disabled = false;
       return;
     }
 
+    // 3. Redirigir a Mercado Pago
     window.location.href = paymentData.init_point;
 
   } catch (error) {
     console.error("❌ Error pago evento:", error);
     alert("No se pudo iniciar el pago");
-  }
-}
-
-/* =============================
-   🎟️ UNIRSE A EVENTO (SUSCRIPTORES)
-============================= */
-async function joinEvent(eventId) {
-  try {
-    const currentUser = await loadCurrentUser();
-    
-    if (!currentUser) {
-      alert("Debes iniciar sesión");
-      window.location.href = "login.html";
-      return;
+    if (btn) {
+      btn.innerText = originalText;
+      btn.disabled = false;
     }
-
-    const res = await fetch(`${API_URL}/api/events/${eventId}/join`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        userId: currentUser._id
-      })
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      alert(data.message || "Error al unirse al evento");
-      return;
-    }
-
-    alert("✅ Te has unido al evento exitosamente");
-    showEventJoinInfo();
-    
-  } catch (error) {
-    console.error("❌ Error uniéndose al evento:", error);
-    alert("Error al procesar tu solicitud");
   }
 }
 
@@ -135,7 +79,6 @@ async function loadEventInfo() {
   }
 
   try {
-    // Mostrar loading
     eventDetails.innerHTML = `
       <div class="text-center py-5">
         <div class="spinner-border text-primary" role="status">
@@ -145,114 +88,26 @@ async function loadEventInfo() {
       </div>
     `;
 
-    // 🔥 USAR ENDPOINT PÚBLICO para cargar el evento
     const res = await fetch(`${API_URL}/api/events/public/${eventId}`);
     
     if (!res.ok) {
-      if (res.status === 404) {
-        throw new Error("Evento no encontrado");
-      }
+      if (res.status === 404) throw new Error("Evento no encontrado");
       throw new Error(`Error al cargar evento: ${res.status}`);
     }
 
     const event = await res.json();
-    
-    // Cargar usuario actual si está autenticado
-    const authUser = await loadCurrentUser();
-    const isLogged = !!token;
-    const isSubscribed = authUser?.subscription?.isActive === true;
-    
     const price = event.price ?? 0;
-    
-    // Formatear fecha
-    const formattedDate = event.date ? new Date(event.date).toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    }) : 'Fecha por confirmar';
 
-    let actionSection = "";
-
-    /* =============================
-       USUARIO NO LOGUEADO
-    ============================= */
-    if (!isLogged) {
-      actionSection = `
-        <a href="login.html" class="btn btn-primary w-100">
-          🔐 Iniciar sesión
-        </a>
-        <div class="text-center mt-2">
-          <small class="text-muted">¿No tenés cuenta? <a href="register.html">Registrate</a></small>
-        </div>
-      `;
-    }
-
-    /* =============================
-       USUARIO SUSCRITO
-    ============================= */
-    else if (isSubscribed) {
-      actionSection = `
-        <button class="btn btn-success w-100 mt-2" onclick="joinEvent('${event._id}')">
-          🙋‍♀️ Unirme al evento
+    // Botón de pago directo (sin condiciones de login)
+    const actionSection = `
+      <div class="d-grid gap-2 mt-4">
+        <button class="btn btn-success btn-lg" onclick="payEvent('${event._id}')">
+          🎟️ Pagar ahora - ${price === 0 ? 'Gratis' : `$${price}`}
         </button>
-        <div id="joinInfo" class="mt-3" style="display:none">
-          ${event.whatsappLink ? `
-            <div class="alert alert-info">
-              <i class="fab fa-whatsapp"></i>
-              <strong>¡Ya estás en el evento!</strong>
-              <hr>
-              <a href="${event.whatsappLink}" target="_blank" class="btn btn-success w-100">
-                💬 Unirme al grupo de WhatsApp
-              </a>
-            </div>
-          ` : `
-            <div class="alert alert-info">
-              <p>✅ Te has unido al evento exitosamente.</p>
-              <p class="mb-0">El enlace al grupo se publicará próximamente.</p>
-            </div>
-          `}
-        </div>
-      `;
-    }
+        <small class="text-muted text-center">No necesitas registrarte. Pago seguro con Mercado Pago.</small>
+      </div>
+    `;
 
-    /* =============================
-       EVENTO GRATIS (USUARIO NO SUSCRITO)
-    ============================= */
-    else if (price === 0) {
-      actionSection = `
-        <button class="btn btn-primary w-100 mb-2" onclick="payEvent('${event._id}')">
-          🎟️ Obtener ticket gratis
-        </button>
-        <a href="suscripcion.html" class="btn btn-warning w-100">
-          ⭐ Suscribirme y acceder a todos los eventos
-        </a>
-        <div class="text-center mt-2">
-          <small class="text-muted">Con suscripción accedes a todos los eventos sin costo adicional</small>
-        </div>
-      `;
-    }
-
-    /* =============================
-       EVENTO DE PAGO (USUARIO NO SUSCRITO)
-    ============================= */
-    else {
-      actionSection = `
-        <button
-          class="btn btn-success w-100 mb-2"
-          onclick="payEvent('${event._id}')"
-        >
-          🎟️ Pagar este evento - $${price}
-        </button>
-        <a href="suscripcion.html" class="btn btn-warning w-100">
-          ⭐ Suscribirme y ahorrar en todos los eventos
-        </a>
-        <div class="text-center mt-2">
-          <small class="text-muted">La suscripción te da acceso ilimitado a todos los eventos</small>
-        </div>
-      `;
-    }
-
-    // Renderizar el evento con IMAGEN MÁS ALTA
     eventDetails.innerHTML = `
       <div class="row g-4">
         <div class="col-md-6">
@@ -293,7 +148,6 @@ async function loadEventInfo() {
           </div>
 
           <hr>
-
           ${actionSection}
         </div>
       </div>
@@ -313,19 +167,6 @@ async function loadEventInfo() {
   }
 }
 
-/* =============================
-   MOSTRAR INFO DE UNIÓN
-============================= */
-function showEventJoinInfo() {
-  const joinDiv = document.getElementById("joinInfo");
-  if (joinDiv) {
-    joinDiv.style.display = joinDiv.style.display === "none" ? "block" : "none";
-  }
-}
-
-/* =============================
-   🔧 UTILIDAD: ESCAPAR HTML
-============================= */
 function escapeHtml(text) {
   if (!text) return '';
   const div = document.createElement('div');
@@ -333,9 +174,6 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-/* =============================
-   🚀 INIT
-============================= */
 document.addEventListener("DOMContentLoaded", () => {
   loadEventInfo();
 });
