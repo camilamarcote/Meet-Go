@@ -1,21 +1,18 @@
 import mongoose from "mongoose";
 
 const EventTicketSchema = new mongoose.Schema({
-  // 🟢 CORRECCIÓN: required ahora es false para permitir invitados
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
-    required: false, 
+    required: false, // Permitimos que sea null para invitados
     index: true
   },
-  // 🆕 NUEVO: Para guardar el mail del invitado
   guestEmail: {
     type: String,
     required: false,
     trim: true,
     lowercase: true
   },
-  // 🆕 NUEVO: Bandera para identificar rápidamente si es invitado
   isGuest: {
     type: Boolean,
     default: false
@@ -46,7 +43,6 @@ const EventTicketSchema = new mongoose.Schema({
       type: Date,
       default: null
     },
-    // Es buena idea guardar el ID de transacción de Mercado Pago aquí
     transactionId: {
       type: String,
       default: null
@@ -83,20 +79,17 @@ const EventTicketSchema = new mongoose.Schema({
   timestamps: true
 });
 
-/* ⚠️ IMPORTANTE: 
-  Cambiamos el índice único. Si dejamos { user: 1, event: 1 }, 
-  Dará error cuando 'user' sea null (invitados).
-  Este índice solo aplicará la unicidad cuando 'user' exista.
-*/
+
+// 1. Unicidad para usuarios registrados (ignora a los invitados)
 EventTicketSchema.index(
   { user: 1, event: 1 }, 
-  { unique: true, partialFilterExpression: { user: { $exists: true } } }
+  { unique: true, partialFilterExpression: { user: { $exists: true, $gt: null } } }
 );
 
-// Índice opcional para evitar que un mismo mail de invitado compre el mismo evento dos veces
+// 2. Unicidad para invitados por email (evita compras duplicadas del mismo invitado)
 EventTicketSchema.index(
   { guestEmail: 1, event: 1 }, 
-  { unique: true, partialFilterExpression: { guestEmail: { $exists: true } } }
+  { unique: true, partialFilterExpression: { guestEmail: { $exists: true, $gt: null } } }
 );
 
 export default mongoose.model("EventTicket", EventTicketSchema);
