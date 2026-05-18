@@ -1,117 +1,132 @@
-import { Resend } from "resend";
+import express from "express";
+import EventTicket from "../models/eventTicket.js";
+import { createPaymentPreference } from "../services/mercadopago.js";
+import { Payment, MercadoPagoConfig } from "mercadopago";
+import { sendTicketMail } from "../services/mailer.js"; // Importamos tu nuevo servicio de Resend
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const router = express.Router();
 
-// ===============================
-// ✨ MAIL DE BIENVENIDA / SUSCRIPCIÓN
-// ===============================
-export async function sendSubscriptionMail({
-  user,
-  qrImage,
-  whatsappLink
-}) {
-  console.log("📧 Enviando mail de suscripción a:", user.email);
+// Configuración de Mercado Pago
+const mpClient = new MercadoPagoConfig({
+  accessToken: process.env.MP_ACCESS_TOKEN
+});
 
-  const attachments = [];
-
-  if (qrImage?.includes("base64,")) {
-    attachments.push({
-      filename: "meetandgo-suscripcion-qr.png",
-      content: qrImage.split("base64,")[1],
-      encoding: "base64",
-      cid: "subscriptionqr"
-    });
-  }
-
-  const html = `
-    <div style="font-family: Arial, sans-serif; background:#f4f4f4; padding:20px">
-      <div style="max-width:600px; margin:auto; background:#ffffff; padding:24px; border-radius:8px">
-
-        <h1 style="text-align:center">✨ Bienvenida a Meet&Go</h1>
-
-        <p>Hola <strong>${user.username}</strong>,</p>
-
-        <p>
-          Tu <strong>suscripción</strong> ya está activa 🎉  
-          Desde ahora sos parte de la comunidad Meet&Go.
-          Para ingresar a nuestra comunidad de Whatsapp ve al siguiente enlace: 
-          https://chat.whatsapp.com/FzTLq6Yw84U3d6utoTaEFH
-        </p>
-        
-
-        ${
-          attachments.length
-            ? `
-          <hr>
-          <p style="text-align:center">
-            <img src="cid:subscriptionqr" width="220" />
-          </p>
-          <p style="text-align:center; font-weight:bold">
-            Este es tu QR personal de acceso
-          </p>
-        `
-            : ""
-        }
-
-        ${
-          whatsappLink
-            ? `
-          <hr>
-          <p style="text-align:center">
-            <a href="${whatsappLink}" target="_blank" style="
-              display:inline-block;
-              padding:12px 18px;
-              background:#25D366;
-              color:white;
-              border-radius:8px;
-              text-decoration:none;
-              font-weight:bold;
-            ">
-              💬 Unirme al grupo de WhatsApp
-            </a>
-          </p>
-        `
-            : ""
-        }
-
-        <p style="font-size:12px; color:#777; text-align:center">
-          QR personal e intransferible · Meet&Go
-        </p>
-
-      </div>
-    </div>
-  `;
-
-  await resend.emails.send({
-    from: "Meet&Go <no-reply@meetandgouy.com>",
-    to: user.email,
-    subject: "✨ Bienvenida a Meet&Go – Suscripción activa",
-    html,
-    attachments
-  });
-async function sendMail(userId, email) {
-  if (!confirm(`¿Enviar mail de bienvenida a ${email}?`)) return;
-
+// =============================
+// 💳 Crear pago Mercado Pago
+// =============================
+router.post("/payments/create/:ticketId", async (req, res) => {
   try {
-    const res = await fetch(
-      `${API_URL}/api/admin/send-subscription-mail/${userId}`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${currentUser.token}`
-        }
-      }
-    );
+    const { ticketId } = req.params;
 
-    if (!res.ok) throw new Error("Error enviando mail");
+    const ticket = await EventTicket.findById(ticketId)
+      .populate("event")
+      .populate("user");
 
-    alert("📧 Mail enviado correctamente");
+    if (!ticket) {
+      return res.status(404).json({ message: "Ticket no encontrado" });
+    }
+
+    if (ticket.payment?.status === "paid") {
+      return res.status(409).json({ message: "Ticket ya pagado" });
+    }
+
+    const payerData = ticket.user ? {
+      name: ticket.user.name,
+      email: ticket.user.email,
+      id: ticket.user._id
+    } : {
+      name: "Invitado",
+      email: ticket.guestEmail, 
+      id: "guest"
+    };
+
+    const preference = await createPaymentPreference({
+      event: ticket.event,
+      user: payerData,
+      ticketId: ticket._id
+    });
+
+    console.log(`🧾 Preference creada para ticket ${ticketId} (Invitado: ${!ticket.user})`);
+
+    return res.json({
+      init_point: preference.init_point
+    });
 
   } catch (error) {
-    console.error(error);
-    alert("❌ No se pudo enviar el mail");
+    console.error("❌ Error creando pago:", error);
+    return res.status(500).json({ message: "Error creando pago" });
   }
-}
+});
 
+// =============================
+// 🔔 Webhook Mercado Pago
+// =============================
+router.post("/payments/webhook", async (req, res) => {
+  try {
+    const { type, data } = req.body;
 
-}
+    if (type !== "payment" || !data?.id) {
+      return res.sendStatus(200);
+    }
+
+    const paymentClient = new Payment(mpClient);
+    const paymentResponse = await paymentClient.get({ id: data.id });
+    const payment = paymentResponse; 
+
+    console.log("💳 Webhook pago recibido:", payment.id, payment.status);
+
+    if (payment.status === "approved") {
+      const ticketId = payment.metadata?.ticket_id || payment.external_reference; 
+
+      if (!ticketId) {
+        console.warn("⚠️ Pago aprobado sin ticketId en metadata o external_reference");
+        return res.sendStatus(200);
+      }
+
+      // Actualizamos el ticket en la Base de Datos mudando el estatus a "paid"
+      const ticket = await EventTicket.findByIdAndUpdate(
+        ticketId,
+        {
+          $set: {
+            "payment.status": "paid",
+            "payment.amount": payment.transaction_amount,
+            "payment.transactionId": payment.id,
+            "payment.paidAt": new Date()
+          }
+        },
+        { new: true }
+      )
+      .populate("user")
+      .populate("event");
+
+      if (!ticket) {
+        console.error("❌ Ticket no encontrado tras aprobación de pago");
+        return res.sendStatus(200);
+      }
+
+      console.log("🎟 Ticket actualizado con éxito en Base de Datos:", ticket._id);
+
+      // Determinamos el email destino (el escrito a mano por el usuario en la app o web)
+      const recipientEmail = ticket.user ? ticket.user.email : ticket.guestEmail;
+
+      if (recipientEmail) {
+        // Ejecutamos el envío de correos mediante Resend
+        await sendTicketMail({
+          to: recipientEmail,
+          userName: ticket.user ? ticket.user.name : "Invitado",
+          event: ticket.event,
+          ticket: ticket
+        });
+        console.log(`✉️ Mail de ticket enviado automáticamente vía Resend a: ${recipientEmail}`);
+      }
+    }
+
+    res.sendStatus(200);
+
+  } catch (error) {
+    console.error("❌ Error webhook MercadoPago:", error);
+    res.sendStatus(500);
+  }
+});
+
+export default router;

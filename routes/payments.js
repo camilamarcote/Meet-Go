@@ -2,28 +2,27 @@ import express from "express";
 import EventTicket from "../models/eventTicket.js";
 import { createPaymentPreference } from "../services/mercadopago.js";
 import { Payment, MercadoPagoConfig } from "mercadopago";
+import { sendTicketMail } from "../services/mailer.js";
 
 const router = express.Router();
 
-// Configuración de Mercado Pago
 const mpClient = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN
 });
 
-// =============================
-// 💳 Crear pago Mercado Pago
-// =============================
+// ==========================================
+// 💳 CREAR PREFERENCIA DE PAGO MERCADO PAGO
+// ==========================================
 router.post("/payments/create/:ticketId", async (req, res) => {
   try {
     const { ticketId } = req.params;
 
-    // Buscamos el ticket. 
-    // NOTA: 'user' puede venir null si el ticket fue creado como invitado.
     const ticket = await EventTicket.findById(ticketId)
       .populate("event")
       .populate("user");
 
     if (!ticket) {
+      console.error(`❌ [Crear Pago] Ticket ${ticketId} no encontrado.`);
       return res.status(404).json({ message: "Ticket no encontrado" });
     }
 
@@ -31,17 +30,18 @@ router.post("/payments/create/:ticketId", async (req, res) => {
       return res.status(409).json({ message: "Ticket ya pagado" });
     }
 
-    // Preparamos los datos del pagador para la preferencia
-    // Si no hay ticket.user, enviamos los datos de invitado
-    const payerData = ticket.user ? {
-      name: ticket.user.name,
-      email: ticket.user.email,
-      id: ticket.user._id
-    } : {
+    // Priorizamos el email de invitado ingresado en el flujo sin registro de la web
+    const payerData = ticket.guestEmail ? {
       name: "Invitado",
-      email: ticket.guestEmail, // Campo capturado en eventinfo.js
+      email: ticket.guestEmail,
       id: "guest"
+    } : {
+      name: ticket.user?.name || "Usuario Meet&Go",
+      email: ticket.user?.email,
+      id: ticket.user?._id
     };
+
+    console.log(`📩 [Crear Pago] Generando preferencia para: ${payerData.email} (Ticket: ${ticketId})`);
 
     const preference = await createPaymentPreference({
       event: ticket.event,
@@ -49,52 +49,56 @@ router.post("/payments/create/:ticketId", async (req, res) => {
       ticketId: ticket._id
     });
 
-    console.log(`🧾 Preference creada para ticket ${ticketId} (Invitado: ${!ticket.user})`);
+    console.log(`🧾 [Crear Pago] Preference creada con éxito: ${preference.id}`);
 
-    return res.json({
-      init_point: preference.init_point
-    });
+    return res.json({ init_point: preference.init_point });
 
   } catch (error) {
-    console.error("❌ Error creando pago:", error);
+    console.error("❌ [Crear Pago] Error crítico al crear preferencia:", error);
     return res.status(500).json({ message: "Error creando pago" });
   }
 });
 
-// =============================
-// 🔔 Webhook Mercado Pago
-// =============================
+// ==========================================
+// 🔔 WEBHOOK ENTRANTE DE MERCADO PAGO
+// ==========================================
 router.post("/payments/webhook", async (req, res) => {
   try {
     const { type, data } = req.body;
 
+    // Ignorar notificaciones que no correspondan a pagos reales
     if (type !== "payment" || !data?.id) {
       return res.sendStatus(200);
     }
 
     const paymentClient = new Payment(mpClient);
-    const paymentResponse = await paymentClient.get({ id: data.id });
-    const payment = paymentResponse; // En versiones nuevas de SDK es directo o .body
+    const payment = await paymentClient.get({ id: data.id });
 
-    console.log("💳 Webhook pago recibido:", payment.id, payment.status);
+    console.log(`💳 [Webhook] Recibido MP ID: ${payment.id} - Estado: ${payment.status}`);
 
     if (payment.status === "approved") {
-      const ticketId = payment.metadata?.ticket_id || payment.external_reference; 
+      // Mapeo exhaustivo para capturar el ID del ticket sin importar dónde lo guarde el SDK
+      const ticketId = 
+        payment.external_reference || 
+        payment.metadata?.ticket_id || 
+        payment.metadata?.ticketid; 
+
+      console.log(`🔍 [Webhook] Buscando Ticket ID asociado en DB: ${ticketId}`);
 
       if (!ticketId) {
-        console.warn("⚠️ Pago aprobado sin ticketId en metadata");
+        console.warn("⚠️ [Webhook] Pago omitido: No se halló ningún ticketId válido en la data de MP.");
         return res.sendStatus(200);
       }
 
-      // Actualizamos el ticket
+      // Buscamos y actualizamos el estado del ticket de forma atómica
       const ticket = await EventTicket.findByIdAndUpdate(
         ticketId,
         {
-          payment: {
-            status: "paid",
-            amount: payment.transaction_amount,
-            transactionId: payment.id,
-            paidAt: new Date()
+          $set: {
+            "payment.status": "paid",
+            "payment.amount": payment.transaction_amount,
+            "payment.transactionId": payment.id,
+            "payment.paidAt": new Date()
           }
         },
         { new: true }
@@ -103,32 +107,51 @@ router.post("/payments/webhook", async (req, res) => {
       .populate("event");
 
       if (!ticket) {
-        console.error("❌ Ticket no encontrado tras aprobación de pago");
+        console.error(`❌ [Webhook] Error fatal: El ticket ${ticketId} no existe en la Base de Datos.`);
         return res.sendStatus(200);
       }
 
-      console.log("🎟 Ticket actualizado:", ticket._id);
+      console.log(`🎟 [Webhook] Ticket actualizado con éxito en BD: ${ticket._id}`);
 
-      // --- Lógica de envío de mail ---
-      // Determinamos el email destino (registrado o invitado)
-      const recipientEmail = ticket.user ? ticket.user.email : ticket.guestEmail;
+      // Estructuramos el destinatario priorizando el correo manual del alert web (invitado)
+      const recipientEmail = ticket.guestEmail || ticket.user?.email;
+      const userName = ticket.user?.name || "Invitado";
 
-      if (recipientEmail && typeof sendTicketMail === "function") {
-        await sendTicketMail({
-          to: recipientEmail,
-          userName: ticket.user ? ticket.user.name : "Invitado",
-          event: ticket.event,
-          ticket: ticket
-        });
-        console.log(`📧 Mail enviado a: ${recipientEmail}`);
+      console.log(`📧 [Webhook] Email detectado para envío: ${recipientEmail}`);
+
+      if (recipientEmail) {
+        // Resguardo de seguridad por si el evento fue eliminado de la DB para evitar crash al renderizar strings
+        const eventData = ticket.event || { 
+          name: "Tu evento confirmado", 
+          date: "Ver detalles en la App", 
+          department: "Uruguay" 
+        };
+
+        try {
+          console.log(`🚀 [Webhook] Desviando hacia Resend para: ${recipientEmail}...`);
+          
+          await sendTicketMail({
+            to: recipientEmail,
+            userName: userName,
+            event: eventData,
+            ticket: ticket
+          });
+
+          console.log(`✅ [Webhook] ¡Mail despachado con éxito por Resend a: ${recipientEmail}!`);
+        } catch (mailError) {
+          console.error("❌ [Webhook] El motor de Resend rechazó el envío del mail:", mailError);
+        }
+      } else {
+        console.warn(`⚠️ [Webhook] El ticket ${ticketId} se pagó correctamente pero no tiene un email de destino asignado.`);
       }
     }
 
-    res.sendStatus(200);
+    // Siempre respondemos 200 a Mercado Pago para evitar que re-intente infinitamente
+    return res.sendStatus(200);
 
   } catch (error) {
-    console.error("❌ Error webhook MercadoPago:", error);
-    res.sendStatus(500);
+    console.error("❌ [Webhook] Error crítico en la ejecución del Webhook general:", error);
+    return res.sendStatus(500);
   }
 });
 

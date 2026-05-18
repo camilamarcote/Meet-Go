@@ -148,9 +148,6 @@ async function loadEventInfo() {
                         <button class="btn btn-success btn-lg" onclick="payEvent('${event._id}', this)">
                             🎟️ Comprar Ticket - ${price === 0 ? 'Gratis' : `$${price}`}
                         </button>
-                        <p class="text-muted text-center small mt-2">
-                            <i class="fas fa-lock"></i> No requiere registro. Pago procesado por Mercado Pago.
-                        </p>
                     </div>
                 </div>
             </div>

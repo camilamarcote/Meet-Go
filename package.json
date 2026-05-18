@@ -22,7 +22,7 @@
     "mercadopago": "^2.11.0",
     "mongoose": "^8.19.1",
     "multer": "^2.0.2",
-    "nodemailer": "^7.0.12",
+    "nodemailer": "^7.0.13",
     "qrcode": "^1.5.4",
     "resend": "^6.7.0",
     "socket.io": "^4.8.1",
