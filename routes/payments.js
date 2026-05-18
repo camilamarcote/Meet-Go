@@ -2,86 +2,13 @@ import express from "express";
 import EventTicket from "../models/eventTicket.js";
 import { createPaymentPreference } from "../services/mercadopago.js";
 import { Payment, MercadoPagoConfig } from "mercadopago";
-import { Resend } from "resend"; // Importamos Resend directamente aquí
+import { sendTicketMail } from "../utils/mailer.js"; // Apuntando correctamente a utils/mailer.js
 
 const router = express.Router();
 
 const mpClient = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN
 });
-
-// Inicializamos Resend de forma local para este flujo
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-// ==========================================
-// 🎟️ FUNCIÓN INTERNA DE ENVÍO (RESEND)
-// ==========================================
-async function sendTicketMail({ to, userName, event, ticket }) {
-  console.log(`🚀 [Resend Local] Preparando envío de ticket para: ${to}`);
-
-  const attachments = [];
-
-  // Si el ticket contiene imagen QR en Base64, la adjuntamos inline
-  if (ticket.qrImage && ticket.qrImage.includes("base64,")) {
-    attachments.push({
-      filename: `ticket-${ticket._id}.png`,
-      content: ticket.qrImage.split("base64,")[1],
-      encoding: "base64",
-      cid: "ticketqr" 
-    });
-  }
-
-  const html = `
-    <div style="font-family: Arial, sans-serif; background:#f4f4f4; padding:20px;">
-      <div style="max-width:600px; margin:auto; background:#ffffff; padding:24px; border-radius:8px; border: 1px solid #dee2e6;">
-        
-        <h2 style="color: #0d6efd; text-align:center; margin-bottom: 5px;">🎉 ¡Entrada Confirmada!</h2>
-        <p style="text-align:center; color: #6c757d; margin-top: 0;">Meet&Go Uruguay</p>
-
-        <p>Hola <strong>${userName}</strong>,</p>
-        <p>Tu pago fue procesado con éxito. Aquí tienes tu acceso para el evento:</p>
-        
-        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #0d6efd;">
-          <h3 style="margin-top: 0; color: #212529; font-size: 18px;">${event.name}</h3>
-          <p style="margin: 5px 0;"><strong>📅 Fecha:</strong> ${event.date}</p>
-          <p style="margin: 5px 0;"><strong>⏰ Hora:</strong> ${event.time || 'Por confirmar'}</p>
-          <p style="margin: 5px 0;"><strong>📍 Lugar:</strong> ${event.department}</p>
-        </div>
-
-        ${
-          attachments.length
-            ? `
-          <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
-          <p style="text-align:center;">
-            <img src="cid:ticketqr" width="220" style="display:block; margin:auto;" />
-          </p>
-          <p style="text-align:center; font-weight:bold; color:#212529; margin-top:10px;">
-            Presentá este código QR en la entrada 📱
-          </p>
-        `
-            : ""
-        }
-
-        <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
-        <p style="font-size:13px; color:#495057;">
-          <strong>💡 Tip de Meet&Go:</strong> También podés ver y gestionar esta entrada directamente desde el celular ingresando a la pestaña <strong>"Mis Tickets"</strong> en nuestra app móvil utilizando tu correo electrónico: <em>${to}</em>.
-        </p>
-
-        <p style="font-size:11px; color:#777; text-align:center; margin-top:30px;">
-          Meet&Go · Conectando experiencias.
-        </p>
-      </div>
-    </div>
-  `;
-
-  await resend.emails.send({
-    from: "Meet&Go <no-reply@meetandgouy.com>",
-    to: to,
-    subject: `🎟️ Ticket Confirmado – ${event.name}`,
-    html,
-    attachments
-  });
-}
 
 // ========================================================
 // 💳 CREAR PREFERENCIA DE PAGO (O CONFIRMAR SI ES GRATIS)
@@ -127,7 +54,7 @@ router.post("/payments/create/:ticketId", async (req, res) => {
       await ticket.save();
       console.log(`🎟 [NUEVO FLUJO - GRATIS] Ticket guardado como 'paid' en la BD.`);
 
-      // 2. Despachar mail con Resend de inmediato
+      // 2. Despachar mail con Resend de inmediato utilizando el servicio importado
       if (recipientEmail) {
         try {
           await sendTicketMail({

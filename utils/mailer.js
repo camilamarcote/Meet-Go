@@ -1,132 +1,137 @@
-import express from "express";
-import EventTicket from "../models/eventTicket.js";
-import { createPaymentPreference } from "../services/mercadopago.js";
-import { Payment, MercadoPagoConfig } from "mercadopago";
-import { sendTicketMail } from "../services/mailer.js"; // Importamos tu nuevo servicio de Resend
+import { Resend } from "resend";
 
-const router = express.Router();
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Configuración de Mercado Pago
-const mpClient = new MercadoPagoConfig({
-  accessToken: process.env.MP_ACCESS_TOKEN
-});
+// ==========================================
+// ✨ MAIL DE BIENVENIDA / SUSCRIPCIÓN
+// ==========================================
+export async function sendSubscriptionMail({ user, qrImage, whatsappLink }) {
+  console.log("📧 Enviando mail de suscripción a:", user.email);
 
-// =============================
-// 💳 Crear pago Mercado Pago
-// =============================
-router.post("/payments/create/:ticketId", async (req, res) => {
-  try {
-    const { ticketId } = req.params;
+  const attachments = [];
 
-    const ticket = await EventTicket.findById(ticketId)
-      .populate("event")
-      .populate("user");
-
-    if (!ticket) {
-      return res.status(404).json({ message: "Ticket no encontrado" });
-    }
-
-    if (ticket.payment?.status === "paid") {
-      return res.status(409).json({ message: "Ticket ya pagado" });
-    }
-
-    const payerData = ticket.user ? {
-      name: ticket.user.name,
-      email: ticket.user.email,
-      id: ticket.user._id
-    } : {
-      name: "Invitado",
-      email: ticket.guestEmail, 
-      id: "guest"
-    };
-
-    const preference = await createPaymentPreference({
-      event: ticket.event,
-      user: payerData,
-      ticketId: ticket._id
+  if (qrImage?.includes("base64,")) {
+    attachments.push({
+      filename: "meetandgo-suscripcion-qr.png",
+      content: qrImage.split("base64,")[1],
+      encoding: "base64",
+      cid: "subscriptionqr"
     });
+  }
 
-    console.log(`🧾 Preference creada para ticket ${ticketId} (Invitado: ${!ticket.user})`);
+  const html = `
+    <div style="font-family: Arial, sans-serif; background:#f4f4f4; padding:20px">
+      <div style="max-width:600px; margin:auto; background:#ffffff; padding:24px; border-radius:8px">
+        <h1 style="text-align:center">✨ Bienvenida a Meet&Go</h1>
+        <p>Hola <strong>${user.username}</strong>,</p>
+        <p>
+          Tu <strong>suscripción</strong> ya está activa 🎉<br>  
+          Desde ahora sos parte de la comunidad Meet&Go.
+          Para ingresar a nuestra comunidad de Whatsapp ve al siguiente enlace: 
+          https://chat.whatsapp.com/FzTLq6Yw84U3d6utoTaEFH
+        </p>
+        ${
+          attachments.length
+            ? `
+          <hr>
+          <p style="text-align:center">
+            <img src="cid:subscriptionqr" width="220" />
+          </p>
+          <p style="text-align:center; font-weight:bold">Este es tu QR personal de acceso</p>
+        `
+            : ""
+        }
+        ${
+          whatsappLink
+            ? `
+          <hr>
+          <p style="text-align:center">
+            <a href="${whatsappLink}" target="_blank" style="
+              display:inline-block;
+              padding:12px 18px;
+              background:#25D366;
+              color:white;
+              border-radius:8px;
+              text-decoration:none;
+              font-weight:bold;
+            ">💬 Unirme al grupo de WhatsApp</a>
+          </p>
+        `
+            : ""
+        }
+        <p style="font-size:12px; color:#777; text-align:center">QR personal e intransferible · Meet&Go</p>
+      </div>
+    </div>
+  `;
 
-    return res.json({
-      init_point: preference.init_point
+  await resend.emails.send({
+    from: "Meet&Go <no-reply@meetandgouy.com>",
+    to: user.email,
+    subject: "✨ Bienvenida a Meet&Go – Suscripción activa",
+    html,
+    attachments
+  });
+}
+
+// ==========================================
+// 🎟️ ENVIAR TICKET DE EVENTO AUTOMÁTICO
+// ==========================================
+export async function sendTicketMail({ to, userName, event, ticket }) {
+  console.log(`🚀 [Resend - Utils] Preparando envío de ticket para: ${to}`);
+
+  const attachments = [];
+
+  if (ticket.qrImage && ticket.qrImage.includes("base64,")) {
+    attachments.push({
+      filename: `ticket-${ticket._id}.png`,
+      content: ticket.qrImage.split("base64,")[1],
+      encoding: "base64",
+      cid: "ticketqr" 
     });
-
-  } catch (error) {
-    console.error("❌ Error creando pago:", error);
-    return res.status(500).json({ message: "Error creando pago" });
   }
-});
 
-// =============================
-// 🔔 Webhook Mercado Pago
-// =============================
-router.post("/payments/webhook", async (req, res) => {
-  try {
-    const { type, data } = req.body;
+  const html = `
+    <div style="font-family: Arial, sans-serif; background:#f4f4f4; padding:20px;">
+      <div style="max-width:600px; margin:auto; background:#ffffff; padding:24px; border-radius:8px; border: 1px solid #dee2e6;">
+        <h2 style="color: #0d6efd; text-align:center; margin-bottom: 5px;">🎉 ¡Entrada Confirmada!</h2>
+        <p style="text-align:center; color: #6c757d; margin-top: 0;">Meet&Go Uruguay</p>
+        <p>Hola <strong>${userName}</strong>,</p>
+        <p>Tu acceso para el evento ya está confirmado:</p>
+        
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #0d6efd;">
+          <h3 style="margin-top: 0; color: #212529; font-size: 18px;">${event.name}</h3>
+          <p style="margin: 5px 0;"><strong>📅 Fecha:</strong> ${event.date}</p>
+          <p style="margin: 5px 0;"><strong>⏰ Hora:</strong> ${event.time || 'Por confirmar'}</p>
+          <p style="margin: 5px 0;"><strong>📍 Lugar:</strong> ${event.department}</p>
+        </div>
 
-    if (type !== "payment" || !data?.id) {
-      return res.sendStatus(200);
-    }
+        ${
+          attachments.length
+            ? `
+          <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
+          <p style="text-align:center;">
+            <img src="cid:ticketqr" width="220" style="display:block; margin:auto;" />
+          </p>
+          <p style="text-align:center; font-weight:bold; color:#212529; margin-top:10px;">
+            Presentá este código QR en la entrada 📱
+          </p>
+        `
+            : ""
+        }
+        <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
+        <p style="font-size:13px; color:#495057;">
+          <strong>💡 Tip de Meet&Go:</strong> También podés ver esta entrada desde la pestaña <strong>"Mis Tickets"</strong> en nuestra app móvil usando tu correo: <em>${to}</em>.
+        </p>
+        <p style="font-size:11px; color:#777; text-align:center; margin-top:30px;">Meet&Go · Conectando experiencias.</p>
+      </div>
+    </div>
+  `;
 
-    const paymentClient = new Payment(mpClient);
-    const paymentResponse = await paymentClient.get({ id: data.id });
-    const payment = paymentResponse; 
-
-    console.log("💳 Webhook pago recibido:", payment.id, payment.status);
-
-    if (payment.status === "approved") {
-      const ticketId = payment.metadata?.ticket_id || payment.external_reference; 
-
-      if (!ticketId) {
-        console.warn("⚠️ Pago aprobado sin ticketId en metadata o external_reference");
-        return res.sendStatus(200);
-      }
-
-      // Actualizamos el ticket en la Base de Datos mudando el estatus a "paid"
-      const ticket = await EventTicket.findByIdAndUpdate(
-        ticketId,
-        {
-          $set: {
-            "payment.status": "paid",
-            "payment.amount": payment.transaction_amount,
-            "payment.transactionId": payment.id,
-            "payment.paidAt": new Date()
-          }
-        },
-        { new: true }
-      )
-      .populate("user")
-      .populate("event");
-
-      if (!ticket) {
-        console.error("❌ Ticket no encontrado tras aprobación de pago");
-        return res.sendStatus(200);
-      }
-
-      console.log("🎟 Ticket actualizado con éxito en Base de Datos:", ticket._id);
-
-      // Determinamos el email destino (el escrito a mano por el usuario en la app o web)
-      const recipientEmail = ticket.user ? ticket.user.email : ticket.guestEmail;
-
-      if (recipientEmail) {
-        // Ejecutamos el envío de correos mediante Resend
-        await sendTicketMail({
-          to: recipientEmail,
-          userName: ticket.user ? ticket.user.name : "Invitado",
-          event: ticket.event,
-          ticket: ticket
-        });
-        console.log(`✉️ Mail de ticket enviado automáticamente vía Resend a: ${recipientEmail}`);
-      }
-    }
-
-    res.sendStatus(200);
-
-  } catch (error) {
-    console.error("❌ Error webhook MercadoPago:", error);
-    res.sendStatus(500);
-  }
-});
-
-export default router;
+  await resend.emails.send({
+    from: "Meet&Go <no-reply@meetandgouy.com>",
+    to: to,
+    subject: `🎟️ Ticket Confirmado – ${event.name}`,
+    html,
+    attachments
+  });
+}
