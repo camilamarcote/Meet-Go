@@ -90,35 +90,67 @@ export async function sendTicketMail({ to, userName, event, ticket }) {
     });
   }
 
+  // Estructuramos de forma segura las variables mapeadas según tu EventSchema
+  const eventName = event?.name || "Evento Meet & Go";
+  const eventDate = event?.date || "Por confirmar";
+  const eventTime = event?.time || "Por confirmar";
+  const eventPlace = event?.department || "Uruguay";
+  const eventWhatsApp = event?.whatsappLink || null;
+
   const html = `
     <div style="font-family: Arial, sans-serif; background:#f4f4f4; padding:20px;">
       <div style="max-width:600px; margin:auto; background:#ffffff; padding:24px; border-radius:8px; border: 1px solid #dee2e6;">
         <h2 style="color: #0d6efd; text-align:center; margin-bottom: 5px;">🎉 ¡Entrada Confirmada!</h2>
         <p style="text-align:center; color: #6c757d; margin-top: 0;">Meet&Go Uruguay</p>
-        <p>Hola <strong>${userName}</strong>,</p>
-        <p>Tu acceso para el evento ya está confirmado:</p>
         
+        <p>Hola <strong>${userName}</strong>,</p>
+        <p>Tu acceso para el evento ya está confirmado de manera exitosa. Aquí tienes todos los detalles:</p>
+        
+        <!-- Detalles extraídos directamente de tu esquema de Evento -->
         <div style="background-color: #f8f9fa; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #0d6efd;">
-          <h3 style="margin-top: 0; color: #212529; font-size: 18px;">${event.name}</h3>
-          <p style="margin: 5px 0;"><strong>📅 Fecha:</strong> ${event.date}</p>
-          <p style="margin: 5px 0;"><strong>⏰ Hora:</strong> ${event.time || 'Por confirmar'}</p>
-          <p style="margin: 5px 0;"><strong>📍 Lugar:</strong> ${event.department}</p>
+          <h3 style="margin-top: 0; color: #212529; font-size: 18px;">${eventName}</h3>
+          <p style="margin: 5px 0;"><strong>📅 Fecha:</strong> ${eventDate}</p>
+          <p style="margin: 5px 0;"><strong>⏰ Hora:</strong> ${eventTime}</p>
+          <p style="margin: 5px 0;"><strong>📍 Lugar/Departamento:</strong> ${eventPlace}</p>
         </div>
+
+        <!-- 🔗 Botón Dinámico para unirse al grupo de WhatsApp del evento -->
+        ${
+          eventWhatsApp
+            ? `
+          <div style="text-align:center; margin: 25px 0;">
+            <p style="margin-bottom: 10px; font-size: 14px; color: #495057;">¡Sumate al grupo de WhatsApp exclusivo de este evento para coordinar con el resto!</p>
+            <a href="${eventWhatsApp}" target="_blank" style="
+              display:inline-block;
+              padding:12px 20px;
+              background:#25D366;
+              color:white;
+              border-radius:8px;
+              text-decoration:none;
+              font-weight:bold;
+              font-size: 15px;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            ">💬 Unirme al grupo del Evento</a>
+          </div>
+          <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
+        `
+            : ""
+        }
 
         ${
           attachments.length
             ? `
-          <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
           <p style="text-align:center;">
             <img src="cid:ticketqr" width="220" style="display:block; margin:auto;" />
           </p>
           <p style="text-align:center; font-weight:bold; color:#212529; margin-top:10px;">
             Presentá este código QR en la entrada 📱
           </p>
+          <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
         `
             : ""
         }
-        <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
+        
         <p style="font-size:13px; color:#495057;">
           <strong>💡 Tip de Meet&Go:</strong> También podés ver esta entrada desde la pestaña <strong>"Mis Tickets"</strong> en nuestra app móvil usando tu correo: <em>${to}</em>.
         </p>
@@ -130,7 +162,7 @@ export async function sendTicketMail({ to, userName, event, ticket }) {
   await resend.emails.send({
     from: "Meet&Go <no-reply@meetandgouy.com>",
     to: to,
-    subject: `🎟️ Ticket Confirmado – ${event.name}`,
+    subject: `🎟️ Ticket Confirmado – ${eventName}`,
     html,
     attachments
   });
