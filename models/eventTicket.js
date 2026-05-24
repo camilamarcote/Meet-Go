@@ -13,6 +13,17 @@ const EventTicketSchema = new mongoose.Schema({
     trim: true,
     lowercase: true
   },
+  // 👥 NUEVOS CAMPOS: Capturan los datos obligatorios del modal de invitados
+  guestName: {
+    type: String,
+    required: false,
+    trim: true
+  },
+  guestPhone: {
+    type: String,
+    required: false,
+    trim: true
+  },
   isGuest: {
     type: Boolean,
     default: false
@@ -26,7 +37,8 @@ const EventTicketSchema = new mongoose.Schema({
   accessType: {
     type: String,
     enum: ["subscription", "single-event"],
-    required: true
+    required: true,
+    default: "single-event" // 💡 Agregamos valor por defecto para que no falle con invitados
   },
   payment: {
     status: {
@@ -78,7 +90,6 @@ const EventTicketSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
-
 
 // 1. Unicidad para usuarios registrados (ignora a los invitados)
 EventTicketSchema.index(
