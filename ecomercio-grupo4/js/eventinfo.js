@@ -27,17 +27,17 @@ function injectGuestModal() {
                             
                             <div class="mb-3">
                                 <label class="form-label fw-semibold text-secondary small">Nombre Completo</label>
-                                <input type="text" id="guestFullName" class="form-control form-control-lg" placeholder="Ej: Juan Pérez" required trim>
+                                <input type="text" id="guestFullName" class="form-control form-control-lg" placeholder="Ej: Juan Pérez" required>
                             </div>
                             
                             <div class="mb-3">
                                 <label class="form-label fw-semibold text-secondary small">Correo Electrónico</label>
-                                <input type="email" id="guestEmail" class="form-control form-control-lg" placeholder="nombre@ejemplo.com" required trim>
+                                <input type="email" id="guestEmail" class="form-control form-control-lg" placeholder="nombre@ejemplo.com" required>
                             </div>
                             
                             <div class="mb-2">
                                 <label class="form-label fw-semibold text-secondary small">Número de Celular</label>
-                                <input type="tel" id="guestPhone" class="form-control form-control-lg" placeholder="Ej: 099123456" required trim>
+                                <input type="tel" id="guestPhone" class="form-control form-control-lg" placeholder="Ej: 099123456" required>
                             </div>
                         </div>
                         <div class="modal-footer bg-light border-0 d-grid gap-2 p-4">
@@ -192,6 +192,51 @@ async function loadEventInfo() {
         const event = await res.json();
         const price = event.price ?? 0;
 
+        // 🎟️ Cálculos del Sistema de Cupos
+        // Evaluamos si viene como booleano puro o string desde el backend
+        const hasLimit = event.hasCapacityLimit === true || event.hasCapacityLimit === "true";
+        const maxCapacity = Number(event.maxCapacity) || 0;
+        const ticketsSold = Number(event.ticketsSold) || 0; 
+        const remainingCapacity = maxCapacity - ticketsSold;
+        const isSoldOut = hasLimit && remainingCapacity <= 0;
+
+        // Renderizado del mensaje superior de los cupos
+        let capacityBadgeHtml = "";
+        if (hasLimit) {
+            if (isSoldOut) {
+                capacityBadgeHtml = `
+                    <div class="alert alert-danger fw-bold text-center border-0 shadow-sm mb-3">
+                        ❌ Los cupos para esta actividad se han cerrado
+                    </div>
+                `;
+            } else {
+                capacityBadgeHtml = `
+                    <div class="alert alert-warning fw-bold text-center border-0 shadow-sm mb-3 text-dark">
+                        🔥 ¡Quedan solo ${remainingCapacity} cupos disponibles!
+                    </div>
+                `;
+            }
+        }
+
+        // Renderizado inteligente del botón de acción (Compra vs Bloqueado)
+        let actionButtonHtml = "";
+        if (isSoldOut) {
+            actionButtonHtml = `
+                <button class="btn btn-secondary btn-lg w-100 py-3 fw-bold shadow-sm" disabled style="cursor: not-allowed; opacity: 0.7;">
+                    Cupos Cerrados 🔒
+                </button>
+            `;
+        } else {
+            actionButtonHtml = `
+                <button class="btn btn-success btn-lg w-100 py-3 fw-bold text-uppercase shadow-sm" onclick="payEvent('${event._id}', this)">
+                    🎟️ Comprar Ticket - ${price === 0 ? 'Gratis' : `$${price}`}
+                </button>
+            `;
+        }
+
+        // Variable unificada para soportar indistintamente si el backend usa ageRange o age
+        const backendAgeValue = event.ageRange || event.age;
+
         eventDetails.innerHTML = `
             <div class="row g-4">
                 <div class="col-md-6">
@@ -203,38 +248,44 @@ async function loadEventInfo() {
                             style="width: 100%; height: auto; max-height: 600px; object-fit: cover;"
                             onerror="this.src='img/default_event.jpg'"
                         >
-                        <span class="badge ${price === 0 ? 'bg-success' : 'bg-primary'} position-absolute top-0 end-0 m-3 p-2">
+                        <span class="badge ${price === 0 ? 'bg-success' : 'bg-primary'} position-absolute top-0 end-0 m-3 p-2 fs-6 shadow-sm">
                             ${price === 0 ? 'Gratis' : `$${price}`}
                         </span>
                     </div>
                 </div>
 
                 <div class="col-md-6">
-                    <h2 class="mb-3">${escapeHtml(event.name)}</h2>
+                    <h2 class="mb-3 fw-bold">${escapeHtml(event.name)}</h2>
+                    
+                    ${capacityBadgeHtml}
                     
                     ${event.description ? `
                         <div class="mb-4">
-                            <h5 class="fw-bold">📝 Descripción</h5>
-                            <p class="text-muted">${escapeHtml(event.description)}</p>
+                            <h5 class="fw-bold text-secondary">📝 Descripción</h5>
+                            <p class="text-muted" style="white-space: pre-line;">${escapeHtml(event.description)}</p>
                         </div>
                     ` : ''}
 
-                    <div class="event-info mb-4">
-                        <h5 class="fw-bold">📍 Detalles</h5>
-                        <ul class="list-unstyled">
+                    <div class="event-info mb-4 bg-white p-3 border rounded shadow-sm">
+                        <h5 class="fw-bold text-secondary mb-3">📍 Detalles</h5>
+                        <ul class="list-unstyled mb-0">
                             ${event.category ? `<li class="mb-2"><strong>🎯 Categoría:</strong> ${escapeHtml(event.category)}</li>` : ''}
-                            ${event.department ? `<li class="mb-2"><strong>📍 Ubicación:</strong> ${escapeHtml(event.department)}</li>` : ''}
+                            ${event.department ? `<li class="mb-2"><strong>📍 Ubicación:</strong> ${escapeHtml(event.department)} ${event.neighborhood ? `- ${escapeHtml(event.neighborhood)}` : ''}</li>` : ''}
+                            
+                            <li class="mb-2">
+                                <strong>👶 Franja etaria:</strong> 
+                                ${backendAgeValue === 'sin_limite' || !backendAgeValue ? '<span class="text-success fw-bold">🎉 ¡Para todo público!</span>' : `${escapeHtml(backendAgeValue)} años`}
+                            </li>
+                            
                             <li class="mb-2"><strong>📅 Fecha:</strong> ${event.date}</li>
-                            ${event.time ? `<li class="mb-2"><strong>⏰ Hora:</strong> ${event.time}</li>` : ''}
+                            ${event.time ? `<li class="mb-0"><strong>⏰ Hora:</strong> ${event.time}</li>` : ''}
                         </ul>
                     </div>
 
-                    <hr>
+                    <hr class="text-muted my-4">
                     
-                    <div class="d-grid gap-2 mt-4">
-                        <button class="btn btn-success btn-lg" onclick="payEvent('${event._id}', this)">
-                            🎟️ Comprar Ticket - ${price === 0 ? 'Gratis' : `$${price}`}
-                        </button>
+                    <div class="d-grid gap-2">
+                        ${actionButtonHtml}
                     </div>
                 </div>
             </div>
@@ -245,7 +296,7 @@ async function loadEventInfo() {
         eventDetails.innerHTML = `
             <div class="alert alert-danger text-center shadow-sm">
                 <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
-                <p>${error.message}</p>
+                <p class="fw-bold">${error.message}</p>
                 <a href="explorar.html" class="btn btn-outline-danger btn-sm">Volver al listado</a>
             </div>
         `;
@@ -253,7 +304,7 @@ async function loadEventInfo() {
 }
 
 /* =============================
-    🛠️ UTILIDADES
+    🛠  UTILIDADES
 ============================= */
 function escapeHtml(text) {
     if (!text) return '';
