@@ -5,7 +5,7 @@ import cors from "cors";
 import http from "http";
 import { Server } from "socket.io";
 
-// ... (tus imports de rutas se mantienen igual)
+// Imports de rutas
 import eventsRouter from "./routes/events.js";
 import usersRoutes from "./routes/users.js";
 import ticketRoutes from "./routes/tickets.js";
@@ -16,8 +16,6 @@ import publicRoutes from "./routes/public.js";
 
 const app = express();
 const server = http.createServer(app);
-
-// ... (configuración de socket.io y cors se mantienen igual)
 
 // Middlewares
 const allowedOrigins = [
@@ -48,9 +46,11 @@ app.use(cors({
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ limit: "10mb" }));
 
-// Rutas
+// ========================================================
+// 🛣️ REGISTRO DE RUTAS (CORREGIDO)
+// ========================================================
 app.use("/api/events", eventsRouter);
-app.use("/api/events", ticketRoutes);
+app.use("/api", ticketRoutes); // ✅ CORRECCIÓN: Cambiado de "/api/events" a "/api" para evitar duplicar /events/events/
 app.use("/api/users", usersRoutes);
 app.use("/api", paymentsRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
@@ -64,16 +64,14 @@ const PORT = process.env.PORT || 5000;
 
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(async () => { // Agregamos async aquí
+  .then(async () => { 
     console.log("✅ MongoDB conectado");
     
     // 🔥 CÓDIGO TEMPORAL PARA BORRAR EL ÍNDICE BLOQUEANTE
     try {
-      // Accedemos directamente a la colección para borrar el índice viejo
       await mongoose.connection.collection('eventtickets').dropIndex('user_1_event_1');
       console.log("🚀 [LIMPIEZA] Índice 'user_1_event_1' borrado con éxito.");
     } catch (err) {
-      // Si el índice no existe (porque ya se borró o cambió de nombre), no pasa nada
       console.log("ℹ️ [LIMPIEZA] El índice no existía o ya fue procesado.");
     }
 
