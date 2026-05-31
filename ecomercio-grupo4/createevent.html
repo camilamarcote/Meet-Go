@@ -7,19 +7,19 @@
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
-<!-- Favicon básico -->
-<link rel="shortcut icon" href="img/favicon.ico">
-<link rel="icon" type="image/x-icon" href="img/favicon.ico">
+  <!-- Favicon básico -->
+  <link rel="shortcut icon" href="img/favicon.ico">
+  <link class="icon" type="image/x-icon" href="img/favicon.ico">
 
-<!-- Favicons PNG -->
-<link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="img/favicon-16x16.png">
+  <!-- Favicons PNG -->
+  <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="img/favicon-16x16.png">
 
-<!-- Apple Touch -->
-<link rel="apple-touch-icon" sizes="180x180" href="img/apple-touch-icon.png">
+  <!-- Apple Touch -->
+  <link rel="apple-touch-icon" sizes="180x180" href="img/apple-touch-icon.png">
 
-<!-- Manifest -->
-<link rel="manifest" href="img/site.webmanifest">
+  <!-- Manifest -->
+  <link rel="manifest" href="img/site.webmanifest">
 </head>
 
 <body>
@@ -55,44 +55,66 @@
           <option>Gastronómica</option>
         </select>
       </div>
-      <!-- Categoría -->
+
+      <!-- Franja etaria -->
       <div class="mb-3">
         <label class="form-label">Franja etaria</label>
-        <select id="eventAge" class="form-select" >
-          <option value="">Seleccionar</option>
-          <option>20 a 30</option>
-          <option>30 a 45</option>
-          <option>45 a 55</option>
-          <option>+55</option>
+        <select id="eventAgeRange" class="form-select" required>
+          <option value="sin_limite">Sin franja etaria (Para todo público) 🎉</option>
+          <option value="20-30">20 a 30 años</option>
+          <option value="30-45">30 a 45 años</option>
+          <option value="45-55">45 a 55 años</option>
+          <option value="55+">Mayores de 55 años</option>
         </select>
       </div>
 
-<!-- Precio general -->
-<div class="mb-3">
-  <label class="form-label">Precio general (0 = gratis)</label>
-  <input
-    type="number"
-    id="eventPrice"
-    class="form-control"
-    min="0"
-    value="0"
-    required
-  >
-</div>
+      <!-- Control de Cupos -->
+      <div class="mb-3">
+        <label class="form-label">¿Este evento tiene cupos limitados?</label>
+        <select id="eventHasCapacityLimit" class="form-select" required>
+          <option value="false">No (Cupos ilimitados)</option>
+          <option value="true">Sí (Definir cantidad)</option>
+        </select>
+      </div>
 
-<!-- Precio alternativo -->
-<div class="mb-3">
-  <label class="form-label">
-    Precio alternativo <small class="text-muted">(opcional)</small>
-  </label>
-  <input
-    type="number"
-    id="eventAltPrice"
-    class="form-control"
-    min="0"
-    placeholder="Ej: precio para suscriptores"
-  >
-</div>
+      <!-- Input de cantidad de cupos (Controlado dinámicamente por JS) -->
+      <div class="mb-3" id="capacityGroupContainer" style="display: none;">
+        <label class="form-label text-success fw-bold">Cantidad de cupos disponibles</label>
+        <input 
+          type="number" 
+          id="eventMaxCapacity" 
+          class="form-control border-success" 
+          min="1" 
+          placeholder="Ej: 30"
+        >
+      </div>
+
+      <!-- Precio general -->
+      <div class="mb-3">
+        <label class="form-label">Precio general (0 = gratis)</label>
+        <input
+          type="number"
+          id="eventPrice"
+          class="form-control"
+          min="0"
+          value="0"
+          required
+        >
+      </div>
+
+      <!-- Precio alternativo -->
+      <div class="mb-3">
+        <label class="form-label">
+          Precio alternativo <small class="text-muted">(opcional)</small>
+        </label>
+        <input
+          type="number"
+          id="eventAltPrice"
+          class="form-control"
+          min="0"
+          placeholder="Ej: precio para suscriptores"
+        >
+      </div>
 
       <!-- Imagen -->
       <div class="mb-3">
@@ -113,46 +135,44 @@
       </div>
 
       <!-- Departamento -->
-<!-- Departamento -->
-<div class="mb-3">
-  <label class="form-label">Departamento</label>
-  <select id="eventDepartment" class="form-select" required>
-    <option value="">Seleccionar</option>
-    <option>Montevideo</option>
-    <option>Canelones</option>
-    <option>Maldonado</option>
-    <option>Colonia</option>
-    <option>Salto</option>
-    <option>Paysandú</option>
-    <option>Rivera</option>
-    <option>San José</option>
-    <option>Tacuarembó</option>
-    <option>Rocha</option>
-  </select>
-</div>
+      <div class="mb-3">
+        <label class="form-label">Departamento</label>
+        <select id="eventDepartment" class="form-select" required>
+          <option value="">Seleccionar</option>
+          <option>Montevideo</option>
+          <option>Canelones</option>
+          <option>Maldonado</option>
+          <option>Colonia</option>
+          <option>Salto</option>
+          <option>Paysandú</option>
+          <option>Rivera</option>
+          <option>San José</option>
+          <option>Tacuarembó</option>
+          <option>Rocha</option>
+        </select>
+      </div>
 
-<!-- Barrio / Localidad -->
-<div class="mb-3">
-  <label class="form-label">Barrio / Localidad</label>
-  <select id="eventNeighborhood" class="form-select" disabled required>
-    <option value="">Seleccioná un departamento primero</option>
-  </select>
-</div>
-
+      <!-- Barrio / Localidad -->
+      <div class="mb-3">
+        <label class="form-label">Barrio / Localidad</label>
+        <select id="eventNeighborhood" class="form-select" disabled required>
+          <option value="">Seleccioná un departamento primero</option>
+        </select>
+      </div>
 
       <!-- Fecha -->
       <div class="mb-3">
         <label class="form-label">Fecha</label>
-        <input type="date" id="eventDate" class="form-control">
+        <input type="date" id="eventDate" class="form-control" required>
       </div>
 
       <!-- Hora -->
       <div class="mb-3">
         <label class="form-label">Hora</label>
-        <input type="time" id="eventTime" class="form-control" >
+        <input type="time" id="eventTime" class="form-control" required>
       </div>
 
-      <button type="submit" class="btn btn-primary w-100 mt-3">
+      <button type="submit" class="btn btn-primary w-100 mt-3 py-2 fw-bold">
         Publicar evento
       </button>
     </form>
