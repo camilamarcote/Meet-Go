@@ -1,7 +1,7 @@
 import express from "express";
 import Ticket from "../models/eventTicket.js"; // Asegúrate de que la ruta a tu modelo sea correcta
 import Event from "../models/event.js";
-import User from "../models/user.js";
+import User from "../models/User.js";
 import { protect } from "../middlewares/auth.js";
 
 const router = express.Router();
