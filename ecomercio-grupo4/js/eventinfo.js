@@ -103,9 +103,10 @@ function payEvent(eventId, btnElement) {
 async function processGuestPurchase(eventId, btnElement, guestData) {
     try {
         // 1. Bloquear botón y mostrar carga
-        const originalText = btnElement.innerText;
-        btnElement.innerText = "Procesando...";
-        btnElement.disabled = true;
+        if (btnElement) {
+            btnElement.innerText = "Procesando...";
+            btnElement.disabled = true;
+        }
 
         // 2. Crear ticket como invitado enviando Nombre, Mail y Teléfono
         const resTicket = await fetch(`${API_URL}/api/events/${eventId}/tickets`, {
@@ -115,8 +116,8 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
             },
             body: JSON.stringify({
                 guestEmail: guestData.email,
-                guestName: guestData.fullName,  // Nuevo campo enviado
-                guestPhone: guestData.phone,    // Nuevo campo enviado
+                guestName: guestData.fullName,
+                guestPhone: guestData.phone,
                 isGuest: true 
             })
         });
@@ -145,8 +146,19 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
 
         // 4. Redirigir a Mercado Pago (o manejar flujo gratis si devuelve paid)
         if (paymentData.status === "paid") {
+            // Modificamos visualmente el botón en el acto para evitar dobles clics mientras se refresca
+            if (btnElement) {
+                btnElement.innerText = "Cupos Cerrados 🔒";
+                btnElement.className = "btn btn-secondary btn-lg w-100 py-3 fw-bold shadow-sm";
+                btnElement.disabled = true;
+            }
+            
             alert("🎉 ¡Tu ticket gratuito ha sido procesado con éxito! Revisa tu correo electrónico.");
-            window.location.reload();
+            
+            // ⏳ Esperamos 800ms antes de recargar para asegurar que la escritura en Mongo finalice
+            setTimeout(() => {
+                window.location.reload();
+            }, 800);
         } else {
             window.location.href = paymentData.init_point;
         }
@@ -193,7 +205,6 @@ async function loadEventInfo() {
         const price = event.price ?? 0;
 
         // 🎟️ Cálculos del Sistema de Cupos
-        // Evaluamos si viene como booleano puro o string desde el backend
         const hasLimit = event.hasCapacityLimit === true || event.hasCapacityLimit === "true";
         const maxCapacity = Number(event.maxCapacity) || 0;
         const ticketsSold = Number(event.ticketsSold) || 0; 
@@ -234,7 +245,6 @@ async function loadEventInfo() {
             `;
         }
 
-        // Variable unificada para soportar indistintamente si el backend usa ageRange o age
         const backendAgeValue = event.ageRange || event.age;
 
         eventDetails.innerHTML = `
@@ -304,7 +314,7 @@ async function loadEventInfo() {
 }
 
 /* =============================
-    🛠  UTILIDADES
+    🛠   UTILIDADES
 ============================= */
 function escapeHtml(text) {
     if (!text) return '';
@@ -319,6 +329,6 @@ function validateEmail(email) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    injectGuestModal(); // Inyectamos el modal oculto en la estructura
+    injectGuestModal();
     loadEventInfo();
 });
