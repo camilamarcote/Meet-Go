@@ -14,13 +14,12 @@ const upload = multer({
 });
 
 // =============================
-// 🟢 TODOS LOS EVENTOS (PROTEGIDO - PARA USUARIOS AUTENTICADOS CON PERFIL COMPLETO)
+// 🟢 TODOS LOS EVENTOS (PROTEGIDO)
 // =============================
 router.get("/", protect, async (req, res) => {
   try {
     const user = req.user;
 
-    // 🔒 PERFIL DE EXPERIENCIA OBLIGATORIO
     if (!user.experienceProfile?.completed) {
       return res.status(403).json({
         code: "PROFILE_INCOMPLETE",
@@ -42,9 +41,7 @@ router.get("/", protect, async (req, res) => {
 // =============================
 router.get("/public/all", async (req, res) => {
   try {
-    // Obtener todos los eventos activos (puedes filtrar si quieres solo públicos)
     const events = await Event.find({ isActive: { $ne: false } }).sort({ createdAt: -1 });
-    
     res.json(events);
   } catch (error) {
     console.error("❌ Error cargando eventos públicos:", error);
@@ -99,7 +96,7 @@ router.get("/public/:id", async (req, res) => {
 });
 
 // =============================
-// 🟣 CREAR EVENTO
+// 🟣 CREAR EVENTO MODIFICADO
 // =============================
 router.post(
   "/",
@@ -110,14 +107,20 @@ router.post(
   ]),
   async (req, res) => {
     try {
+      // Destructuramos las nuevas variables enviadas desde el frontend
       const {
         name,
         description,
         category,
         department,
+        neighborhood,      // 📍 Añadido
+        ageRange,          // 👶 Añadido
+        hasCapacityLimit,  // 🎟️ Añadido
+        maxCapacity,       // 🎟️ Añadido
         date,
         time,
         price,
+        altPrice,          // 💰 Añadido (Opcional)
         whatsappLink,
         groupMembersCount
       } = req.body;
@@ -125,7 +128,7 @@ router.post(
       let imageUrl = "";
       let qrUrl = "";
 
-      // 🖼️ IMAGEN
+      // 🖼️ IMAGEN CLOUDINARY
       if (req.files?.image?.[0]) {
         const imageUpload = await new Promise((resolve, reject) => {
           cloudinary.uploader.upload_stream(
@@ -139,7 +142,7 @@ router.post(
         imageUrl = imageUpload.secure_url;
       }
 
-      // 📲 QR WHATSAPP
+      // 📲 QR WHATSAPP CLOUDINARY
       if (req.files?.whatsappQR?.[0]) {
         const qrUpload = await new Promise((resolve, reject) => {
           cloudinary.uploader.upload_stream(
@@ -153,19 +156,26 @@ router.post(
         qrUrl = qrUpload.secure_url;
       }
 
+      // Construcción del documento Mongoose parseando tipos de datos correctamente
       const newEvent = new Event({
         name,
         description,
         category,
         department,
+        neighborhood,                                       // Guardamos barrio
+        ageRange: ageRange || "sin_limite",                // Fallback por seguridad
+        hasCapacityLimit: hasCapacityLimit === "true",     // Viene como String, convertimos a Boolean
+        maxCapacity: hasCapacityLimit === "true" ? (Number(maxCapacity) || 0) : 0, 
+        ticketsSold: 0,                                    // Empezamos limpio en cero
         date,
         time,
         price: Number(price) || 0,
+        altPrice: altPrice ? Number(altPrice) : undefined, // Guardamos precio alternativo si existe
         image: imageUrl,
         whatsappLink,
         whatsappQR: qrUrl,
         groupMembersCount: groupMembersCount || 0,
-        isActive: true // Asegurar que los nuevos eventos estén activos por defecto
+        isActive: true 
       });
 
       const savedEvent = await newEvent.save();

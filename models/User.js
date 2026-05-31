@@ -27,8 +27,12 @@ const UserSchema = new mongoose.Schema(
     },
 
     age: { type: Number, min: 0, required: true },
+    
+    // 📍 Ubicación más precisa integrada con la nueva lógica geográfica
     department: { type: String, trim: true, default: "" },
-    nationality: { type: String, trim: true, default: "Uruguay" }, // Valor por defecto
+    neighborhood: { type: String, trim: true, default: "" }, // <-- Añadido para segmentación local
+    
+    nationality: { type: String, trim: true, default: "Uruguay" },
 
     phone: { type: String, trim: true, default: "" },
 
@@ -62,8 +66,18 @@ const UserSchema = new mongoose.Schema(
     roles: { type: [String], default: ["user"] },
     isOrganizer: { type: Boolean, default: false },
 
+    /* ========================================================
+        🎟️ HISTORIAL DE ENTRADAS (Añadido para control de cupos)
+    ======================================================== */
+    tickets: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Ticket"
+      }
+    ],
+
     /* =============================
-       🎯 PERFIL DE EXPERIENCIA (OPCIONAL)
+        🎯 PERFIL DE EXPERIENCIA (OPCIONAL)
     ============================= */
     experienceProfile: {
       completed: { type: Boolean, default: false },

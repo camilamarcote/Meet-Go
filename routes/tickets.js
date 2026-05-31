@@ -1,134 +1,107 @@
 import express from "express";
-import mongoose from "mongoose";
-import { v4 as uuidv4 } from "uuid";
-import QRCode from "qrcode";
-// 1. Cambiamos protect por optionalAuth
-import { optionalAuth, protect } from "../middlewares/auth.js"; 
-
+import Ticket from "../models/ticket.js"; // Asegúrate de que la ruta a tu modelo sea correcta
 import Event from "../models/event.js";
-import User from "../models/User.js";
-import EventTicket from "../models/eventTicket.js"; 
+import User from "../models/user.js";
+import { protect } from "../middlewares/auth.js";
 
 const router = express.Router();
 
-console.log("✅ ticketRoutes cargado (Modo Híbrido: Registro/Invitado)");
-
-// =============================
-// 🎟️ CREAR / REUTILIZAR TICKET
-// =============================
-router.post("/:eventId/tickets", optionalAuth, async (req, res) => {
+// ========================================================
+// 🎟️ 1. OBTENER "MIS TICKETS" (PROTEGIDO - SOLO PARA EL USUARIO LOGUEADO)
+// ========================================================
+router.get("/my-tickets", protect, async (req, res) => {
   try {
-    const { eventId } = req.params;
-    const { guestEmail, isGuest } = req.body; // Recibimos datos de invitado del frontend
-
-    // Validar ID del evento
-    if (!mongoose.Types.ObjectId.isValid(eventId)) {
-      return res.status(400).json({ message: "ID de evento inválido" });
-    }
-
-    const event = await Event.findById(eventId);
-    if (!event) {
-      return res.status(404).json({ message: "Evento no encontrado" });
-    }
-
-    // 🔎 Lógica de Búsqueda de Ticket Existente
-    let existingTicket = null;
-
-    if (req.user) {
-      // Si el usuario está logueado, buscamos por su ID
-      existingTicket = await EventTicket.findOne({
-        user: req.user._id,
-        event: eventId
-      });
-    } else if (guestEmail) {
-      // Si es invitado, buscamos por email
-      existingTicket = await EventTicket.findOne({
-        guestEmail: guestEmail,
-        event: eventId,
-        paymentStatus: { $ne: "paid" } // Solo reutilizar si no está pagado
-      });
-    }
-
-    if (existingTicket) {
-      if (existingTicket.payment?.status === "paid" || existingTicket.payment?.status === "free") {
-        return res.status(409).json({ message: "Ya tienes una entrada para este evento" });
+    // Buscamos al usuario autenticado por su ID (inyectado por el middleware protect)
+    // Usamos populate para traer el array de tickets y, anidado, la info esencial de cada evento
+    const userWithTickets = await User.findById(req.user._id).populate({
+      path: "tickets",
+      populate: {
+        path: "event",
+        select: "name description date time image department neighborhood price" // Campos que renderizaremos en el front
       }
-      return res.status(200).json({
-        message: "Ticket pendiente reutilizado",
-        ticket: existingTicket
-      });
-    }
-
-    // =============================
-    // 🆕 CREAR NUEVO TICKET
-    // =============================
-    const qrCode = uuidv4();
-    const qrImage = await QRCode.toDataURL(qrCode);
-    
-    let validUntil;
-    if (event.date && event.time) {
-      validUntil = new Date(`${event.date}T${event.time}`);
-    } else {
-      validUntil = new Date();
-      validUntil.setMonth(validUntil.getMonth() + 1);
-    }
-
-    const ticketData = {
-      event: event._id,
-      accessType: "single-event",
-      payment: {
-        status: event.price === 0 ? "free" : "pending",
-        amount: event.price || 0,
-        paidAt: event.price === 0 ? new Date() : null
-      },
-      qrCode,
-      qrImage,
-      validUntil,
-      used: false
-    };
-
-    // Asignar dueño: O usuario logueado o email de invitado
-    if (req.user) {
-      ticketData.user = req.user._id;
-    } else if (guestEmail) {
-      ticketData.guestEmail = guestEmail;
-      ticketData.isGuest = true;
-    } else {
-      return res.status(400).json({ message: "Se requiere un usuario o un email de invitado" });
-    }
-
-    const ticket = new EventTicket(ticketData);
-    await ticket.save();
-
-    res.status(201).json({
-      message: "🎟️ Ticket creado",
-      ticket
     });
 
+    if (!userWithTickets) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    // Retornamos únicamente el array de tickets ya estructurado
+    res.json(userWithTickets.tickets);
   } catch (error) {
-    console.error("❌ Error al crear ticket:", error);
-    res.status(500).json({ message: "Error al crear ticket", error: error.message });
+    console.error("❌ Error al obtener los tickets del usuario:", error);
+    res.status(500).json({ message: "Error al cargar tu historial de tickets" });
   }
 });
 
-// =============================
-// 📋 MIS EVENTOS (Requiere estar logueado)
-// =============================
-router.get("/my/:userId", protect, async (req, res) => {
+// ========================================================
+// 🟣 2. CREAR TICKET (SOPORTA USUARIO LOGUEADO E INVITADOS)
+// ========================================================
+router.post("/events/:eventId/tickets", async (req, res) => {
   try {
-    const { userId } = req.params;
+    const { eventId } = req.params;
+    const { guestEmail, guestName, guestPhone, isGuest } = req.body;
 
-    if (req.user._id.toString() !== userId) {
-      return res.status(403).json({ message: "No autorizado" });
+    // Verificar si el evento existe
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ message: "El evento especificado no existe." });
     }
 
-    const tickets = await EventTicket.find({ user: userId })
-      .populate("event")
-      .sort({ createdAt: -1 });
+    // 🛑 VALIDACIÓN PREVIA DE CUPOS AUTOMÁTICA
+    if (event.hasCapacityLimit) {
+      const remaining = event.maxCapacity - (event.ticketsSold || 0);
+      if (remaining <= 0) {
+        return res.status(400).json({ message: "Lo sentimos, los cupos para este evento están agotados." });
+      }
+    }
 
-    res.json(tickets);
+    let ticketData = {
+      event: eventId,
+      price: event.price || 0,
+      status: "pending" // Cambiará a 'paid' tras pasar la pasarela de Mercado Pago
+    };
+
+    // Intentar capturar al usuario logueado si existe un token enviado (opcional en esta ruta mixta)
+    // Si tu middleware 'protect' es obligatorio siempre, puedes estructurarlo de otra manera.
+    // Aquí asumimos que si viene 'isGuest', se procesa sin vincular ID de usuario.
+    if (isGuest === true || isGuest === "true") {
+      ticketData.isGuest = true;
+      ticketData.guestEmail = guestEmail;
+      ticketData.guestName = guestName;
+      ticketData.guestPhone = guestPhone;
+    } else {
+      // Si no es invitado, asumimos flujo con login y requiere datos de cuenta (necesitarías aplicar protect aquí o evaluar el req.user)
+      if (req.user) {
+        ticketData.user = req.user._id;
+        ticketData.isGuest = false;
+      } else {
+        return res.status(401).json({ message: "No autenticado o datos de invitado faltantes." });
+      }
+    }
+
+    // Instanciar y guardar el nuevo Ticket
+    const nuevoTicket = new Ticket(ticketData);
+    const ticketGuardado = await nuevoTicket.save();
+
+    // 🔥 VINCULACIÓN DINÁMICA: Si el usuario está registrado, añadimos el ticket a su perfil
+    if (!ticketData.isGuest && ticketData.user) {
+      await User.findByIdAndUpdate(ticketData.user, {
+        $push: { tickets: ticketGuardado._id }
+      });
+    }
+
+    // Actualizar de forma preventiva el contador de tickets vendidos del evento
+    // (Esto incrementará temporalmente la reserva de cupo, idealmente se confirma al pasar a 'paid')
+    await Event.findByIdAndUpdate(eventId, { $inc: { ticketsSold: 1 } });
+
+    res.status(201).json({
+      message: "Ticket generado con éxito",
+      ticket: ticketGuardado
+    });
+
   } catch (error) {
-    res.status(500).json({ message: "Error al obtener mis eventos" });
+    console.error("❌ Error creando el ticket:", error);
+    res.status(500).json({ message: "Error interno al procesar la reserva del ticket" });
   }
 });
 
