@@ -62,8 +62,7 @@ const EventTicketSchema = new mongoose.Schema({
   },
   qrCode: {
     type: String,
-    required: true,
-    unique: true,
+    required: false, // ✅ CORREGIDO: Cambiado a false para permitir la inicialización sin errores
     index: true
   },
   qrImage: {

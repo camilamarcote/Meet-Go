@@ -1,5 +1,6 @@
 import express from "express";
-import Ticket from "../models/eventTicket.js"; // Asegúrate de que la ruta a tu modelo sea correcta
+import crypto from "crypto"; // ✅ Librería nativa para generar hashes únicos
+import Ticket from "../models/eventTicket.js"; 
 import Event from "../models/event.js";
 import User from "../models/User.js";
 import { protect } from "../middlewares/auth.js";
@@ -7,17 +8,15 @@ import { protect } from "../middlewares/auth.js";
 const router = express.Router();
 
 // ========================================================
-// 🎟️ 1. OBTENER "MIS TICKETS" (PROTEGIDO - SOLO PARA EL USUARIO LOGUEADO)
+// 🎟️ 1. OBTENER "MIS TICKETS" (PROTEGIDO)
 // ========================================================
 router.get("/my-tickets", protect, async (req, res) => {
   try {
-    // Buscamos al usuario autenticado por su ID (inyectado por el middleware protect)
-    // Usamos populate para traer el array de tickets y, anidado, la info esencial de cada evento
     const userWithTickets = await User.findById(req.user._id).populate({
       path: "tickets",
       populate: {
         path: "event",
-        select: "name description date time image department neighborhood price" // Campos que renderizaremos en el front
+        select: "name description date time image department neighborhood price" 
       }
     });
 
@@ -25,7 +24,6 @@ router.get("/my-tickets", protect, async (req, res) => {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
 
-    // Retornamos únicamente el array de tickets ya estructurado
     res.json(userWithTickets.tickets);
   } catch (error) {
     console.error("❌ Error al obtener los tickets del usuario:", error);
@@ -55,22 +53,25 @@ router.post("/events/:eventId/tickets", async (req, res) => {
       }
     }
 
+    // Generar un código único para el QR basado en un UUID aleatorio
+    const codigoUnicoTicket = `TICK-${crypto.randomUUID()}`;
+
     let ticketData = {
       event: eventId,
-      price: event.price || 0,
-      status: "pending" // Cambiará a 'paid' tras pasar la pasarela de Mercado Pago
+      qrCode: codigoUnicoTicket, // ✅ CORREGIDO: El ticket ahora nace con su código identificador único
+      payment: {
+        status: event.price === 0 ? "free" : "pending", // Se marca de forma preventiva si es gratis
+        amount: event.price || 0
+      }
     };
 
-    // Intentar capturar al usuario logueado si existe un token enviado (opcional en esta ruta mixta)
-    // Si tu middleware 'protect' es obligatorio siempre, puedes estructurarlo de otra manera.
-    // Aquí asumimos que si viene 'isGuest', se procesa sin vincular ID de usuario.
+    // Procesamiento según tipo de usuario
     if (isGuest === true || isGuest === "true") {
       ticketData.isGuest = true;
       ticketData.guestEmail = guestEmail;
       ticketData.guestName = guestName;
       ticketData.guestPhone = guestPhone;
     } else {
-      // Si no es invitado, asumimos flujo con login y requiere datos de cuenta (necesitarías aplicar protect aquí o evaluar el req.user)
       if (req.user) {
         ticketData.user = req.user._id;
         ticketData.isGuest = false;
@@ -83,15 +84,14 @@ router.post("/events/:eventId/tickets", async (req, res) => {
     const nuevoTicket = new Ticket(ticketData);
     const ticketGuardado = await nuevoTicket.save();
 
-    // 🔥 VINCULACIÓN DINÁMICA: Si el usuario está registrado, añadimos el ticket a su perfil
+    // 🔥 VINCULACIÓN DINÁMICA
     if (!ticketData.isGuest && ticketData.user) {
       await User.findByIdAndUpdate(ticketData.user, {
         $push: { tickets: ticketGuardado._id }
       });
     }
 
-    // Actualizar de forma preventiva el contador de tickets vendidos del evento
-    // (Esto incrementará temporalmente la reserva de cupo, idealmente se confirma al pasar a 'paid')
+    // Actualizar el contador de tickets vendidos del evento
     await Event.findByIdAndUpdate(eventId, { $inc: { ticketsSold: 1 } });
 
     res.status(201).json({
