@@ -122,6 +122,14 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
             })
         });
 
+        // 🛠️ Control preventivo de contenido HTML en la creación del Ticket
+        const contentTypeTicket = resTicket.headers.get("content-type");
+        if (!contentTypeTicket || !contentTypeTicket.includes("application/json")) {
+            const textError = await resTicket.text();
+            console.error("🔴 El servidor respondió con HTML en la creación de Ticket. Contenido devuelto:", textError);
+            throw new Error("El servidor no pudo procesar la ruta de tickets. Verifica que el endpoint esté activo.");
+        }
+
         const ticketData = await resTicket.json();
 
         if (!resTicket.ok) {
@@ -137,6 +145,14 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
                 "Content-Type": "application/json"
             }
         });
+
+        // 🛠️ Control preventivo de contenido HTML en el módulo de pagos
+        const contentTypePayment = resPayment.headers.get("content-type");
+        if (!contentTypePayment || !contentTypePayment.includes("application/json")) {
+            const textError = await resPayment.text();
+            console.error("🔴 El servidor respondió con HTML en el módulo de Pagos. Contenido devuelto:", textError);
+            throw new Error("El módulo de pagos no respondió con el formato correcto o la ruta no existe.");
+        }
 
         const paymentData = await resPayment.json();
 
