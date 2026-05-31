@@ -1,8 +1,9 @@
 import express from "express";
 import EventTicket from "../models/eventTicket.js";
+import Event from "../models/event.js"; // 👈 Importamos el modelo Event para actualizar los cupos
 import { createPaymentPreference } from "../services/mercadopago.js";
 import { Payment, MercadoPagoConfig } from "mercadopago";
-import { sendTicketMail } from "../utils/mailer.js"; // Apuntando correctamente a utils/mailer.js
+import { sendTicketMail } from "../utils/mailer.js"; 
 
 const router = express.Router();
 
@@ -53,6 +54,14 @@ router.post("/payments/create/:ticketId", async (req, res) => {
       };
       await ticket.save();
       console.log(`🎟 [NUEVO FLUJO - GRATIS] Ticket guardado como 'paid' en la BD.`);
+
+      // 🔥 1.1 ACTUALIZACIÓN DE CUPOS: Al ser gratis y quedar confirmado, sumamos cupo vendido inmediatamente
+      if (ticket.event?._id) {
+        await Event.findByIdAndUpdate(ticket.event._id, {
+          $inc: { ticketsSold: 1 }
+        });
+        console.log(`📈 [NUEVO FLUJO - GRATIS] Cupo sumado al evento ${ticket.event._id}`);
+      }
 
       // 2. Despachar mail con Resend de inmediato utilizando el servicio importado
       if (recipientEmail) {
@@ -144,6 +153,15 @@ router.post("/payments/webhook", async (req, res) => {
       if (ticket.payment?.status === "paid") {
         console.log(`⚠️ [WEBHOOK MP] El ticket ${ticketId} ya figuraba como pagado. Omitiendo duplicados.`);
         return res.sendStatus(200);
+      }
+
+      // 🔥 ACTUALIZACIÓN DE CUPOS PARA EVENTOS DE PAGO
+      // Sumamos el cupo en el evento asociado al ticket justo cuando entra la aprobación de dinero real
+      if (ticket.event?._id) {
+        await Event.findByIdAndUpdate(ticket.event._id, {
+          $inc: { ticketsSold: 1 }
+        });
+        console.log(`📈 [WEBHOOK MP] Cupo sumado con éxito al evento ID: ${ticket.event._id}`);
       }
 
       const recipientEmail = ticket.guestEmail || ticket.user?.email;
