@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Tickets | Meet & Go</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        body { background-color: #f8f9fa; }
+        .ticket-card {
+            border: none;
+            border-radius: 16px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            overflow: hidden;
+        }
+        .ticket-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+        }
+        .event-img {
+            height: 160px;
+            object-fit: cover;
+            width: 100%;
+        }
+        .qr-thumb {
+            width: 90px;
+            height: 90px;
+            object-fit: contain;
+            cursor: pointer;
+            border: 1px solid #dee2e6;
+            padding: 4px;
+            background: #fff;
+            border-radius: 8px;
+        }
+        .stub {
+            border-top: 2px dashed #dee2e6;
+            position: relative;
+        }
+        .stub::before, .stub::after {
+            content: '';
+            position: absolute;
+            top: -10px;
+            width: 20px;
+            height: 20px;
+            background-color: #f8f9fa;
+            border-radius: 50%;
+        }
+        .stub::before { left: -10px; }
+        .stub::after { right: -10px; }
+    </style>
+</head>
+<body>
+
+    <div class="container py-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="fw-bold text-dark mb-1">🎟️ Mis Tickets</h1>
+                <p class="text-muted">Presenta el código QR en la entrada del evento para validar tu acceso.</p>
+            </div>
+        </div>
+
+        <div id="statusContainer"></div>
+
+        <div class="row g-4" id="ticketsGrid">
+            </div>
+    </div>
+
+    <div class="modal fade" id="qrModal" tabindex="-1" aria-labelledby="qrModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content border-0 rounded-4 shadow-lg">
+                <div class="modal-header border-0 pb-0">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center pt-0">
+                    <h5 class="fw-bold mb-3" id="modalEventName">Acceso de Entrada</h5>
+                    <img src="" id="modalQrImg" class="img-fluid rounded border p-2 bg-white shadow-sm mb-2" style="max-width: 220px;" alt="Código QR Grande">
+                    <p class="text-muted small mb-0" id="modalTicketCode"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script src="init.js"></script>
+    <script src="my-tickets.js"></script>
+</body>
+</html>
