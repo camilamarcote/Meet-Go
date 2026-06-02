@@ -47,10 +47,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ limit: "10mb" }));
 
 // ========================================================
-// 🛣️ REGISTRO DE RUTAS (CORREGIDO)
+// 🛣️ REGISTRO DE RUTAS
 // ========================================================
 app.use("/api/events", eventsRouter);
-app.use("/api", ticketRoutes); // ✅ CORRECCIÓN: Cambiado de "/api/events" a "/api" para evitar duplicar /events/events/
+app.use("/api", ticketRoutes); 
 app.use("/api/users", usersRoutes);
 app.use("/api", paymentsRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
@@ -67,12 +67,20 @@ mongoose
   .then(async () => { 
     console.log("✅ MongoDB conectado");
     
-    // 🔥 CÓDIGO TEMPORAL PARA BORRAR EL ÍNDICE BLOQUEANTE
+    // 🔥 CÓDIGO TEMPORAL PARA BORRAR EL ÍNDICE BLOQUEANTE DE USUARIOS REPETIDOS
     try {
       await mongoose.connection.collection('eventtickets').dropIndex('user_1_event_1');
       console.log("🚀 [LIMPIEZA] Índice 'user_1_event_1' borrado con éxito.");
     } catch (err) {
-      console.log("ℹ️ [LIMPIEZA] El índice no existía o ya fue procesado.");
+      console.log("ℹ️ [LIMPIEZA] El índice 'user_1_event_1' no existía o ya fue procesado.");
+    }
+
+    // 🔥 NUEVO CÓDIGO TEMPORAL PARA BORRAR EL ÍNDICE DE MAILS DE INVITADOS DUPLICADOS
+    try {
+      await mongoose.connection.collection('eventtickets').dropIndex('guestEmail_1_event_1');
+      console.log("🚀 [LIMPIEZA] Índice 'guestEmail_1_event_1' removido de la DB con éxito.");
+    } catch (err) {
+      console.log("ℹ️ [LIMPIEZA] El índice 'guestEmail_1_event_1' ya fue eliminado de MongoDB.");
     }
 
   })

@@ -96,10 +96,6 @@ EventTicketSchema.index(
   { unique: true, partialFilterExpression: { user: { $exists: true, $gt: null } } }
 );
 
-// 2. Unicidad para invitados por email (evita compras duplicadas del mismo invitado)
-EventTicketSchema.index(
-  { guestEmail: 1, event: 1 }, 
-  { unique: true, partialFilterExpression: { guestEmail: { $exists: true, $gt: null } } }
-);
+// ✅ CORRECCIÓN: Se eliminó el índice compuesto único de guestEmail_1_event_1 para que los invitados puedan comprar múltiples tickets.
 
 export default mongoose.model("EventTicket", EventTicketSchema);
