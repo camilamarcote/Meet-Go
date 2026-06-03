@@ -17,7 +17,7 @@ import publicRoutes from "./routes/public.js";
 const app = express();
 const server = http.createServer(app);
 
-// Middlewares
+// Middlewares - Lista de Orígenes Permitidos
 const allowedOrigins = [
   "https://meetandgouy.com",
   "https://www.meetandgouy.com",
@@ -50,22 +50,25 @@ app.use(express.json({ limit: "10mb" }));
 // 🛣️ REGISTRO DE RUTAS
 // ========================================================
 app.use("/api/events", eventsRouter);
-app.use("/api", ticketRoutes); 
 app.use("/api/users", usersRoutes);
 app.use("/api", paymentsRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/public", publicRoutes);
 
+// Enrutadores espejo para tickets: Esto asegura que responda a /api/tickets y /api/admin/tickets sin fallar
+app.use("/api", ticketRoutes); 
+app.use("/api/admin", ticketRoutes);
+
 // =============================
-// 🗄️ Database & Index Fix
+// 🗄️ Conexión Base de Datos MongoDB
 // =============================
 const PORT = process.env.PORT || 5000;
 
 mongoose
   .connect(process.env.MONGO_URI)
   .then(async () => { 
-    console.log("✅ MongoDB conectado");
+    console.log("✅ MongoDB conectado exitosamente");
     
     // 🔥 CÓDIGO TEMPORAL PARA BORRAR EL ÍNDICE BLOQUEANTE DE USUARIOS REPETIDOS
     try {
@@ -84,11 +87,11 @@ mongoose
     }
 
   })
-  .catch((err) => console.error("❌ Mongo error:", err));
+  .catch((err) => console.error("❌ Error crítico en MongoDB:", err));
 
 // =============================
-// 🚀 Server
+// 🚀 Inicialización del Servidor
 // =============================
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Servidor en puerto ${PORT}`);
+  console.log(`🚀 Servidor corriendo de forma global en el puerto ${PORT}`);
 });

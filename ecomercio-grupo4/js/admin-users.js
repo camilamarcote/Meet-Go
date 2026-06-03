@@ -2,7 +2,7 @@ const API_URL = "https://api.meetandgouy.com";
 
 // Variables globales para la búsqueda
 let allUsers = [];
-let allGuests = []; // 👥 Almacén para los usuarios invitados
+let allGuests = []; // 👥 Almacén para los pases individuales e invitados
 let currentFilter = "all";
 
 /* ===============================
@@ -93,7 +93,7 @@ async function loadUsers(token) {
 =============================== */
 async function loadGuests(token) {
   try {
-    // 🎯 Intentamos conectar con el endpoint general de tickets
+    // 🎯 Conectamos al enrutador general que acabamos de agregar en el backend
     const res = await fetch(`${API_URL}/api/tickets`, {
       headers: {
         Authorization: `Bearer ${token}`
@@ -101,7 +101,7 @@ async function loadGuests(token) {
     });
 
     if (!res.ok) {
-      // Si falla, probamos el endpoint alternativo del administrador por seguridad
+      // Intento alternativo por si las políticas de roles bloquean la raíz
       const resAdmin = await fetch(`${API_URL}/api/admin/tickets`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -123,7 +123,7 @@ async function loadGuests(token) {
         <div class="alert alert-danger" style="padding: 15px; background-color: #f8d7da; color: #721c24; border-radius: 6px; font-weight: 500;">
           <strong>⚠️ Error de conexión backend:</strong> No se pudieron traer los invitados reales de MongoDB.<br>
           <span style="font-size: 0.9rem; font-weight: normal; opacity: 0.8;">
-            Asegúrate de que la ruta de obtención de pases exista en tus controladores y use .populate("event").
+            Verifica que los cambios en tu archivo routes/tickets.js y server.js estén subidos a tu hosting de producción.
           </span>
         </div>
       `;
@@ -133,8 +133,12 @@ async function loadGuests(token) {
 
 // Función auxiliar para filtrar y mandar a pintar
 function procesarYRenderizarInvitados(tickets) {
-  // Filtramos de los pases reales únicamente aquellos que se generaron como invitados externos
-  allGuests = tickets.filter(ticket => ticket.guestEmail || ticket.isGuest === true);
+  // Filtramos pases de invitados externos, pases individuales sueltos (single-event) o marcados explícitamente como guest
+  allGuests = tickets.filter(ticket => 
+    ticket.guestEmail || 
+    ticket.isGuest === true || 
+    ticket.accessType === "single-event"
+  );
   renderGuests(allGuests);
 }
 
@@ -256,7 +260,7 @@ function renderUsers(users) {
 }
 
 /* ===============================
-    🧩 NUEVO: RENDER USUARIOS INVITADOS
+    🧩 RENDER USUARIOS INVITADOS HÍBRIDO (MongoDB Dinámico)
 =============================== */
 function renderGuests(guests) {
   const container = document.getElementById("guestsContainer");
@@ -265,23 +269,37 @@ function renderGuests(guests) {
   container.innerHTML = "";
 
   if (guests.length === 0) {
-    container.innerHTML = `<p class="text-muted p-3">No hay usuarios invitados registrados en el sistema hasta ahora.</p>`;
+    container.innerHTML = `<p class="text-muted p-3">No hay pases individuales ni invitados registrados para los eventos actuales.</p>`;
     return;
   }
 
   guests.forEach(guest => {
+    // 1. Obtener el nombre real del evento poblado
     const eventName = guest.event?.name || guest.event?.title || "Evento No Especificado";
-    const guestName = guest.guestName || "Invitado sin nombre registrado";
-    const guestEmail = guest.guestEmail || "—";
-    const guestPhone = guest.guestPhone || "—";
-    const ticketStatus = guest.payment?.status === "paid" ? "✅ Pagado" : "⏳ Pendiente/Libre";
+    
+    // 2. Extracción híbrida: Si el ticket tiene un objeto "user" (comprador registrado), extrae sus datos.
+    // Si no, recurre a los campos manuales de invitado que cargó el formulario.
+    let guestName = "Invitado anónimo";
+    if (guest.guestName) {
+      guestName = guest.guestName;
+    } else if (guest.user) {
+      guestName = `${guest.user.firstName || ""} ${guest.user.lastName || ""}`.trim() || guest.user.username;
+    }
+
+    const guestEmail = guest.guestEmail || guest.user?.email || "—";
+    const guestPhone = guest.guestPhone || guest.user?.phone || "—";
+    
+    // Status del ticket traducido al panel de control
+    const ticketStatus = guest.payment?.status === "paid" || guest.payment?.status === "free" ? "✅ Pagado/Liberado" : "⏳ Pendiente";
+    const badgeType = guest.isGuest ? "bg-warning text-dark" : "bg-info text-dark";
+    const userLabel = guest.isGuest ? "Invitado Externo" : "Pase Individual";
 
     container.innerHTML += `
       <div class="user-card border-start border-4 border-info">
         <div class="user-header">
-          <h3>${guestName} <span class="fs-6 text-muted">(Invitado)</span></h3>
+          <h3>${guestName} <span class="fs-6 text-muted">(${userLabel})</span></h3>
           <div class="badges">
-            <span class="badge bg-info text-dark">🎟️ Entrada Individual</span>
+            <span class="badge ${badgeType}">🎟️ ${guest.accessType || "Pase"}</span>
             <span class="badge bg-secondary text-white">${ticketStatus}</span>
           </div>
         </div>
@@ -289,7 +307,7 @@ function renderGuests(guests) {
         <p class="mb-2"><strong>🎉 Evento de Destino:</strong> <span class="text-primary fw-bold">${eventName}</span></p>
         <p class="mb-1"><strong>📧 Email:</strong> ${guestEmail}</p>
         <p class="mb-1"><strong>📱 Celular:</strong> ${guestPhone}</p>
-        <p class="mb-0 text-muted small"><strong>🆔 Código Pase:</strong> ${guest.qrCode ? guest.qrCode.substring(0, 18) : "—"}...</p>
+        <p class="mb-0 text-muted small"><strong>🆔 Código Pase:</strong> ${guest.qrCode ? guest.qrCode.substring(0, 23) : "—"}...</p>
       </div>
     `;
   });

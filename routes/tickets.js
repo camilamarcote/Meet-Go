@@ -1,5 +1,5 @@
 import express from "express";
-import crypto from "crypto"; // ✅ Librería nativa para generar hashes únicos
+import crypto from "crypto"; 
 import Ticket from "../models/eventTicket.js"; 
 import Event from "../models/event.js";
 import User from "../models/User.js";
@@ -8,7 +8,25 @@ import { protect } from "../middlewares/auth.js";
 const router = express.Router();
 
 // ========================================================
-// 🎟️ 1. OBTENER "MIS TICKETS" (PROTEGIDO)
+// 🎯 NUEVO: OBTENER TODOS LOS TICKETS (Para Panel de Organizadoras)
+// ========================================================
+router.get("/tickets", async (req, res) => {
+  try {
+    // .populate("event") extrae de forma cruzada el nombre del evento desde MongoDB
+    // .populate("user") extrae datos clave del usuario si no fue una compra como invitado
+    const tickets = await Ticket.find()
+      .populate("event", "name title date")
+      .populate("user", "firstName lastName email phone username");
+
+    res.json(tickets);
+  } catch (error) {
+    console.error("❌ Error al obtener el listado general de tickets:", error);
+    res.status(500).json({ message: "Error interno al procesar el listado de tickets" });
+  }
+});
+
+// ========================================================
+// 🎟️ 2. OBTENER "MIS TICKETS" (PROTEGIDO - HISTORIAL DE USUARIO)
 // ========================================================
 router.get("/my-tickets", protect, async (req, res) => {
   try {
@@ -32,7 +50,7 @@ router.get("/my-tickets", protect, async (req, res) => {
 });
 
 // ========================================================
-// 🟣 2. CREAR TICKET (SOPORTA USUARIO LOGUEADO E INVITADOS)
+// 🟣 3. CREAR TICKET (SOPORTA USUARIO LOGUEADO E INVITADOS)
 // ========================================================
 router.post("/events/:eventId/tickets", async (req, res) => {
   try {
@@ -58,9 +76,9 @@ router.post("/events/:eventId/tickets", async (req, res) => {
 
     let ticketData = {
       event: eventId,
-      qrCode: codigoUnicoTicket, // ✅ CORREGIDO: El ticket ahora nace con su código identificador único
+      qrCode: codigoUnicoTicket, 
       payment: {
-        status: event.price === 0 ? "free" : "pending", // Se marca de forma preventiva si es gratis
+        status: event.price === 0 ? "free" : "pending", 
         amount: event.price || 0
       }
     };
@@ -84,7 +102,7 @@ router.post("/events/:eventId/tickets", async (req, res) => {
     const nuevoTicket = new Ticket(ticketData);
     const ticketGuardado = await nuevoTicket.save();
 
-    // 🔥 VINCULACIÓN DINÁMICA
+    // 🔥 VINCULACIÓN DINÁMICA EN EL PERFIL DEL USUARIO REGISTRADO
     if (!ticketData.isGuest && ticketData.user) {
       await User.findByIdAndUpdate(ticketData.user, {
         $push: { tickets: ticketGuardado._id }
