@@ -4,8 +4,9 @@ const params = new URLSearchParams(window.location.search);
 const eventId = params.get("id");
 const eventDetails = document.getElementById("eventDetails");
 
-// Variable global para recordar qué botón disparó la compra
+// Variable global para recordar qué botón disparó la compra y los cupos máximos permitidos
 let activePayButton = null;
+let maxAvailableQuantity = 10; // Límite por defecto
 
 /* ========================================================
     📦 INICIALIZAR MODAL DE INVITADO EN EL HTML (Al cargar)
@@ -23,7 +24,7 @@ function injectGuestModal() {
                     </div>
                     <form id="guestTicketForm">
                         <div class="modal-body px-4 pb-4">
-                            <p class="text-muted small">Ingresa datos reales. Se utilizarán para validar tu acceso y enviarte el código QR de entrada.</p>
+                            <p class="text-muted small">Ingresa datos reales. Se utilizarán para validar tu acceso y enviarte los códigos QR de entrada.</p>
                             
                             <div class="mb-3">
                                 <label class="form-label fw-semibold text-secondary small">Nombre Completo</label>
@@ -35,9 +36,19 @@ function injectGuestModal() {
                                 <input type="email" id="guestEmail" class="form-control form-control-lg" placeholder="nombre@ejemplo.com" required>
                             </div>
                             
-                            <div class="mb-2">
+                            <div class="mb-3">
                                 <label class="form-label fw-semibold text-secondary small">Número de Celular</label>
                                 <input type="tel" id="guestPhone" class="form-control form-control-lg" placeholder="Ej: 099123456" required>
+                            </div>
+
+                            <!-- 🎯 NUEVO: SELECTOR DINÁMICO DE ENTRADAS -->
+                            <div class="mb-2 p-3 rounded-3 bg-light border border-dashed">
+                                <label class="form-label fw-bold text-dark small d-flex justify-content-between align-items-center">
+                                    <span>Cantidad de entradas:</span>
+                                    <span id="maxQtyNotice" class="badge bg-secondary font-monospace" style="font-size: 0.75rem;">Máx: 10</span>
+                                </label>
+                                <input type="number" id="ticketQuantity" class="form-control form-control-lg text-center fw-bold text-primary" value="1" min="1" max="10" required>
+                                <div class="form-text text-muted small mt-1">Todas las entradas adicionales se registrarán a tu nombre.</div>
                             </div>
                         </div>
                         <div class="modal-footer bg-light border-0 d-grid gap-2 p-4">
@@ -60,6 +71,7 @@ function injectGuestModal() {
         const fullName = document.getElementById("guestFullName").value.trim();
         const email = document.getElementById("guestEmail").value.trim();
         const phone = document.getElementById("guestPhone").value.trim();
+        const quantity = parseInt(document.getElementById("ticketQuantity").value) || 1;
 
         if (!fullName || !email || !phone) {
             alert("Por favor, completa todos los campos requeridos.");
@@ -71,13 +83,18 @@ function injectGuestModal() {
             return;
         }
 
+        if (quantity < 1 || quantity > maxAvailableQuantity) {
+            alert(`Por favor, selecciona una cantidad válida entre 1 y ${maxAvailableQuantity} entradas.`);
+            return;
+        }
+
         // Cerramos el modal de forma nativa con Bootstrap
         const modalElement = document.getElementById("guestModal");
         const modalInstance = bootstrap.Modal.getInstance(modalElement);
         if (modalInstance) modalInstance.hide();
 
-        // Ejecutar el procesamiento de pago real pasando los 3 parámetros recolectados
-        await processGuestPurchase(eventId, activePayButton, { fullName, email, phone });
+        // Ejecutar el procesamiento de pago real pasando los parámetros recolectados y la cantidad elegida
+        await processGuestPurchase(eventId, activePayButton, { fullName, email, phone, quantity });
     });
 }
 
@@ -93,6 +110,17 @@ function payEvent(eventId, btnElement) {
     
     // Limpiamos campos de ejecuciones previas
     document.getElementById("guestTicketForm").reset();
+
+    // 🎯 Ajustamos el tope máximo dinámico en base a los cupos de la base de datos
+    const inputQty = document.getElementById("ticketQuantity");
+    const noticeQty = document.getElementById("maxQtyNotice");
+    if (inputQty) {
+        inputQty.value = "1";
+        inputQty.max = maxAvailableQuantity;
+    }
+    if (noticeQty) {
+        noticeQty.textContent = `Máx: ${maxAvailableQuantity}`;
+    }
     
     modal.show();
 }
@@ -108,7 +136,7 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
             btnElement.disabled = true;
         }
 
-        // 2. Crear ticket como invitado enviando Nombre, Mail y Teléfono
+        // 2. Crear pases como invitado enviando los datos y la CANTIDAD elegida
         const resTicket = await fetch(`${API_URL}/api/events/${eventId}/tickets`, {
             method: "POST",
             headers: {
@@ -118,7 +146,8 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
                 guestEmail: guestData.email,
                 guestName: guestData.fullName,
                 guestPhone: guestData.phone,
-                isGuest: true 
+                isGuest: true,
+                quantity: guestData.quantity // 🎯 SE ENVÍA LA CANTIDAD AL CONTROLADOR MULTIPLE
             })
         });
 
@@ -133,13 +162,19 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
         const ticketData = await resTicket.json();
 
         if (!resTicket.ok) {
-            throw new Error(ticketData.message || "Error al generar el ticket");
+            throw new Error(ticketData.message || "Error al generar los tickets");
         }
 
-        const ticketId = ticketData.ticket._id;
+        // Adaptación: como el backend modificado devuelve un array "tickets", extraemos el primer id para vincular el pago agrupado
+        const targetTickets = ticketData.tickets || [ticketData.ticket];
+        if (!targetTickets || targetTickets.length === 0) {
+            throw new Error("No se recibieron datos válidos de los tickets generados.");
+        }
+        
+        const mainTicketId = targetTickets[0]._id;
 
-        // 3. Crear preferencia de pago en Mercado Pago
-        const resPayment = await fetch(`${API_URL}/api/payments/create/${ticketId}`, {
+        // 3. Crear preferencia de pago en Mercado Pago adjuntando el ID maestro de referencia
+        const resPayment = await fetch(`${API_URL}/api/payments/create/${mainTicketId}`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -160,18 +195,16 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
             throw new Error("No se pudo iniciar el proceso de pago");
         }
 
-        // 4. Redirigir a Mercado Pago (o manejar flujo gratis si devuelve paid)
+        // 4. Redirigir a Mercado Pago o procesar pase libre de costo
         if (paymentData.status === "paid") {
-            // Modificamos visualmente el botón en el acto para evitar dobles clics mientras se refresca
             if (btnElement) {
                 btnElement.innerText = "Cupos Cerrados 🔒";
                 btnElement.className = "btn btn-secondary btn-lg w-100 py-3 fw-bold shadow-sm";
                 btnElement.disabled = true;
             }
             
-            alert("🎉 ¡Tu ticket gratuito ha sido procesado con éxito! Revisa tu correo electrónico.");
+            alert(`🎉 ¡Tus ${guestData.quantity} entrada(s) gratuita(s) han sido procesadas con éxito! Revisa tu correo electrónico.`);
             
-            // ⏳ Esperamos 800ms antes de recargar para asegurar que la escritura en Mongo finalice
             setTimeout(() => {
                 window.location.reload();
             }, 800);
@@ -227,6 +260,13 @@ async function loadEventInfo() {
         const remainingCapacity = maxCapacity - ticketsSold;
         const isSoldOut = hasLimit && remainingCapacity <= 0;
 
+        // Establecer el techo del selector de compras dinámicamente
+        if (hasLimit) {
+            maxAvailableQuantity = Math.min(10, remainingCapacity);
+        } else {
+            maxAvailableQuantity = 10; // Tope plano por compra si es libre
+        }
+
         // Renderizado del mensaje superior de los cupos
         let capacityBadgeHtml = "";
         if (hasLimit) {
@@ -256,7 +296,7 @@ async function loadEventInfo() {
         } else {
             actionButtonHtml = `
                 <button class="btn btn-success btn-lg w-100 py-3 fw-bold text-uppercase shadow-sm" onclick="payEvent('${event._id}', this)">
-                    🎟️ Comprar Ticket - ${price === 0 ? 'Gratis' : `$${price}`}
+                    🎟️ Comprar Entradas - ${price === 0 ? 'Gratis' : `$${price}`}
                 </button>
             `;
         }
@@ -281,7 +321,9 @@ async function loadEventInfo() {
                 </div>
 
                 <div class="col-md-6">
-                    <h2 class="mb-3 fw-bold">${escapeHtml(event.name)}</h2>
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <h2 class="mb-3 fw-bold">${escapeHtml(event.name)}</h2>
+                    </div>
                     
                     ${capacityBadgeHtml}
                     
