@@ -4,6 +4,9 @@ import Event from "../models/event.js";
 import { createPaymentPreference } from "../services/mercadopago.js";
 import { Payment, MercadoPagoConfig } from "mercadopago";
 import { sendTicketMail } from "../utils/mailer.js"; 
+// 🚨 NOTA: Asegúrate de importar tu middleware de autenticación (ej: protect, verifyToken, etc.)
+// Si tu middleware se llama distinto, cambia "verifyToken" por el tuyo aquí abajo:
+import { verifyToken } from "../middleware/authMiddleware.js"; 
 
 const router = express.Router();
 
@@ -217,6 +220,49 @@ router.post("/payments/webhook", async (req, res) => {
   } catch (error) {
     console.error("❌ [WEBHOOK MP] Error general en la ejecución:", error);
     return res.sendStatus(500);
+  }
+});
+
+// ========================================================
+// 🎟️ 🔥 ENDPOINT INTEGRADO: OBTENER TICKETS DEL USUARIO
+// ========================================================
+// Reutiliza esta lógica o colócala en tu archivo de tickets si prefieres, 
+// pero llamando a la ruta '/api/my-tickets' se activará esta base de datos.
+router.get("/my-tickets", verifyToken, async (req, res) => {
+  try {
+    // 🎯 Obtenemos el ID y Email del usuario desglosados desde el token decodificado por tu middleware
+    const userId = req.user?._id || req.user?.id;
+    const userEmail = req.user?.email;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Usuario no autenticado de forma válida" });
+    }
+
+    console.log(`🔍 [GET MY TICKETS] Buscando pases activos para el usuario ID: ${userId} o Email: ${userEmail}`);
+
+    // Buscamos los pases donde:
+    // 1. El dueño sea el usuario registrado OR el email de invitado coincida con su cuenta.
+    // 2. El estado del pago sea estrictamente "paid" (aprobado).
+    const misTickets = await EventTicket.find({
+      $and: [
+        {
+          $or: [
+            { user: userId },
+            { guestEmail: userEmail }
+          ]
+        },
+        { "payment.status": "paid" } // 🎯 CLAVE: Verifica anidado en el sub-objeto
+      ]
+    })
+    .populate("event")
+    .sort({ createdAt: -1 }); // Muestra primero los tickets recién comprados
+
+    console.log(`✅ [GET MY TICKETS] Se encontraron ${misTickets.length} tickets válidos.`);
+    return res.json(misTickets);
+
+  } catch (error) {
+    console.error("❌ [GET MY TICKETS] Error en la consulta:", error);
+    return res.status(500).json({ message: "Error interno al obtener los pases del usuario" });
   }
 });
 
