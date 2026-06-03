@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  // Carga ambas listas en paralelo
+  // Carga ambas listas en paralelo desde la base de datos real
   loadUsers(currentUser.token);
   loadGuests(currentUser.token);
   
@@ -82,71 +82,60 @@ async function loadUsers(token) {
   } catch (error) {
     console.error("❌ Error cargando usuarios:", error);
     const container = document.getElementById("usersContainer");
-    if (container) container.innerHTML = "<p>Error al cargar usuarios registrados</p>";
+    if (container) {
+      container.innerHTML = "<p>Error al cargar usuarios registrados en el sistema.</p>";
+    }
   }
 }
 
 /* ===============================
-    👥 NUEVO: CARGAR USUARIOS INVITADOS
-=============================== */
-/* ===============================
-    👥 CARGAR USUARIOS INVITADOS
+    👥 CARGAR USUARIOS INVITADOS REALES
 =============================== */
 async function loadGuests(token) {
   try {
-    // Intentamos pedir los tickets/pases directamente a la API de administración
-    // Nota: Si tu endpoint exacto de tickets es diferente (ej: /api/admin/tickets-purchased), cámbialo aquí.
-    const res = await fetch(`${API_URL}/api/admin/tickets`, {
+    // 🎯 Intentamos conectar con el endpoint general de tickets
+    const res = await fetch(`${API_URL}/api/tickets`, {
       headers: {
         Authorization: `Bearer ${token}`
       }
     });
 
-    // Si la ruta general no responde o da error, usamos datos de prueba controlados 
-    // para verificar el diseño en pantalla mientras configuras tu backend.
     if (!res.ok) {
-      console.warn("⚠️ El endpoint de producción falló o no existe. Cargando simulacro de invitados para desarrollo.");
-      allGuests = [
-        {
-          _id: "guest1",
-          guestName: "Florencia Rodríguez",
-          guestEmail: "flor.rod@outlook.com",
-          guestPhone: "+598 99 123 456",
-          event: { name: "Sunset Party - Meet & Go Montevideo" },
-          payment: { status: "paid" },
-          qrCode: "MNG-INV-992138219"
-        },
-        {
-          _id: "guest2",
-          guestName: "Camila Silva",
-          guestEmail: "camisilva@gmail.com",
-          guestPhone: "+598 94 888 777",
-          event: { name: "After Office - Edición Especial Junio" },
-          payment: { status: "paid" },
-          qrCode: "MNG-INV-441223901"
-        }
-      ];
-    } else {
-      const tickets = await res.json();
+      // Si falla, probamos el endpoint alternativo del administrador por seguridad
+      const resAdmin = await fetch(`${API_URL}/api/admin/tickets`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!resAdmin.ok) throw new Error("No se pudo conectar con ningún endpoint de tickets del backend.");
       
-      // Filtramos solo los pases que correspondan a personas invitadas/externas
-      // Si tu propiedad del backend se llama diferente (ej: ticket.type === 'guest'), cámbiala aquí
-      allGuests = tickets.filter(ticket => 
-        ticket.isGuest === true || 
-        ticket.guestEmail || 
-        ticket.ticketType === "guest"
-      );
+      const tickets = await resAdmin.json();
+      procesarYRenderizarInvitados(tickets);
+      return;
     }
 
-    renderGuests(allGuests);
+    const tickets = await res.json();
+    procesarYRenderizarInvitados(tickets);
 
   } catch (error) {
-    console.error("❌ Error en la lógica de invitados:", error);
+    console.error("❌ Error cargando invitados reales:", error);
     const guestContainer = document.getElementById("guestsContainer");
     if (guestContainer) {
-      guestContainer.innerHTML = `<p class="text-muted p-3">Ocurrió un error al procesar la lista de invitados.</p>`;
+      guestContainer.innerHTML = `
+        <div class="alert alert-danger" style="padding: 15px; background-color: #f8d7da; color: #721c24; border-radius: 6px; font-weight: 500;">
+          <strong>⚠️ Error de conexión backend:</strong> No se pudieron traer los invitados reales de MongoDB.<br>
+          <span style="font-size: 0.9rem; font-weight: normal; opacity: 0.8;">
+            Asegúrate de que la ruta de obtención de pases exista en tus controladores y use .populate("event").
+          </span>
+        </div>
+      `;
     }
   }
+}
+
+// Función auxiliar para filtrar y mandar a pintar
+function procesarYRenderizarInvitados(tickets) {
+  // Filtramos de los pases reales únicamente aquellos que se generaron como invitados externos
+  allGuests = tickets.filter(ticket => ticket.guestEmail || ticket.isGuest === true);
+  renderGuests(allGuests);
 }
 
 /* ===============================
@@ -271,7 +260,7 @@ function renderUsers(users) {
 =============================== */
 function renderGuests(guests) {
   const container = document.getElementById("guestsContainer");
-  if (!container) return; // Si no pusiste el contenedor en tu HTML, no hace nada
+  if (!container) return;
 
   container.innerHTML = "";
 
@@ -281,7 +270,6 @@ function renderGuests(guests) {
   }
 
   guests.forEach(guest => {
-    // Extraemos el nombre del evento cruzado (.populate("event")) desde el ticket
     const eventName = guest.event?.name || guest.event?.title || "Evento No Especificado";
     const guestName = guest.guestName || "Invitado sin nombre registrado";
     const guestEmail = guest.guestEmail || "—";
