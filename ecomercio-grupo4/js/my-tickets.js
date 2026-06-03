@@ -39,7 +39,15 @@ function showStatus(message, type = "loading") {
  * Petición al Backend para obtener el array de pases del usuario logueado
  */
 async function fetchMyTickets() {
-    const token = localStorage.getItem("token");
+    // 🎯 Buscamos el token tanto en formato plano como en la estructura "currentUser" por seguridad
+    let token = localStorage.getItem("token");
+    
+    if (!token) {
+        const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+        if (currentUser && currentUser.token) {
+            token = currentUser.token;
+        }
+    }
 
     // Redirigir al login si no tiene sesión activa
     if (!token) {
@@ -59,7 +67,7 @@ async function fetchMyTickets() {
             }
         });
 
-        // Control si el backend responde con HTML inesperado por un fallo crítico
+        // Control si el backend responde con HTML inesperado por un fallo crítico o redirección
         const contentType = res.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) {
             throw new Error("El backend devolvió una respuesta incorrecta. Inténtalo más tarde.");
@@ -67,6 +75,7 @@ async function fetchMyTickets() {
 
         if (res.status === 401) {
             localStorage.removeItem("token");
+            localStorage.removeItem("currentUser");
             alert("Tu sesión ha expirado. Por favor ingresa nuevamente.");
             window.location.href = "login.html";
             return;
@@ -112,15 +121,20 @@ function renderTickets(tickets) {
 
         const ev = ticket.event;
         
-        // Atributos de pago estilizados
+        // Atributos de pago estilizados compatibles con pases de compras grupales
         const isPaid = ticket.payment?.status === "paid" || ticket.payment?.status === "free" || ticket.payment?.status === "paid_multi";
         const statusBadge = isPaid 
             ? `<span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill small px-2">Válido</span>`
             : `<span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill small px-2">Pago Pendiente</span>`;
 
-        // Integración del QR: Usamos la propiedad del backend o recurrimos al creador dinámico por texto
+        // Integración del QR: Creador dinámico alternativo o propiedad directa del backend
         const fallbackQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(ticket.qrCode)}`;
         const qrFinalImage = ticket.qrImage || fallbackQrUrl;
+
+        // Si es una entrada de compra grupal secundaria, mostramos una distinción en el nombre si aplica
+        const displayEventName = ticket.guestName && ticket.guestName.includes("(") 
+            ? `${ev.name} — <small class="text-muted">${ticket.guestName.substring(ticket.guestName.indexOf("("))}</small>`
+            : ev.name;
 
         const cardHtml = `
             <div class="col-md-6 col-lg-4">
@@ -130,7 +144,7 @@ function renderTickets(tickets) {
                     <div class="card-body p-4 d-flex flex-column justify-content-between">
                         <div>
                             <div class="d-flex justify-content-between align-items-start mb-2">
-                                <h5 class="card-title fw-bold text-truncate mb-0" style="max-width: 75%;">${escapeHtml(ev.name)}</h5>
+                                <h5 class="card-title fw-bold text-truncate mb-0" style="max-width: 75%;">${displayEventName}</h5>
                                 ${statusBadge}
                             </div>
                             <p class="card-text text-muted small mb-3"><i class="fas fa-calendar-alt me-1"></i> ${ev.date} — <i class="fas fa-clock me-1"></i> ${ev.time || 'Ver hora'}</p>
@@ -141,7 +155,7 @@ function renderTickets(tickets) {
                     <div class="stub p-3 bg-light d-flex align-items-center justify-content-between">
                         <div>
                             <span class="text-uppercase text-muted d-block" style="font-size: 10px; font-weight: 700; letter-spacing: 1px;">Pase Digital</span>
-                            <span class="fw-mono text-dark small font-monospace">${ticket.qrCode.substring(0, 14)}...</span>
+                            <span class="fw-mono text-dark small font-monospace">${ticket.qrCode ? ticket.qrCode.substring(0, 14) : '—'}...</span>
                         </div>
                         <img 
                             src="${qrFinalImage}" 
@@ -161,7 +175,7 @@ function renderTickets(tickets) {
 /**
  * Abre el modal y muestra el QR en grande
  */
-function openQrModal(eventName, qrUrl, qrCodeText) {
+window.openQrModal = function(eventName, qrUrl, qrCodeText) {
     modalEventName.innerText = eventName;
     modalQrImg.src = qrUrl;
     modalTicketCode.innerText = `Código: ${qrCodeText}`;
@@ -178,5 +192,5 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Inicialización Automática al cargar el DOM
-document.addEventListener("DOMContentLoaded", fetchMyTickets);
+// 🎯 SOLUCCIÓN CRÍTICA: Al ser type="module", ejecutamos la función directamente al instanciar el archivo
+fetchMyTickets();
