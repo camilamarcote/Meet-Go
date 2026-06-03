@@ -1,6 +1,6 @@
 import express from "express";
 import EventTicket from "../models/eventTicket.js";
-import Event from "../models/event.js"; // 👈 Importamos el modelo Event para actualizar los cupos
+import Event from "../models/event.js"; 
 import { createPaymentPreference } from "../services/mercadopago.js";
 import { Payment, MercadoPagoConfig } from "mercadopago";
 import { sendTicketMail } from "../utils/mailer.js"; 
@@ -18,90 +18,102 @@ router.post("/payments/create/:ticketId", async (req, res) => {
   try {
     const { ticketId } = req.params;
 
-    console.log(`=== 🚀 [NUEVO FLUJO INTEGRADO] Procesando Ticket: ${ticketId} ===`);
+    console.log(`=== 🚀 [NUEVO FLUJO INTEGRADO] Procesando Ticket Maestro: ${ticketId} ===`);
 
-    const ticket = await EventTicket.findById(ticketId)
+    const ticketMaestro = await EventTicket.findById(ticketId)
       .populate("event")
       .populate("user");
 
-    if (!ticket) {
-      console.error(`❌ [NUEVO FLUJO] Ticket ${ticketId} no encontrado en la base de datos.`);
+    if (!ticketMaestro) {
+      console.error(`❌ [NUEVO FLUJO] Ticket de referencia ${ticketId} no encontrado en la base de datos.`);
       return res.status(404).json({ message: "Ticket no encontrado" });
     }
 
-    if (ticket.payment?.status === "paid") {
+    if (ticketMaestro.payment?.status === "paid") {
       console.log(`⚠️ [NUEVO FLUJO] El ticket ${ticketId} ya estaba pagado.`);
       return res.status(409).json({ message: "Ticket ya pagado" });
     }
 
-    const recipientEmail = ticket.guestEmail || ticket.user?.email;
-    const userName = ticket.user?.name || "Invitado";
-    const eventData = ticket.event || { name: "Evento Meet & Go", date: "Ver en la App", department: "Uruguay" };
+    // 🎯 IDENTIFICAR GRUPO: Buscamos todos los tickets que se generaron en simultáneo bajo el mismo QR / Transacción
+    const ticketsDelGrupo = await EventTicket.find({
+      event: ticketMaestro.event?._id,
+      qrCode: ticketMaestro.qrCode
+    }).populate("user").populate("event");
 
-    // 🌟 VALIDACIÓN PARA EVENTOS GRATUITOS
-    const price = ticket.event?.price;
+    const cantidadEntradas = ticketsDelGrupo.length || 1;
+    console.log(`📦 Se detectó un grupo de ${cantidadEntradas} ticket(s) asociados a esta transacción.`);
+
+    const price = ticketMaestro.event?.price;
     const isGratis = price === 0 || price === "0" || !price || Number(price) <= 0;
 
+    // 🌟 VALIDACIÓN PARA EVENTOS GRATUITOS (PROCESAMIENTO EN LOTE)
     if (isGratis) {
-      console.log(`🎁 [NUEVO FLUJO - GRATIS] Validado como GRATUITO (Precio: ${price}). Saltando Mercado Pago.`);
+      console.log(`🎁 [NUEVO FLUJO - GRATIS] Validado como GRATUITO. Procesando ${cantidadEntradas} entrada(s).`);
 
-      // 1. Modificar estado en Base de Datos
-      ticket.payment = {
-        status: "paid",
-        amount: 0,
-        transactionId: `FREE-${Date.now()}`,
-        paidAt: new Date()
-      };
-      await ticket.save();
-      console.log(`🎟 [NUEVO FLUJO - GRATIS] Ticket guardado como 'paid' en la BD.`);
+      const transactionIdComun = `FREE-${Date.now()}`;
 
-      // 🔥 1.1 ACTUALIZACIÓN DE CUPOS: Al ser gratis y quedar confirmado, sumamos cupo vendido inmediatamente
-      if (ticket.event?._id) {
-        await Event.findByIdAndUpdate(ticket.event._id, {
-          $inc: { ticketsSold: 1 }
-        });
-        console.log(`📈 [NUEVO FLUJO - GRATIS] Cupo sumado al evento ${ticket.event._id}`);
+      // Recorremos cada ticket del grupo gratis para activarlo y enviar su respectivo mail
+      for (const t of ticketsDelGrupo) {
+        t.payment = {
+          status: "paid",
+          amount: 0,
+          transactionId: transactionIdComun,
+          paidAt: new Date()
+        };
+        await t.save();
+
+        const recipientEmail = t.guestEmail || t.user?.email;
+        const userName = t.user?.name || t.guestName || "Invitado";
+        const eventData = t.event || { name: "Evento Meet & Go", date: "Ver en la App", department: "Uruguay" };
+
+        if (recipientEmail) {
+          try {
+            await sendTicketMail({
+              to: recipientEmail,
+              userName: userName,
+              event: eventData,
+              ticket: t
+            });
+          } catch (mailError) {
+            console.error(`❌ Error enviando correo para ticket ${t._id}:`, mailError);
+          }
+        }
       }
 
-      // 2. Despachar mail con Resend de inmediato utilizando el servicio importado
-      if (recipientEmail) {
-        try {
-          await sendTicketMail({
-            to: recipientEmail,
-            userName: userName,
-            event: eventData,
-            ticket: ticket
-          });
-          console.log(`✅ [NUEVO FLUJO - GRATIS] Mail enviado con éxito por Resend.`);
-        } catch (mailError) {
-          console.error("❌ [NUEVO FLUJO - GRATIS] Error enviando correo por Resend:", mailError);
-        }
+      // 🔥 ACTUALIZACIÓN DE CUPOS EN LOTE: Sumamos la cantidad exacta comprada
+      if (ticketMaestro.event?._id) {
+        await Event.findByIdAndUpdate(ticketMaestro.event._id, {
+          $inc: { ticketsSold: cantidadEntradas }
+        });
+        console.log(`📈 [GRATIS] Se sumaron ${cantidadEntradas} cupos al evento ${ticketMaestro.event._id}`);
       }
 
       return res.json({
         status: "paid",
-        message: "Ticket gratuito confirmado con éxito",
+        message: `${cantidadEntradas} ticket(s) gratuito(s) confirmado(s) con éxito`,
         init_point: null
       });
     }
 
-    // 🔥 FLUJO EXCLUSIVO PARA EVENTOS DE PAGO (Precio > 0)
-    console.log(`💰 [NUEVO FLUJO - DE PAGO] Precio detectado: ${price}. Conectando con Mercado Pago...`);
+    // 🔥 FLUJO EXCLUSIVO PARA EVENTOS DE PAGO (ENVÍO MULTIPLICADO A MERCADO PAGO)
+    console.log(`💰 [NUEVO FLUJO - DE PAGO] Precio unitario: ${price}. Multiplicando x ${cantidadEntradas}...`);
 
-    const payerData = ticket.guestEmail ? {
-      name: "Invitado",
-      email: ticket.guestEmail,
+    const payerData = ticketMaestro.guestEmail ? {
+      name: ticketMaestro.guestName || "Invitado",
+      email: ticketMaestro.guestEmail,
       id: "guest"
     } : {
-      name: ticket.user?.name || "Usuario Meet&Go",
-      email: ticket.user?.email,
-      id: ticket.user?._id
+      name: ticketMaestro.user?.name || "Usuario Meet&Go",
+      email: ticketMaestro.user?.email,
+      id: ticketMaestro.user?._id
     };
 
+    // 🎯 Pasamos la cantidad al generador de preferencias para que multiplique el precio
     const preference = await createPaymentPreference({
-      event: ticket.event,
+      event: ticketMaestro.event,
       user: payerData,
-      ticketId: ticket._id
+      ticketId: ticketMaestro._id,
+      quantity: cantidadEntradas // 👈 Parámetro clave inyectado al servicio de MP
     });
 
     return res.json({ 
@@ -132,66 +144,72 @@ router.post("/payments/webhook", async (req, res) => {
     console.log(`🚀 [WEBHOOK MP] Pago Recibido ID: ${payment.id} - Estado: ${payment.status}`);
 
     if (payment.status === "approved") {
-      const ticketId = payment.external_reference || payment.metadata?.ticket_id || payment.metadata?.ticketid; 
+      const ticketIdMaestro = payment.external_reference || payment.metadata?.ticket_id || payment.metadata?.ticketid; 
 
-      console.log(`🔍 [WEBHOOK MP] Buscando Ticket ID: ${ticketId}`);
+      console.log(`🔍 [WEBHOOK MP] Buscando Ticket Maestro ID: ${ticketIdMaestro}`);
 
-      if (!ticketId) {
-        console.warn("⚠️ [WEBHOOK MP] Pago aprobado omitido: No se halló ticketId.");
+      if (!ticketIdMaestro) {
+        console.warn("⚠️ [WEBHOOK MP] Pago aprobado omitido: No se halló ticketId de referencia.");
         return res.sendStatus(200);
       }
 
-      const ticket = await EventTicket.findById(ticketId)
-        .populate("user")
-        .populate("event");
+      const ticketMaestro = await EventTicket.findById(ticketIdMaestro);
 
-      if (!ticket) {
-        console.error(`❌ [WEBHOOK MP] El ticket ${ticketId} no existe en la BD.`);
+      if (!ticketMaestro) {
+        console.error(`❌ [WEBHOOK MP] El ticket maestro ${ticketIdMaestro} no existe en la BD.`);
         return res.sendStatus(200);
       }
 
-      if (ticket.payment?.status === "paid") {
-        console.log(`⚠️ [WEBHOOK MP] El ticket ${ticketId} ya figuraba como pagado. Omitiendo duplicados.`);
+      if (ticketMaestro.payment?.status === "paid") {
+        console.log(`⚠️ [WEBHOOK MP] El ticket ya figuraba como pagado. Omitiendo duplicados.`);
         return res.sendStatus(200);
       }
 
-      // 🔥 ACTUALIZACIÓN DE CUPOS PARA EVENTOS DE PAGO
-      // Sumamos el cupo en el evento asociado al ticket justo cuando entra la aprobación de dinero real
-      if (ticket.event?._id) {
-        await Event.findByIdAndUpdate(ticket.event._id, {
-          $inc: { ticketsSold: 1 }
+      // 🎯 Traemos todos los tickets del grupo para procesar la aprobación en bloque
+      const ticketsDelGrupo = await EventTicket.find({
+        event: ticketMaestro.event,
+        qrCode: ticketMaestro.qrCode
+      }).populate("user").populate("event");
+
+      const cantidadEntradas = ticketsDelGrupo.length || 1;
+
+      // 🔥 ACTUALIZACIÓN DE CUPOS TOTALES PARA EVENTOS DE PAGO
+      if (ticketMaestro.event) {
+        await Event.findByIdAndUpdate(ticketMaestro.event, {
+          $inc: { ticketsSold: cantidadEntradas }
         });
-        console.log(`📈 [WEBHOOK MP] Cupo sumado con éxito al evento ID: ${ticket.event._id}`);
+        console.log(`📈 [WEBHOOK MP] Se sumaron ${cantidadEntradas} cupos con éxito al evento ID: ${ticketMaestro.event}`);
       }
 
-      const recipientEmail = ticket.guestEmail || ticket.user?.email;
-      const userName = ticket.user?.name || "Invitado";
-      const eventData = ticket.event || { name: "Evento Meet & Go", date: "Ver en la App", department: "Uruguay" };
+      // Procesamos cada ticket aprobado del grupo para guardar estados y enviar emails individuales
+      for (const t of ticketsDelGrupo) {
+        const recipientEmail = t.guestEmail || t.user?.email;
+        const userName = t.user?.name || t.guestName || "Invitado";
+        const eventData = t.event || { name: "Evento Meet & Go", date: "Ver en la App", department: "Uruguay" };
 
-      console.log(`📧 [WEBHOOK MP] Intentando enviar correo a: ${recipientEmail}`);
-
-      if (recipientEmail) {
-        try {
-          await sendTicketMail({
-            to: recipientEmail,
-            userName: userName,
-            event: eventData,
-            ticket: ticket
-          });
-          console.log(`✅ [WEBHOOK MP] Correo enviado exitosamente vía Resend.`);
-        } catch (mailError) {
-          console.error("❌ [WEBHOOK MP] Error crítico al despachar en Resend:", mailError);
+        if (recipientEmail) {
+          try {
+            await sendTicketMail({
+              to: recipientEmail,
+              userName: userName,
+              event: eventData,
+              ticket: t
+            });
+          } catch (mailError) {
+            console.error("❌ [WEBHOOK MP] Error enviando correo por Resend:", mailError);
+          }
         }
+
+        t.payment = {
+          status: "paid",
+          amount: t.event?.price || 0, // Guarda el precio unitario correspondiente a este pase individual
+          transactionId: payment.id,
+          paidAt: new Date()
+        };
+        await t.save();
       }
 
-      ticket.payment = {
-        status: "paid",
-        amount: payment.transaction_amount,
-        transactionId: payment.id,
-        paidAt: new Date()
-      };
-      await ticket.save();
-      console.log(`🎟 [WEBHOOK MP] Estado del ticket actualizado a 'paid' en la base de datos.`);
+      console.log(`🎟 [WEBHOOK MP] Se actualizaron ${cantidadEntradas} tickets a estado 'paid' exitosamente.`);
     }
 
     return res.sendStatus(200);
