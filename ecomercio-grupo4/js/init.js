@@ -34,10 +34,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   <li class="nav-item" id="nav-users" style="display:none">
     <a class="nav-link" href="admin-users.html">Usuarios</a>
   </li>
-
-  <li class="nav-item" id="nav-my-tickets" style="display:none">
-    <a class="nav-link" href="my-tickets.html">Mis Tickets</a>
-  </li>
         
   <li class="nav-item" id="nav-benefits">
     <a class="nav-link" href="benefits.html">Beneficios</a>
