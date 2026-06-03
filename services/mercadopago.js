@@ -16,7 +16,8 @@ const preferenceClient = new Preference(mpClient);
 // =============================
 // 🎟️ PAGO DE EVENTO
 // =============================
-export async function createPaymentPreference({ event, user, ticketId }) {
+// 🎯 SE AÑADE EL PARÁMETRO QUANTITY (Por defecto 1)
+export async function createPaymentPreference({ event, user, ticketId, quantity = 1 }) {
   try {
     if (!event || !user || !ticketId) {
       throw new Error("Datos insuficientes para crear el pago");
@@ -25,6 +26,11 @@ export async function createPaymentPreference({ event, user, ticketId }) {
     const price = Number(event.price);
     if (isNaN(price) || price <= 0) {
       throw new Error("Precio inválido");
+    }
+
+    const inputQuantity = Number(quantity);
+    if (isNaN(inputQuantity) || inputQuantity < 1) {
+      throw new Error("Cantidad de entradas inválida");
     }
 
     const preference = await preferenceClient.create({
@@ -38,7 +44,7 @@ export async function createPaymentPreference({ event, user, ticketId }) {
             title: event.name,
             description: event.description || "Entrada a evento",
             category_id: "tickets",
-            quantity: 1,
+            quantity: inputQuantity, // 🎯 AHORA MERCADO PAGO MULTIPLICA EL PRECIO CORRECTAMENTE EN SU PROPIA PANTALLA
             currency_id: "UYU",
             unit_price: price
           }
@@ -67,12 +73,13 @@ export async function createPaymentPreference({ event, user, ticketId }) {
           // Si user._id existe (usuario registrado), lo convierte a string.
           // Si no existe (invitado), usa user.id (que enviamos como "guest") o "guest_user".
           userId: user._id ? user._id.toString() : (user.id ? user.id.toString() : "guest_user"),
-          type: "event"
+          type: "event",
+          quantity: inputQuantity // Guardamos la cantidad también en la metadata por seguridad
         }
       }
     });
 
-    console.log("🧾 Preference creada:", preference.id);
+    console.log(`🧾 Preference creada con éxito para ${inputQuantity} entrada(s). ID:`, preference.id);
     return preference;
 
   } catch (error) {
