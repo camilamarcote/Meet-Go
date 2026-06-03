@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Panel de Organizadoras</title>
   <link rel="stylesheet" href="css/admin-users.css">
+  
   <!-- Favicon básico -->
   <link rel="shortcut icon" href="img/favicon.ico">
   <link rel="icon" type="image/x-icon" href="img/favicon.ico">
@@ -18,46 +19,128 @@
 
   <!-- Manifest -->
   <link rel="manifest" href="img/site.webmanifest">
+
+  <!-- Estilos rápidos para controlar las pestañas y el contenedor de invitados -->
+  <style>
+    .admin-tabs {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 25px;
+      border-bottom: 2px solid #eee;
+      padding-bottom: 10px;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      font-size: 1.1rem;
+      font-weight: 600;
+      padding: 8px 16px;
+      cursor: pointer;
+      color: #666;
+      border-radius: 6px;
+      transition: all 0.3s ease;
+    }
+    .tab-btn:hover {
+      background-color: rgba(0,0,0,0.05);
+    }
+    .tab-btn.active {
+      color: #000;
+      background-color: rgba(0,0,0,0.08);
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    /* Estilo por si el borde dinámico de invitados necesita diferenciarse en tu grid */
+    .border-start-info {
+      border-left: 5px solid #0dcaf0 !important;
+    }
+  </style>
 </head>
 
 <body>
   <div class="admin-container">
     <h1 class="admin-title">Panel de organizadoras</h1>
     
-    <!-- Barra de búsqueda mejorada -->
-    <div class="search-section">
-      <div class="search-wrapper">
-        <input 
-          type="text" 
-          id="searchInput" 
-          class="search-input" 
-          placeholder="🔍 Buscar por nombre, email, username, nacionalidad, intereses..."
-          autocomplete="off"
-        />
-        <button id="clearSearch" class="clear-search-btn" style="display: none;">✕</button>
+    <!-- 🗂️ Sistema de Pestañas Principal -->
+    <div class="admin-tabs">
+      <button class="tab-btn active" onclick="switchMainTab('registrados')">👥 Usuarios Registrados</button>
+      <button class="tab-btn" onclick="switchMainTab('invitados')">🎟️ Usuarios Invitados</button>
+    </div>
+
+    <!-- =========================================================
+         SECCIÓN 1: USUARIOS REGISTRADOS
+         ========================================================= -->
+    <div id="tabRegistrados" class="tab-content active">
+      <!-- Barra de búsqueda mejorada para registrados -->
+      <div class="search-section">
+        <div class="search-wrapper">
+          <input 
+            type="text" 
+            id="searchInput" 
+            class="search-input" 
+            placeholder="🔍 Buscar por nombre, email, username, nacionalidad, intereses..."
+            autocomplete="off"
+          />
+          <button id="clearSearch" class="clear-search-btn" style="display: none;">✕</button>
+        </div>
+        
+        <!-- Filtros adicionales opcionales -->
+        <div class="filter-buttons">
+          <button class="filter-btn" data-filter="all">Todos</button>
+          <button class="filter-btn" data-filter="verified">Verificados</button>
+          <button class="filter-btn" data-filter="unverified">No verificados</button>
+          <button class="filter-btn" data-filter="subscribed">Suscriptos</button>
+          <button class="filter-btn" data-filter="organizer">Organizadoras</button>
+        </div>
+        
+        <div class="search-stats">
+          <span id="resultsCount">0</span> usuarios encontrados
+        </div>
       </div>
       
-      <!-- Filtros adicionales opcionales -->
-      <div class="filter-buttons">
-        <button class="filter-btn" data-filter="all">Todos</button>
-        <button class="filter-btn" data-filter="verified">Verificados</button>
-        <button class="filter-btn" data-filter="unverified">No verificados</button>
-        <button class="filter-btn" data-filter="subscribed">Suscriptos</button>
-        <button class="filter-btn" data-filter="organizer">Organizadoras</button>
-      </div>
+      <!-- Contenedor del Grid para Usuarios Registrados -->
+      <div id="usersContainer" class="grid"></div>
       
-      <div class="search-stats">
-        <span id="resultsCount">0</span> usuarios encontrados
+      <!-- Mensaje cuando no hay resultados de búsqueda -->
+      <div id="noResults" class="no-results" style="display: none;">
+        <p>😕 No se encontraron usuarios que coincidan con tu búsqueda</p>
       </div>
     </div>
-    
-    <div id="usersContainer" class="grid"></div>
-    
-    <!-- Mensaje cuando no hay resultados -->
-    <div id="noResults" class="no-results" style="display: none;">
-      <p>😕 No se encontraron usuarios que coincidan con tu búsqueda</p>
+
+    <!-- =========================================================
+         SECCIÓN 2: USUARIOS INVITADOS (POR EVENTO)
+         ========================================================= -->
+    <div id="tabInvitados" class="tab-content">
+      <div class="search-section" style="margin-bottom: 20px;">
+        <p style="color: #666; margin: 0;">Lista general de pases individuales e invitados externos clasificados por el evento de asistencia.</p>
+      </div>
+
+      <!-- Contenedor del Grid para Invitados -->
+      <div id="guestsContainer" class="grid"></div>
     </div>
+
   </div>
+
+  <!-- Lógica en JS para alternar las pestañas de forma fluida -->
+  <script>
+    function switchMainTab(tabName) {
+      // Remover clases activas de los botones
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      // Ocultar todos los contenidos
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+      if (tabName === 'registrados') {
+        document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+        document.getElementById('tabRegistrados').classList.add('active');
+      } else if (tabName === 'invitados') {
+        document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+        document.getElementById('tabInvitados').classList.add('active');
+      }
+    }
+  </script>
 
   <script src="js/admin-users.js"></script>
 </body>
