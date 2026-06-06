@@ -34,7 +34,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   <li class="nav-item" id="nav-users" style="display:none">
     <a class="nav-link" href="admin-users.html">Usuarios</a>
   </li>
-        
+
+  <!-- ✅ BENEFICIOS -->
   <li class="nav-item" id="nav-benefits">
     <a class="nav-link" href="benefits.html">Beneficios</a>
   </li>
@@ -45,6 +46,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     </a>
   </li>
 </ul>
+
 
       <div class="ms-auto d-flex align-items-center gap-2" id="nav-right"></div>
 
@@ -86,7 +88,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const user = await res.json();
 
     /* ============================
-        3. NAV LOGUEADO
+       3. NAV LOGUEADO
     ============================ */
     rightZone.innerHTML = `
       <span class="fw-semibold">${user.username}</span>
@@ -109,10 +111,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         </ul>
       </div>
     `;
-
-    // ✅ MOSTRAR MIS TICKETS (Para cualquier usuario que haya iniciado sesión con éxito)
-    const myTicketsNav = document.getElementById("nav-my-tickets");
-    if (myTicketsNav) myTicketsNav.style.display = "block";
 
     // 👮 ADMIN / ORGANIZADORA
     if (user.isOrganizer || user.roles?.includes("admin")) {
