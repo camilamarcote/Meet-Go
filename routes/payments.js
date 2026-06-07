@@ -4,8 +4,7 @@ import Event from "../models/event.js";
 import { createPaymentPreference } from "../services/mercadopago.js";
 import { Payment, MercadoPagoConfig } from "mercadopago";
 import { sendTicketMail } from "../utils/mailer.js"; 
-import { protect } from "../middlewares/auth.js";
-import { verifyToken } from "../middleware/authMiddleware.js"; 
+import { protect } from "../middlewares/auth.js"; // 👈 Tu middleware real e importación única
 
 const router = express.Router();
 
@@ -36,7 +35,7 @@ router.post("/payments/create/:ticketId", async (req, res) => {
       return res.status(409).json({ message: "Ticket ya pagado" });
     }
 
-    // 🎯 IDENTIFICAR GRUPO: Buscamos todos los tickets que se generaron en simultáneo bajo el mismo QR / Transacción
+    // 🎯 IDENTIFICAR GRUPO: Buscamos todos los tickets generados en lote compartiendo el mismo código
     const ticketsDelGrupo = await EventTicket.find({
       event: ticketMaestro.event?._id,
       qrCode: ticketMaestro.qrCode
@@ -82,14 +81,6 @@ router.post("/payments/create/:ticketId", async (req, res) => {
         }
       }
 
-      // 🔥 ACTUALIZACIÓN DE CUPOS EN LOTE: Sumamos la cantidad exacta comprada
-      if (ticketMaestro.event?._id) {
-        await Event.findByIdAndUpdate(ticketMaestro.event._id, {
-          $inc: { ticketsSold: cantidadEntradas }
-        });
-        console.log(`📈 [GRATIS] Se sumaron ${cantidadEntradas} cupos al evento ${ticketMaestro.event._id}`);
-      }
-
       return res.json({
         status: "paid",
         message: `${cantidadEntradas} ticket(s) gratuito(s) confirmado(s) con éxito`,
@@ -97,7 +88,7 @@ router.post("/payments/create/:ticketId", async (req, res) => {
       });
     }
 
-    // 🔥 FLUJO EXCLUSIVO PARA EVENTOS DE PAGO (ENVÍO MULTIPLICADO A MERCADO PAGO)
+    // 🔥 FLUJO EXCLUSIVO PARA EVENTOS DE PAGO
     console.log(`💰 [NUEVO FLUJO - DE PAGO] Precio unitario: ${price}. Multiplicando x ${cantidadEntradas}...`);
 
     const payerData = ticketMaestro.guestEmail ? {
@@ -110,12 +101,12 @@ router.post("/payments/create/:ticketId", async (req, res) => {
       id: ticketMaestro.user?._id
     };
 
-    // 🎯 Pasamos la cantidad al generador de preferencias para que multiplique el precio
+    // Pasamos la cantidad al generador de preferencias de MP
     const preference = await createPaymentPreference({
       event: ticketMaestro.event,
       user: payerData,
       ticketId: ticketMaestro._id,
-      quantity: cantidadEntradas // 👈 Parámetro clave inyectado al servicio de MP
+      quantity: cantidadEntradas 
     });
 
     return res.json({ 
@@ -167,7 +158,7 @@ router.post("/payments/webhook", async (req, res) => {
         return res.sendStatus(200);
       }
 
-      // 🎯 Traemos todos los tickets del grupo para procesar la aprobación en bloque
+      // Traemos todos los tickets que pertenecen al lote grupal de la compra
       const ticketsDelGrupo = await EventTicket.find({
         event: ticketMaestro.event,
         qrCode: ticketMaestro.qrCode
@@ -175,13 +166,8 @@ router.post("/payments/webhook", async (req, res) => {
 
       const cantidadEntradas = ticketsDelGrupo.length || 1;
 
-      // 🔥 ACTUALIZACIÓN DE CUPOS TOTALES PARA EVENTOS DE PAGO
-      if (ticketMaestro.event) {
-        await Event.findByIdAndUpdate(ticketMaestro.event, {
-          $inc: { ticketsSold: cantidadEntradas }
-        });
-        console.log(`📈 [WEBHOOK MP] Se sumaron ${cantidadEntradas} cupos con éxito al evento ID: ${ticketMaestro.event}`);
-      }
+      // 🛠️ NOTA DE CONTROL: La sumatoria de "ticketsSold" ya se procesó de forma segura al 
+      // hacer el POST inicial en routes/tickets.js. Aquí solo procesamos la liberación de los pases.
 
       // Procesamos cada ticket aprobado del grupo para guardar estados y enviar emails individuales
       for (const t of ticketsDelGrupo) {
@@ -204,7 +190,7 @@ router.post("/payments/webhook", async (req, res) => {
 
         t.payment = {
           status: "paid",
-          amount: t.event?.price || 0, // Guarda el precio unitario correspondiente a este pase individual
+          amount: t.event?.price || 0, 
           transactionId: payment.id,
           paidAt: new Date()
         };
@@ -225,12 +211,8 @@ router.post("/payments/webhook", async (req, res) => {
 // ========================================================
 // 🎟️ 🔥 ENDPOINT INTEGRADO: OBTENER TICKETS DEL USUARIO
 // ========================================================
-// Reutiliza esta lógica o colócala en tu archivo de tickets si prefieres, 
-// pero llamando a la ruta '/api/my-tickets' se activará esta base de datos.
-// Cambia "verifyToken" por "protect"
 router.get("/my-tickets", protect, async (req, res) => {
   try {
-    // 🎯 Obtenemos el ID y Email del usuario desglosados desde el token decodificado por tu middleware
     const userId = req.user?._id || req.user?.id;
     const userEmail = req.user?.email;
 
@@ -240,9 +222,6 @@ router.get("/my-tickets", protect, async (req, res) => {
 
     console.log(`🔍 [GET MY TICKETS] Buscando pases activos para el usuario ID: ${userId} o Email: ${userEmail}`);
 
-    // Buscamos los pases donde:
-    // 1. El dueño sea el usuario registrado OR el email de invitado coincida con su cuenta.
-    // 2. El estado del pago sea estrictamente "paid" (aprobado).
     const misTickets = await EventTicket.find({
       $and: [
         {
@@ -251,11 +230,11 @@ router.get("/my-tickets", protect, async (req, res) => {
             { guestEmail: userEmail }
           ]
         },
-        { "payment.status": "paid" } // 🎯 CLAVE: Verifica anidado en el sub-objeto
+        { "payment.status": "paid" } 
       ]
     })
     .populate("event")
-    .sort({ createdAt: -1 }); // Muestra primero los tickets recién comprados
+    .sort({ createdAt: -1 }); 
 
     console.log(`✅ [GET MY TICKETS] Se encontraron ${misTickets.length} tickets válidos.`);
     return res.json(misTickets);
