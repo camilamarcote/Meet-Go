@@ -139,12 +139,13 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
             btnElement.disabled = true;
         }
 
-        // Detectar si hay sesión activa para inyectar cabecera de autenticación opcional
         const token = localStorage.getItem("token");
         const headers = { "Content-Type": "application/json" };
         if (token) headers["Authorization"] = `Bearer ${token}`;
 
-        // Enviar bloque con la cantidad real elegida
+        console.log(`📡 Enviando petición de compra por ${guestData.quantity} entradas...`);
+
+        // Mandamos los datos al backend incluyendo la CANTIDAD elegida
         const resTicket = await fetch(`${API_URL}/api/events/${eventId}/tickets`, {
             method: "POST",
             headers: headers,
@@ -152,8 +153,8 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
                 guestEmail: guestData.email,
                 guestName: guestData.fullName,
                 guestPhone: guestData.phone,
-                isGuest: !token, // Si no hay token, opera estrictamente como guest
-                quantity: guestData.quantity 
+                isGuest: !token, 
+                quantity: guestData.quantity // 🎯 ¡CLAVE! Ahora sí viaja el número (2, 3, etc.) al backend
             })
         });
 
@@ -168,7 +169,7 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
             throw new Error(ticketData.message || "Error al generar los tickets");
         }
 
-        // Leer lote array devuelto por el nuevo backend corregido
+        // Leemos el lote array devuelto por tu backend multi-ticket
         const targetTickets = ticketData.tickets || [ticketData.ticket];
         if (!targetTickets || targetTickets.length === 0) {
             throw new Error("No se recibieron datos de tickets válidos.");
@@ -176,7 +177,7 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
         
         const mainTicketId = targetTickets[0]._id;
 
-        // Mandar ID maestro a tu pasarela de Mercado Pago
+        // Mandamos el ID maestro a tu pasarela para generar la preferencia de MP
         const resPayment = await fetch(`${API_URL}/api/payments/create/${mainTicketId}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" }
@@ -206,6 +207,7 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
                 window.location.reload();
             }, 800);
         } else {
+            // Redirección directa a la pantalla de pago multiplicada de Mercado Pago
             window.location.href = paymentData.init_point;
         }
 
@@ -219,7 +221,6 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
         }
     }
 }
-
 /* =============================
     📄 CARGAR INFO DEL EVENTO
 ============================= */
