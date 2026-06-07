@@ -9,7 +9,7 @@ let activePayButton = null;
 let maxAvailableQuantity = 10; // Límite por defecto
 
 /* ========================================================
-    📦 INICIALIZAR MODAL DE INVITADO EN EL HTML (Al cargar)
+    📦 INICIALIZAR MODAL DE COMPRA EN EL HTML (Al cargar)
 ======================================================== */
 function injectGuestModal() {
     if (document.getElementById("guestModal")) return;
@@ -41,7 +41,6 @@ function injectGuestModal() {
                                 <input type="tel" id="guestPhone" class="form-control form-control-lg" placeholder="Ej: 099123456" required>
                             </div>
 
-                            <!-- 🎯 NUEVO: SELECTOR DINÁMICO DE ENTRADAS -->
                             <div class="mb-2 p-3 rounded-3 bg-light border border-dashed">
                                 <label class="form-label fw-bold text-dark small d-flex justify-content-between align-items-center">
                                     <span>Cantidad de entradas:</span>
@@ -88,12 +87,12 @@ function injectGuestModal() {
             return;
         }
 
-        // Cerramos el modal de forma nativa con Bootstrap
+        // Cerramos el modal
         const modalElement = document.getElementById("guestModal");
         const modalInstance = bootstrap.Modal.getInstance(modalElement);
         if (modalInstance) modalInstance.hide();
 
-        // Ejecutar el procesamiento de pago real pasando los parámetros recolectados y la cantidad elegida
+        // Ejecutar procesamiento unificado
         await processGuestPurchase(eventId, activePayButton, { fullName, email, phone, quantity });
     });
 }
@@ -101,17 +100,22 @@ function injectGuestModal() {
 /* ========================================================
     💳 DISPARADOR DE COMPRA (Abre el Modal)
 ======================================================== */
-function payEvent(eventId, btnElement) {
-    activePayButton = btnElement; // Guardamos referencia
+window.payEvent = function(eventId, btnElement) {
+    activePayButton = btnElement;
     
-    // Inicializamos y abrimos el modal de Bootstrap
     const modalElement = document.getElementById("guestModal");
     const modal = new bootstrap.Modal(modalElement);
     
-    // Limpiamos campos de ejecuciones previas
     document.getElementById("guestTicketForm").reset();
 
-    // 🎯 Ajustamos el tope máximo dinámico en base a los cupos de la base de datos
+    // Autofill opcional si el usuario ya tiene sesión iniciada en la App
+    const savedUser = JSON.parse(localStorage.getItem("currentUser"));
+    if (savedUser) {
+        if(document.getElementById("guestFullName")) document.getElementById("guestFullName").value = `${savedUser.firstName || ''} ${savedUser.lastName || ''}`.trim();
+        if(document.getElementById("guestEmail")) document.getElementById("guestEmail").value = savedUser.email || "";
+        if(document.getElementById("guestPhone")) document.getElementById("guestPhone").value = savedUser.phone || "";
+    }
+
     const inputQty = document.getElementById("ticketQuantity");
     const noticeQty = document.getElementById("maxQtyNotice");
     if (inputQty) {
@@ -130,33 +134,32 @@ function payEvent(eventId, btnElement) {
 ======================================================== */
 async function processGuestPurchase(eventId, btnElement, guestData) {
     try {
-        // 1. Bloquear botón y mostrar carga
         if (btnElement) {
             btnElement.innerText = "Procesando...";
             btnElement.disabled = true;
         }
 
-        // 2. Crear pases como invitado enviando los datos y la CANTIDAD elegida
+        // Detectar si hay sesión activa para inyectar cabecera de autenticación opcional
+        const token = localStorage.getItem("token");
+        const headers = { "Content-Type": "application/json" };
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
+        // Enviar bloque con la cantidad real elegida
         const resTicket = await fetch(`${API_URL}/api/events/${eventId}/tickets`, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: headers,
             body: JSON.stringify({
                 guestEmail: guestData.email,
                 guestName: guestData.fullName,
                 guestPhone: guestData.phone,
-                isGuest: true,
-                quantity: guestData.quantity // 🎯 SE ENVÍA LA CANTIDAD AL CONTROLADOR MULTIPLE
+                isGuest: !token, // Si no hay token, opera estrictamente como guest
+                quantity: guestData.quantity 
             })
         });
 
-        // 🛠️ Control preventivo de contenido HTML en la creación del Ticket
         const contentTypeTicket = resTicket.headers.get("content-type");
         if (!contentTypeTicket || !contentTypeTicket.includes("application/json")) {
-            const textError = await resTicket.text();
-            console.error("🔴 El servidor respondió con HTML en la creación de Ticket. Contenido devuelto:", textError);
-            throw new Error("El servidor no pudo procesar la ruta de tickets. Verifica que el endpoint esté activo.");
+            throw new Error("El servidor no pudo procesar los tickets de forma correcta.");
         }
 
         const ticketData = await resTicket.json();
@@ -165,37 +168,31 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
             throw new Error(ticketData.message || "Error al generar los tickets");
         }
 
-        // Adaptación: como el backend modificado devuelve un array "tickets", extraemos el primer id para vincular el pago agrupado
+        // Leer lote array devuelto por el nuevo backend corregido
         const targetTickets = ticketData.tickets || [ticketData.ticket];
         if (!targetTickets || targetTickets.length === 0) {
-            throw new Error("No se recibieron datos válidos de los tickets generados.");
+            throw new Error("No se recibieron datos de tickets válidos.");
         }
         
         const mainTicketId = targetTickets[0]._id;
 
-        // 3. Crear preferencia de pago en Mercado Pago adjuntando el ID maestro de referencia
+        // Mandar ID maestro a tu pasarela de Mercado Pago
         const resPayment = await fetch(`${API_URL}/api/payments/create/${mainTicketId}`, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            }
+            headers: { "Content-Type": "application/json" }
         });
 
-        // 🛠️ Control preventivo de contenido HTML en el módulo de pagos
         const contentTypePayment = resPayment.headers.get("content-type");
         if (!contentTypePayment || !contentTypePayment.includes("application/json")) {
-            const textError = await resPayment.text();
-            console.error("🔴 El servidor respondió con HTML en el módulo de Pagos. Contenido devuelto:", textError);
-            throw new Error("El módulo de pagos no respondió con el formato correcto o la ruta no existe.");
+            throw new Error("El módulo de pagos no respondió correctamente.");
         }
 
         const paymentData = await resPayment.json();
 
         if (!resPayment.ok) {
-            throw new Error("No se pudo iniciar el proceso de pago");
+            throw new Error("No se pudo iniciar el proceso de pago.");
         }
 
-        // 4. Redirigir a Mercado Pago o procesar pase libre de costo
         if (paymentData.status === "paid") {
             if (btnElement) {
                 btnElement.innerText = "Cupos Cerrados 🔒";
@@ -203,7 +200,7 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
                 btnElement.disabled = true;
             }
             
-            alert(`🎉 ¡Tus ${guestData.quantity} entrada(s) gratuita(s) han sido procesadas con éxito! Revisa tu correo electrónico.`);
+            alert(`🎉 ¡Tus ${guestData.quantity} entrada(s) han sido procesadas con éxito! Revisa tu correo electrónico.`);
             
             setTimeout(() => {
                 window.location.reload();
@@ -216,7 +213,6 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
         console.error("❌ Error en el proceso de pago:", error);
         alert(error.message);
         
-        // Restaurar botón en caso de error
         if (btnElement) {
             btnElement.innerText = "🎟️ Intentar de nuevo";
             btnElement.disabled = false;
@@ -244,62 +240,36 @@ async function loadEventInfo() {
         `;
 
         const res = await fetch(`${API_URL}/api/events/public/${eventId}`);
-        
-        if (!res.ok) {
-            if (res.status === 404) throw new Error("Evento no encontrado");
-            throw new Error(`Error del servidor: ${res.status}`);
-        }
+        if (!res.ok) throw new Error(`Error del servidor: ${res.status}`);
 
         const event = await res.json();
         const price = event.price ?? 0;
 
-        // 🎟️ Cálculos del Sistema de Cupos
         const hasLimit = event.hasCapacityLimit === true || event.hasCapacityLimit === "true";
         const maxCapacity = Number(event.maxCapacity) || 0;
         const ticketsSold = Number(event.ticketsSold) || 0; 
         const remainingCapacity = maxCapacity - ticketsSold;
         const isSoldOut = hasLimit && remainingCapacity <= 0;
 
-        // Establecer el techo del selector de compras dinámicamente
+        // Establecer el techo dinámico
         if (hasLimit) {
             maxAvailableQuantity = Math.min(10, remainingCapacity);
         } else {
-            maxAvailableQuantity = 10; // Tope plano por compra si es libre
+            maxAvailableQuantity = 10;
         }
 
-        // Renderizado del mensaje superior de los cupos
         let capacityBadgeHtml = "";
         if (hasLimit) {
             if (isSoldOut) {
-                capacityBadgeHtml = `
-                    <div class="alert alert-danger fw-bold text-center border-0 shadow-sm mb-3">
-                        ❌ Los cupos para esta actividad se han cerrado
-                    </div>
-                `;
+                capacityBadgeHtml = `<div class="alert alert-danger fw-bold text-center border-0 shadow-sm mb-3">❌ Cupos agotados</div>`;
             } else {
-                capacityBadgeHtml = `
-                    <div class="alert alert-warning fw-bold text-center border-0 shadow-sm mb-3 text-dark">
-                        🔥 ¡Quedan solo ${remainingCapacity} cupos disponibles!
-                    </div>
-                `;
+                capacityBadgeHtml = `<div class="alert alert-warning fw-bold text-center border-0 shadow-sm mb-3 text-dark">🔥 ¡Quedan solo ${remainingCapacity} cupos!</div>`;
             }
         }
 
-        // Renderizado inteligente del botón de acción (Compra vs Bloqueado)
-        let actionButtonHtml = "";
-        if (isSoldOut) {
-            actionButtonHtml = `
-                <button class="btn btn-secondary btn-lg w-100 py-3 fw-bold shadow-sm" disabled style="cursor: not-allowed; opacity: 0.7;">
-                    Cupos Cerrados 🔒
-                </button>
-            `;
-        } else {
-            actionButtonHtml = `
-                <button class="btn btn-success btn-lg w-100 py-3 fw-bold text-uppercase shadow-sm" onclick="payEvent('${event._id}', this)">
-                    🎟️ Comprar Entradas - ${price === 0 ? 'Gratis' : `$${price}`}
-                </button>
-            `;
-        }
+        let actionButtonHtml = isSoldOut 
+            ? `<button class="btn btn-secondary btn-lg w-100 py-3 fw-bold shadow-sm" disabled>Cupos Cerrados 🔒</button>`
+            : `<button class="btn btn-success btn-lg w-100 py-3 fw-bold text-uppercase shadow-sm" onclick="payEvent('${event._id}', this)">🎟️ Comprar Entradas - ${price === 0 ? 'Gratis' : `$${price}`}</button>`;
 
         const backendAgeValue = event.ageRange || event.age;
 
@@ -307,73 +277,35 @@ async function loadEventInfo() {
             <div class="row g-4">
                 <div class="col-md-6">
                     <div class="position-relative">
-                        <img 
-                            src="${event.image || "img/default_event.jpg"}" 
-                            class="img-fluid rounded shadow-sm" 
-                            alt="${event.name}"
-                            style="width: 100%; height: auto; max-height: 600px; object-fit: cover;"
-                            onerror="this.src='img/default_event.jpg'"
-                        >
-                        <span class="badge ${price === 0 ? 'bg-success' : 'bg-primary'} position-absolute top-0 end-0 m-3 p-2 fs-6 shadow-sm">
-                            ${price === 0 ? 'Gratis' : `$${price}`}
-                        </span>
+                        <img src="${event.image || "img/default_event.jpg"}" class="img-fluid rounded shadow-sm" style="width: 100%; height: auto; max-height: 600px; object-fit: cover;" onerror="this.src='img/default_event.jpg'">
+                        <span class="badge ${price === 0 ? 'bg-success' : 'bg-primary'} position-absolute top-0 end-0 m-3 p-2 fs-6 shadow-sm">${price === 0 ? 'Gratis' : `$${price}`}</span>
                     </div>
                 </div>
-
                 <div class="col-md-6">
-                    <div class="d-flex justify-content-between align-items-start mb-1">
-                        <h2 class="mb-3 fw-bold">${escapeHtml(event.name)}</h2>
-                    </div>
-                    
+                    <h2 class="mb-3 fw-bold">${escapeHtml(event.name)}</h2>
                     ${capacityBadgeHtml}
-                    
-                    ${event.description ? `
-                        <div class="mb-4">
-                            <h5 class="fw-bold text-secondary">📝 Descripción</h5>
-                            <p class="text-muted" style="white-space: pre-line;">${escapeHtml(event.description)}</p>
-                        </div>
-                    ` : ''}
-
+                    ${event.description ? `<div class="mb-4"><h5 class="fw-bold text-secondary">📝 Descripción</h5><p class="text-muted" style="white-space: pre-line;">${escapeHtml(event.description)}</p></div>` : ''}
                     <div class="event-info mb-4 bg-white p-3 border rounded shadow-sm">
                         <h5 class="fw-bold text-secondary mb-3">📍 Detalles</h5>
                         <ul class="list-unstyled mb-0">
                             ${event.category ? `<li class="mb-2"><strong>🎯 Categoría:</strong> ${escapeHtml(event.category)}</li>` : ''}
                             ${event.department ? `<li class="mb-2"><strong>📍 Ubicación:</strong> ${escapeHtml(event.department)} ${event.neighborhood ? `- ${escapeHtml(event.neighborhood)}` : ''}</li>` : ''}
-                            
-                            <li class="mb-2">
-                                <strong>👶 Franja etaria:</strong> 
-                                ${backendAgeValue === 'sin_limite' || !backendAgeValue ? '<span class="text-success fw-bold">🎉 ¡Para todo público!</span>' : `${escapeHtml(backendAgeValue)} años`}
-                            </li>
-                            
+                            <li class="mb-2"><strong>👶 Franja etaria:</strong> ${backendAgeValue === 'sin_limite' || !backendAgeValue ? '<span class="text-success fw-bold">🎉 ATP</span>' : `${escapeHtml(backendAgeValue)} años`}</li>
                             <li class="mb-2"><strong>📅 Fecha:</strong> ${event.date}</li>
                             ${event.time ? `<li class="mb-0"><strong>⏰ Hora:</strong> ${event.time}</li>` : ''}
                         </ul>
                     </div>
-
                     <hr class="text-muted my-4">
-                    
-                    <div class="d-grid gap-2">
-                        ${actionButtonHtml}
-                    </div>
+                    <div class="d-grid gap-2">${actionButtonHtml}</div>
                 </div>
             </div>
         `;
-
     } catch (error) {
         console.error("❌ Error cargando evento:", error);
-        eventDetails.innerHTML = `
-            <div class="alert alert-danger text-center shadow-sm">
-                <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
-                <p class="fw-bold">${error.message}</p>
-                <a href="explorar.html" class="btn btn-outline-danger btn-sm">Volver al listado</a>
-            </div>
-        `;
+        eventDetails.innerHTML = `<div class="alert alert-danger text-center shadow-sm"><p class="fw-bold">${error.message}</p></div>`;
     }
 }
 
-/* =============================
-    🛠   UTILIDADES
-============================= */
 function escapeHtml(text) {
     if (!text) return '';
     const div = document.createElement('div');
@@ -382,8 +314,7 @@ function escapeHtml(text) {
 }
 
 function validateEmail(email) {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(email);
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 document.addEventListener("DOMContentLoaded", () => {

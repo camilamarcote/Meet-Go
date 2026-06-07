@@ -8,12 +8,10 @@ import { protect } from "../middlewares/auth.js";
 const router = express.Router();
 
 // ========================================================
-// 🎯 NUEVO: OBTENER TODOS LOS TICKETS (Para Panel de Organizadoras)
+// 🎯 OBTENER TODOS LOS TICKETS (Para Panel de Organizadoras)
 // ========================================================
 router.get("/tickets", async (req, res) => {
   try {
-    // .populate("event") extrae de forma cruzada el nombre del evento desde MongoDB
-    // .populate("user") extrae datos clave del usuario si no fue una compra como invitado
     const tickets = await Ticket.find()
       .populate("event", "name title date")
       .populate("user", "firstName lastName email phone username");
@@ -26,7 +24,7 @@ router.get("/tickets", async (req, res) => {
 });
 
 // ========================================================
-// 🎟️ 2. OBTENER "MIS TICKETS" (PROTEGIDO - HISTORIAL DE USUARIO)
+// 🎟️ OBTENER "MIS TICKETS" (PROTEGIDO - HISTORIAL DE USUARIO)
 // ========================================================
 router.get("/my-tickets", protect, async (req, res) => {
   try {
@@ -50,12 +48,15 @@ router.get("/my-tickets", protect, async (req, res) => {
 });
 
 // ========================================================
-// 🟣 3. CREAR TICKET (SOPORTA USUARIO LOGUEADO E INVITADOS)
+// 🟣 CREAR TICKETS EN LOTE (SOPORTA CANTIDADES MÚLTIPLES)
 // ========================================================
 router.post("/events/:eventId/tickets", async (req, res) => {
   try {
     const { eventId } = req.params;
-    const { guestEmail, guestName, guestPhone, isGuest } = req.body;
+    const { guestEmail, guestName, guestPhone, isGuest, quantity } = req.body;
+
+    // Convertir y asegurar que la cantidad sea un número válido y positivo
+    const qtyToBuy = Math.max(1, parseInt(quantity) || 1);
 
     // Verificar si el evento existe
     const event = await Event.findById(eventId);
@@ -63,63 +64,76 @@ router.post("/events/:eventId/tickets", async (req, res) => {
       return res.status(404).json({ message: "El evento especificado no existe." });
     }
 
-    // 🛑 VALIDACIÓN PREVIA DE CUPOS AUTOMÁTICA
+    // 🛑 VALIDACIÓN PREVIA DE CUPOS EN BASE A LA CANTIDAD SOLICITADA
     if (event.hasCapacityLimit) {
       const remaining = event.maxCapacity - (event.ticketsSold || 0);
-      if (remaining <= 0) {
-        return res.status(400).json({ message: "Lo sentimos, los cupos para este evento están agotados." });
+      if (remaining < qtyToBuy) {
+        return res.status(400).json({ 
+          message: `Lo sentimos, no hay cupos suficientes. Solo quedan ${remaining} lugares disponibles.` 
+        });
       }
     }
 
-    // Generar un código único para el QR basado en un UUID aleatorio
-    const codigoUnicoTicket = `TICK-${crypto.randomUUID()}`;
+    // Generamos una semilla única compartida para vincular la compra grupal en Mercado Pago
+    const grupoCompraId = `QRGRP-${crypto.randomUUID().substring(0, 8).toUpperCase()}`;
+    const ticketsCreados = [];
 
-    let ticketData = {
-      event: eventId,
-      qrCode: codigoUnicoTicket, 
-      payment: {
-        status: event.price === 0 ? "free" : "pending", 
-        amount: event.price || 0
-      }
-    };
+    // 🚀 BUCLE EN LOTE: Creamos un registro individual por cada entrada solicitada
+    for (let i = 0; i < qtyToBuy; i++) {
+      // Cada pase físico/digital necesita su propio código QR único para que el check-in no falle
+      const codigoUnicoTicket = `TICK-${crypto.randomUUID()}`;
 
-    // Procesamiento según tipo de usuario
-    if (isGuest === true || isGuest === "true") {
-      ticketData.isGuest = true;
-      ticketData.guestEmail = guestEmail;
-      ticketData.guestName = guestName;
-      ticketData.guestPhone = guestPhone;
-    } else {
-      if (req.user) {
-        ticketData.user = req.user._id;
-        ticketData.isGuest = false;
+      // Si es una entrada de acompañante, lo especificamos en el nombre para la visualización del front
+      const finalGuestName = i === 0 ? guestName : `${guestName} (Acompañante ${i})`;
+
+      let ticketData = {
+        event: eventId,
+        qrCode: codigoUnicoTicket, 
+        payment: {
+          status: event.price === 0 ? "free" : "pending", 
+          amount: event.price || 0
+        }
+      };
+
+      if (isGuest === true || isGuest === "true") {
+        ticketData.isGuest = true;
+        ticketData.guestEmail = guestEmail;
+        ticketData.guestName = finalGuestName;
+        ticketData.guestPhone = guestPhone;
       } else {
-        return res.status(401).json({ message: "No autenticado o datos de invitado faltantes." });
+        if (req.user) {
+          ticketData.user = req.user._id;
+          ticketData.isGuest = false;
+        } else {
+          return res.status(401).json({ message: "No autenticado o datos de invitado faltantes." });
+        }
+      }
+
+      const nuevoTicket = new Ticket(ticketData);
+      const ticketGuardado = await nuevoTicket.save();
+      ticketsCreados.push(ticketGuardado);
+
+      // 🔥 VINCULACIÓN EN EL PERFIL DEL USUARIO REGISTRADO
+      if (!ticketData.isGuest && ticketData.user) {
+        await User.findByIdAndUpdate(ticketData.user, {
+          $push: { tickets: ticketGuardado._id }
+        });
       }
     }
 
-    // Instanciar y guardar el nuevo Ticket
-    const nuevoTicket = new Ticket(ticketData);
-    const ticketGuardado = await nuevoTicket.save();
+    // Actualizar el contador del evento sumando el bloque total comprado de una sola vez
+    await Event.findByIdAndUpdate(eventId, { $inc: { ticketsSold: qtyToBuy } });
 
-    // 🔥 VINCULACIÓN DINÁMICA EN EL PERFIL DEL USUARIO REGISTRADO
-    if (!ticketData.isGuest && ticketData.user) {
-      await User.findByIdAndUpdate(ticketData.user, {
-        $push: { tickets: ticketGuardado._id }
-      });
-    }
-
-    // Actualizar el contador de tickets vendidos del evento
-    await Event.findByIdAndUpdate(eventId, { $inc: { ticketsSold: 1 } });
-
+    // Devolvemos tanto la estructura antigua (ticket único) como la nueva (tickets en array) para retrocompatibilidad
     res.status(201).json({
-      message: "Ticket generado con éxito",
-      ticket: ticketGuardado
+      message: `${qtyToBuy} ticket(s) generado(s) con éxito`,
+      ticket: ticketsCreados[0], 
+      tickets: ticketsCreados
     });
 
   } catch (error) {
-    console.error("❌ Error creando el ticket:", error);
-    res.status(500).json({ message: "Error interno al procesar la reserva del ticket" });
+    console.error("❌ Error creando el lote de tickets:", error);
+    res.status(500).json({ message: "Error interno al procesar la reserva de los tickets" });
   }
 });
 
