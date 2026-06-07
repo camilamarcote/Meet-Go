@@ -13,7 +13,7 @@ const EventTicketSchema = new mongoose.Schema({
     trim: true,
     lowercase: true
   },
-  // 👥 NUEVOS CAMPOS: Capturan los datos obligatorios del modal de invitados
+  // 👥 CAMPOS DE INVITADOS: Capturan los datos obligatorios del modal
   guestName: {
     type: String,
     required: false,
@@ -34,6 +34,14 @@ const EventTicketSchema = new mongoose.Schema({
     required: true,
     index: true
   },
+  
+  // 🛒 NUEVO CAMPO AGRUPADOR: Vincula los tickets que se compran juntos en una misma transacción
+  cartId: {
+    type: String,
+    required: false,
+    index: true // 🎯 Clave para búsquedas rápidas en routes/payments.js
+  },
+
   accessType: {
     type: String,
     enum: ["subscription", "single-event"],
@@ -96,6 +104,6 @@ EventTicketSchema.index(
   { unique: true, partialFilterExpression: { user: { $exists: true, $gt: null } } }
 );
 
-// ✅ CORRECCIÓN: Se eliminó el índice compuesto único de guestEmail_1_event_1 para que los invitados puedan comprar múltiples tickets.
+// ✅ NOTA: El índice compuesto único de guestEmail_1_event_1 ya no existe, permitiendo compras múltiples por invitado.
 
 export default mongoose.model("EventTicket", EventTicketSchema);
