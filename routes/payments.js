@@ -4,7 +4,7 @@ import Event from "../models/event.js";
 import { createPaymentPreference } from "../services/mercadopago.js";
 import { Payment, MercadoPagoConfig } from "mercadopago";
 import { sendTicketMail } from "../utils/mailer.js"; 
-import { protect } from "../middlewares/auth.js"; // 👈 Tu middleware real e importación única
+import { protect } from "../middlewares/auth.js";
 
 const router = express.Router();
 
@@ -35,10 +35,10 @@ router.post("/payments/create/:ticketId", async (req, res) => {
       return res.status(409).json({ message: "Ticket ya pagado" });
     }
 
-    // 🎯 IDENTIFICAR GRUPO: Buscamos todos los tickets generados en lote compartiendo el mismo código
+    // 🎯 IDENTIFICAR GRUPO: Ahora buscamos todos los tickets asociados al mismo carrito/lote (cartId)
     const ticketsDelGrupo = await EventTicket.find({
       event: ticketMaestro.event?._id,
-      qrCode: ticketMaestro.qrCode
+      cartId: ticketMaestro.cartId // 👈 Cambiado de qrCode a cartId
     }).populate("user").populate("event");
 
     const cantidadEntradas = ticketsDelGrupo.length || 1;
@@ -53,7 +53,7 @@ router.post("/payments/create/:ticketId", async (req, res) => {
 
       const transactionIdComun = `FREE-${Date.now()}`;
 
-      // Recorremos cada ticket del grupo gratis para activarlo y enviar su respectivo mail
+      // Recorremos cada ticket del lote para activarlo y enviar su correo
       for (const t of ticketsDelGrupo) {
         t.payment = {
           status: "paid",
@@ -101,7 +101,7 @@ router.post("/payments/create/:ticketId", async (req, res) => {
       id: ticketMaestro.user?._id
     };
 
-    // Pasamos la cantidad al generador de preferencias de MP
+    // Pasamos la cantidad total encontrada al generador de preferencias de MP
     const preference = await createPaymentPreference({
       event: ticketMaestro.event,
       user: payerData,
@@ -158,18 +158,15 @@ router.post("/payments/webhook", async (req, res) => {
         return res.sendStatus(200);
       }
 
-      // Traemos todos los tickets que pertenecen al lote grupal de la compra
+      // 🎯 Traemos todos los tickets que pertenecen al lote usando cartId
       const ticketsDelGrupo = await EventTicket.find({
         event: ticketMaestro.event,
-        qrCode: ticketMaestro.qrCode
+        cartId: ticketMaestro.cartId // 👈 Cambiado de qrCode a cartId
       }).populate("user").populate("event");
 
       const cantidadEntradas = ticketsDelGrupo.length || 1;
 
-      // 🛠️ NOTA DE CONTROL: La sumatoria de "ticketsSold" ya se procesó de forma segura al 
-      // hacer el POST inicial en routes/tickets.js. Aquí solo procesamos la liberación de los pases.
-
-      // Procesamos cada ticket aprobado del grupo para guardar estados y enviar emails individuales
+      // Procesamos cada ticket aprobado del lote para guardar estados y enviar emails individuales
       for (const t of ticketsDelGrupo) {
         const recipientEmail = t.guestEmail || t.user?.email;
         const userName = t.user?.name || t.guestName || "Invitado";

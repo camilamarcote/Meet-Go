@@ -2,7 +2,7 @@ import express from "express";
 import Event from "../models/event.js";
 import EventTicket from "../models/eventTicket.js";
 import { protect } from "../middlewares/auth.js";
-import crypto from "crypto"; // O la librería que uses para generar identificadores únicos
+import crypto from "crypto";
 
 const router = express.Router();
 
@@ -14,7 +14,7 @@ router.post("/events/:eventId/tickets", protect, async (req, res) => {
     const { eventId } = req.params;
     const { guestEmail, guestName, guestPhone, isGuest, quantity } = req.body;
 
-    // 🎯 Capturamos la cantidad enviada por el front (por defecto 1 si no viene)
+    // Capturamos la cantidad enviada por el front (por defecto 1 si no viene)
     const cantidadAComprar = parseInt(quantity) || 1;
 
     const evento = await Event.findById(eventId);
@@ -22,7 +22,7 @@ router.post("/events/:eventId/tickets", protect, async (req, res) => {
       return res.status(404).json({ message: "Evento no encontrado" });
     }
 
-    // Opcional: Validar cupos si tu evento tiene límite
+    // Validar cupos si el evento tiene límite de capacidad
     if (evento.hasCapacityLimit) {
       const disponibles = evento.maxCapacity - evento.ticketsSold;
       if (disponibles < cantidadAComprar) {
@@ -30,16 +30,20 @@ router.post("/events/:eventId/tickets", protect, async (req, res) => {
       }
     }
 
-    // 🔑 Código común de transacción para agrupar este lote de entradas
-    const codigoGrupoQR = crypto.randomBytes(12).toString("hex");
-
+    // 🛒 ID DE CARRITO ÚNICO: Agrupa todos los pases pertenecientes a este lote de compra
+    const idLoteCompra = crypto.randomBytes(12).toString("hex");
     const ticketsCreados = [];
 
-    // 🔄 BUCLE CLAVE: Guardamos tantos tickets en la BD como el usuario haya pedido
+    // 🔄 BUCLE: Creamos pases individuales con QRs distintos para evitar el error E11000 de duplicados
     for (let i = 0; i < cantidadAComprar; i++) {
+      
+      // Cada ticket tiene un código QR único e irrepetible 🎉
+      const qrUnicoIndividual = crypto.randomBytes(16).toString("hex");
+
       const ticketData = {
         event: eventId,
-        qrCode: codigoGrupoQR, // 🎯 Comparten el mismo código para identificarlos como grupo
+        qrCode: qrUnicoIndividual,  // 🎯 ÚNICO: Soluciona el error MongoServerError E11000
+        cartId: idLoteCompra,        // 🛒 NUEVO: Los vincula bajo el mismo lote de pago
         payment: {
           status: "pending",
           amount: evento.price || 0
@@ -67,7 +71,7 @@ router.post("/events/:eventId/tickets", protect, async (req, res) => {
       $inc: { ticketsSold: cantidadAComprar }
     });
 
-    console.log(`✅ [BACKEND] Creados con éxito ${cantidadAComprar} tickets bajo el identificador de grupo: ${codigoGrupoQR}`);
+    console.log(`✅ [BACKEND] Creados con éxito ${cantidadAComprar} tickets independientes en el lote: ${idLoteCompra}`);
 
     // Devolvemos el array de tickets creados al frontend
     return res.status(201).json({ tickets: ticketsCreados });
