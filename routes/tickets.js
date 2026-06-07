@@ -50,8 +50,9 @@ router.get("/my-tickets", protect, async (req, res) => {
 // ========================================================
 // 🟣 CREAR TICKETS EN LOTE (SOPORTA CANTIDADES MÚLTIPLES)
 // ========================================================
-router.post("/events/:eventId/tickets", async (req, res) => {
+router.post("/events/:eventId/tickets", protect, async (req, res) => {
   try {
+     // ... todo el resto de tu código queda exactamente igual ...
     const { eventId } = req.params;
     const { guestEmail, guestName, guestPhone, isGuest, quantity } = req.body;
 

@@ -4,8 +4,7 @@ import Event from "../models/event.js";
 import { createPaymentPreference } from "../services/mercadopago.js";
 import { Payment, MercadoPagoConfig } from "mercadopago";
 import { sendTicketMail } from "../utils/mailer.js"; 
-// 🚨 NOTA: Asegúrate de importar tu middleware de autenticación (ej: protect, verifyToken, etc.)
-// Si tu middleware se llama distinto, cambia "verifyToken" por el tuyo aquí abajo:
+import { protect } from "../middlewares/auth.js";
 import { verifyToken } from "../middleware/authMiddleware.js"; 
 
 const router = express.Router();
@@ -228,7 +227,8 @@ router.post("/payments/webhook", async (req, res) => {
 // ========================================================
 // Reutiliza esta lógica o colócala en tu archivo de tickets si prefieres, 
 // pero llamando a la ruta '/api/my-tickets' se activará esta base de datos.
-router.get("/my-tickets", verifyToken, async (req, res) => {
+// Cambia "verifyToken" por "protect"
+router.get("/my-tickets", protect, async (req, res) => {
   try {
     // 🎯 Obtenemos el ID y Email del usuario desglosados desde el token decodificado por tu middleware
     const userId = req.user?._id || req.user?.id;
