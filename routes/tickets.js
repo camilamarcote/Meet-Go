@@ -1,140 +1,80 @@
 import express from "express";
-import crypto from "crypto"; 
-import Ticket from "../models/eventTicket.js"; 
 import Event from "../models/event.js";
-import User from "../models/User.js";
+import EventTicket from "../models/eventTicket.js";
 import { protect } from "../middlewares/auth.js";
+import crypto from "crypto"; // O la librería que uses para generar identificadores únicos
 
 const router = express.Router();
-
-// ========================================================
-// 🎯 OBTENER TODOS LOS TICKETS (Para Panel de Organizadoras)
-// ========================================================
-router.get("/tickets", async (req, res) => {
-  try {
-    const tickets = await Ticket.find()
-      .populate("event", "name title date")
-      .populate("user", "firstName lastName email phone username");
-
-    res.json(tickets);
-  } catch (error) {
-    console.error("❌ Error al obtener el listado general de tickets:", error);
-    res.status(500).json({ message: "Error interno al procesar el listado de tickets" });
-  }
-});
-
-// ========================================================
-// 🎟️ OBTENER "MIS TICKETS" (PROTEGIDO - HISTORIAL DE USUARIO)
-// ========================================================
-router.get("/my-tickets", protect, async (req, res) => {
-  try {
-    const userWithTickets = await User.findById(req.user._id).populate({
-      path: "tickets",
-      populate: {
-        path: "event",
-        select: "name description date time image department neighborhood price" 
-      }
-    });
-
-    if (!userWithTickets) {
-      return res.status(404).json({ message: "Usuario no encontrado" });
-    }
-
-    res.json(userWithTickets.tickets);
-  } catch (error) {
-    console.error("❌ Error al obtener los tickets del usuario:", error);
-    res.status(500).json({ message: "Error al cargar tu historial de tickets" });
-  }
-});
 
 // ========================================================
 // 🟣 CREAR TICKETS EN LOTE (SOPORTA CANTIDADES MÚLTIPLES)
 // ========================================================
 router.post("/events/:eventId/tickets", protect, async (req, res) => {
   try {
-     // ... todo el resto de tu código queda exactamente igual ...
     const { eventId } = req.params;
     const { guestEmail, guestName, guestPhone, isGuest, quantity } = req.body;
 
-    // Convertir y asegurar que la cantidad sea un número válido y positivo
-    const qtyToBuy = Math.max(1, parseInt(quantity) || 1);
+    // 🎯 Capturamos la cantidad enviada por el front (por defecto 1 si no viene)
+    const cantidadAComprar = parseInt(quantity) || 1;
 
-    // Verificar si el evento existe
-    const event = await Event.findById(eventId);
-    if (!event) {
-      return res.status(404).json({ message: "El evento especificado no existe." });
+    const evento = await Event.findById(eventId);
+    if (!evento) {
+      return res.status(404).json({ message: "Evento no encontrado" });
     }
 
-    // 🛑 VALIDACIÓN PREVIA DE CUPOS EN BASE A LA CANTIDAD SOLICITADA
-    if (event.hasCapacityLimit) {
-      const remaining = event.maxCapacity - (event.ticketsSold || 0);
-      if (remaining < qtyToBuy) {
-        return res.status(400).json({ 
-          message: `Lo sentimos, no hay cupos suficientes. Solo quedan ${remaining} lugares disponibles.` 
-        });
+    // Opcional: Validar cupos si tu evento tiene límite
+    if (evento.hasCapacityLimit) {
+      const disponibles = evento.maxCapacity - evento.ticketsSold;
+      if (disponibles < cantidadAComprar) {
+        return res.status(400).json({ message: `Solo quedan ${disponibles} cupos disponibles.` });
       }
     }
 
-    // Generamos una semilla única compartida para vincular la compra grupal en Mercado Pago
-    const grupoCompraId = `QRGRP-${crypto.randomUUID().substring(0, 8).toUpperCase()}`;
+    // 🔑 Código común de transacción para agrupar este lote de entradas
+    const codigoGrupoQR = crypto.randomBytes(12).toString("hex");
+
     const ticketsCreados = [];
 
-    // 🚀 BUCLE EN LOTE: Creamos un registro individual por cada entrada solicitada
-    for (let i = 0; i < qtyToBuy; i++) {
-      // Cada pase físico/digital necesita su propio código QR único para que el check-in no falle
-      const codigoUnicoTicket = `TICK-${crypto.randomUUID()}`;
-
-      // Si es una entrada de acompañante, lo especificamos en el nombre para la visualización del front
-      const finalGuestName = i === 0 ? guestName : `${guestName} (Acompañante ${i})`;
-
-      let ticketData = {
+    // 🔄 BUCLE CLAVE: Guardamos tantos tickets en la BD como el usuario haya pedido
+    for (let i = 0; i < cantidadAComprar; i++) {
+      const ticketData = {
         event: eventId,
-        qrCode: codigoUnicoTicket, 
+        qrCode: codigoGrupoQR, // 🎯 Comparten el mismo código para identificarlos como grupo
         payment: {
-          status: event.price === 0 ? "free" : "pending", 
-          amount: event.price || 0
+          status: "pending",
+          amount: evento.price || 0
         }
       };
 
-      if (isGuest === true || isGuest === "true") {
+      // Manejo de roles (Invitado vs Registrado)
+      if (isGuest === true || isGuest === "true" || !req.user) {
         ticketData.isGuest = true;
         ticketData.guestEmail = guestEmail;
-        ticketData.guestName = finalGuestName;
+        ticketData.guestName = guestName;
         ticketData.guestPhone = guestPhone;
       } else {
-        if (req.user) {
-          ticketData.user = req.user._id;
-          ticketData.isGuest = false;
-        } else {
-          return res.status(401).json({ message: "No autenticado o datos de invitado faltantes." });
-        }
+        ticketData.user = req.user._id;
+        ticketData.isGuest = false;
       }
 
-      const nuevoTicket = new Ticket(ticketData);
-      const ticketGuardado = await nuevoTicket.save();
-      ticketsCreados.push(ticketGuardado);
-
-      // 🔥 VINCULACIÓN EN EL PERFIL DEL USUARIO REGISTRADO
-      if (!ticketData.isGuest && ticketData.user) {
-        await User.findByIdAndUpdate(ticketData.user, {
-          $push: { tickets: ticketGuardado._id }
-        });
-      }
+      const nuevoTicket = new EventTicket(ticketData);
+      await nuevoTicket.save();
+      ticketsCreados.push(nuevoTicket);
     }
 
-    // Actualizar el contador del evento sumando el bloque total comprado de una sola vez
-    await Event.findByIdAndUpdate(eventId, { $inc: { ticketsSold: qtyToBuy } });
-
-    // Devolvemos tanto la estructura antigua (ticket único) como la nueva (tickets en array) para retrocompatibilidad
-    res.status(201).json({
-      message: `${qtyToBuy} ticket(s) generado(s) con éxito`,
-      ticket: ticketsCreados[0], 
-      tickets: ticketsCreados
+    // 🔥 ACTUALIZACIÓN DE CUPOS EN LOTE AUTOMÁTICA
+    await Event.findByIdAndUpdate(eventId, {
+      $inc: { ticketsSold: cantidadAComprar }
     });
 
+    console.log(`✅ [BACKEND] Creados con éxito ${cantidadAComprar} tickets bajo el identificador de grupo: ${codigoGrupoQR}`);
+
+    // Devolvemos el array de tickets creados al frontend
+    return res.status(201).json({ tickets: ticketsCreados });
+
   } catch (error) {
-    console.error("❌ Error creando el lote de tickets:", error);
-    res.status(500).json({ message: "Error interno al procesar la reserva de los tickets" });
+    console.error("❌ Error creando lote de tickets:", error);
+    return res.status(500).json({ message: "Error interno al procesar la reserva de pases" });
   }
 });
 
