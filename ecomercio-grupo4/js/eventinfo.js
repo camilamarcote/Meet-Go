@@ -291,7 +291,7 @@ async function loadEventInfo() {
                         <ul class="list-unstyled mb-0">
                             ${event.category ? `<li class="mb-2"><strong>🎯 Categoría:</strong> ${escapeHtml(event.category)}</li>` : ''}
                             ${event.department ? `<li class="mb-2"><strong>📍 Ubicación:</strong> ${escapeHtml(event.department)} ${event.neighborhood ? `- ${escapeHtml(event.neighborhood)}` : ''}</li>` : ''}
-                            <li class="mb-2"><strong>👶 Franja etaria:</strong> ${backendAgeValue === 'sin_limite' || !backendAgeValue ? '<span class="text-success fw-bold">🎉 ATP</span>' : `${escapeHtml(backendAgeValue)} años`}</li>
+                            <li class="mb-2"><strong>👶 Franja etaria:</strong> ${backendAgeValue === 'sin_limite' || !backendAgeValue ? '<span class="text-success fw-bold">Sin limite de edad</span>' : `${escapeHtml(backendAgeValue)} años`}</li>
                             <li class="mb-2"><strong>📅 Fecha:</strong> ${event.date}</li>
                             ${event.time ? `<li class="mb-0"><strong>⏰ Hora:</strong> ${event.time}</li>` : ''}
                         </ul>
