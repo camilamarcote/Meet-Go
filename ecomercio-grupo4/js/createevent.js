@@ -7,11 +7,13 @@ const eventForm = document.getElementById("eventForm");
 const departmentSelect = document.getElementById("eventDepartment");
 const neighborhoodSelect = document.getElementById("eventNeighborhood");
 
-// Nuevos selectores añadidos para franja etaria y cupos
+// Nuevos selectores añadidos para franja etaria, cupos y precios
 const ageRangeSelect = document.getElementById("eventAgeRange");
 const hasCapacityLimitSelect = document.getElementById("eventHasCapacityLimit");
 const maxCapacityInput = document.getElementById("eventMaxCapacity");
 const capacityGroupContainer = document.getElementById("capacityGroupContainer");
+const eventPrice = document.getElementById("eventPrice");
+const eventAltPrice = document.getElementById("eventAltPrice"); // Selector capturado correctamente
 
 // =============================
 // 🔐 CONTROL DE USUARIO
@@ -72,18 +74,17 @@ departmentSelect.addEventListener("change", () => {
 });
 
 // =============================
-// 🔄 Control Visual de Cupos (Ocultar/Mostrar input de cantidad)
+// 🔄 Control Visual de Cupos
 // =============================
 if (hasCapacityLimitSelect && capacityGroupContainer) {
   hasCapacityLimitSelect.addEventListener("change", () => {
-    // Si seleccionan "SÍ" (true), mostramos el contenedor del input numérico
     if (hasCapacityLimitSelect.value === "true") {
       capacityGroupContainer.style.display = "block";
-      maxCapacityInput.required = true; // Hacemos obligatorio el campo si hay límite
+      maxCapacityInput.required = true; 
     } else {
       capacityGroupContainer.style.display = "none";
       maxCapacityInput.required = false;
-      maxCapacityInput.value = ""; // Limpiamos el valor si se arrepienten
+      maxCapacityInput.value = ""; 
     }
   });
 }
@@ -105,7 +106,7 @@ eventForm.addEventListener("submit", async (e) => {
   formData.append("time", eventTime.value);
   formData.append("price", Number(eventPrice.value) || 0);
 
-  // 👶 Franja Etaria (Mandará 'sin_limite' o el rango clásico elegido)
+  // 👶 Franja Etaria 
   if (ageRangeSelect) {
     formData.append("ageRange", ageRangeSelect.value);
   }
@@ -118,23 +119,23 @@ eventForm.addEventListener("submit", async (e) => {
     formData.append("maxCapacity", Number(maxCapacityInput.value));
   }
 
-  // Precio alternativo
-  if (eventAltPrice.value) {
+  // 👑 PRECIO ALTERNATIVO (CORREGIDO: validación dinámica del elemento del DOM)
+  if (eventAltPrice && eventAltPrice.value.trim() !== "") {
     formData.append("altPrice", Number(eventAltPrice.value));
   }
 
   // Imagen del evento
-  if (eventImage.files.length) {
+  if (eventImage && eventImage.files.length) {
     formData.append("image", eventImage.files[0]);
   }
 
   // Link de whatsapp
-  if (eventWhatsapp.value.trim()) {
+  if (eventWhatsapp && eventWhatsapp.value.trim()) {
     formData.append("whatsappLink", eventWhatsapp.value.trim());
   }
 
   // QR de whatsapp
-  if (eventQR.files.length) {
+  if (eventQR && eventQR.files.length) {
     formData.append("whatsappQR", eventQR.files[0]);
   }
 
@@ -160,7 +161,6 @@ eventForm.addEventListener("submit", async (e) => {
     eventForm.reset();
     neighborhoodSelect.disabled = true;
     
-    // Ocultar de nuevo el campo de cupos al resetear
     if (capacityGroupContainer) {
       capacityGroupContainer.style.display = "none";
     }
