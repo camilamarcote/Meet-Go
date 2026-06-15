@@ -63,7 +63,6 @@ function injectGuestModal() {
     div.innerHTML = modalHtml;
     document.body.appendChild(div);
 
-    // Escuchar el envío del formulario del modal
     document.getElementById("guestTicketForm").addEventListener("submit", async (e) => {
         e.preventDefault();
         
@@ -87,12 +86,10 @@ function injectGuestModal() {
             return;
         }
 
-        // Cerramos el modal
         const modalElement = document.getElementById("guestModal");
         const modalInstance = bootstrap.Modal.getInstance(modalElement);
         if (modalInstance) modalInstance.hide();
 
-        // Ejecutar procesamiento unificado
         await processGuestPurchase(eventId, activePayButton, { fullName, email, phone, quantity });
     });
 }
@@ -108,7 +105,6 @@ window.payEvent = function(eventId, btnElement) {
     
     document.getElementById("guestTicketForm").reset();
 
-    // Autofill opcional si el usuario ya tiene sesión iniciada en la App
     const savedUser = JSON.parse(localStorage.getItem("currentUser"));
     if (savedUser) {
         if(document.getElementById("guestFullName")) document.getElementById("guestFullName").value = `${savedUser.firstName || ''} ${savedUser.lastName || ''}`.trim();
@@ -139,13 +135,13 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
             btnElement.disabled = true;
         }
 
-        const token = localStorage.getItem("token");
+        const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+        const token = currentUser?.token;
         const headers = { "Content-Type": "application/json" };
         if (token) headers["Authorization"] = `Bearer ${token}`;
 
         console.log(`📡 Enviando petición de compra por ${guestData.quantity} entradas...`);
 
-        // Mandamos los datos al backend incluyendo la CANTIDAD elegida
         const resTicket = await fetch(`${API_URL}/api/events/${eventId}/tickets`, {
             method: "POST",
             headers: headers,
@@ -154,7 +150,7 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
                 guestName: guestData.fullName,
                 guestPhone: guestData.phone,
                 isGuest: !token, 
-                quantity: guestData.quantity // 🎯 ¡CLAVE! Ahora sí viaja el número (2, 3, etc.) al backend
+                quantity: guestData.quantity 
             })
         });
 
@@ -169,7 +165,6 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
             throw new Error(ticketData.message || "Error al generar los tickets");
         }
 
-        // Leemos el lote array devuelto por tu backend multi-ticket
         const targetTickets = ticketData.tickets || [ticketData.ticket];
         if (!targetTickets || targetTickets.length === 0) {
             throw new Error("No se recibieron datos de tickets válidos.");
@@ -177,7 +172,6 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
         
         const mainTicketId = targetTickets[0]._id;
 
-        // Mandamos el ID maestro a tu pasarela para generar la preferencia de MP
         const resPayment = await fetch(`${API_URL}/api/payments/create/${mainTicketId}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" }
@@ -207,7 +201,6 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
                 window.location.reload();
             }, 800);
         } else {
-            // Redirección directa a la pantalla de pago multiplicada de Mercado Pago
             window.location.href = paymentData.init_point;
         }
 
@@ -221,6 +214,7 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
         }
     }
 }
+
 /* =============================
     📄 CARGAR INFO DEL EVENTO
 ============================= */
@@ -244,7 +238,17 @@ async function loadEventInfo() {
         if (!res.ok) throw new Error(`Error del servidor: ${res.status}`);
 
         const event = await res.json();
-        const price = event.price ?? 0;
+        
+        // 🎯 LOGICA DE PRECIOS ALTERNATIVOS
+        const basePrice = event.price ?? 0;
+        const altPrice = event.altPrice ?? null;
+
+        // Validamos si el cliente logueado es VIP/Suscriptor
+        const savedUser = JSON.parse(localStorage.getItem("currentUser"));
+        const isSubscriber = savedUser?.isSubscriber === true || savedUser?.roles?.includes("admin");
+        
+        // El precio final depende de su rol
+        const finalPrice = (isSubscriber && altPrice !== null) ? altPrice : basePrice;
 
         const hasLimit = event.hasCapacityLimit === true || event.hasCapacityLimit === "true";
         const maxCapacity = Number(event.maxCapacity) || 0;
@@ -252,7 +256,6 @@ async function loadEventInfo() {
         const remainingCapacity = maxCapacity - ticketsSold;
         const isSoldOut = hasLimit && remainingCapacity <= 0;
 
-        // Establecer el techo dinámico
         if (hasLimit) {
             maxAvailableQuantity = Math.min(10, remainingCapacity);
         } else {
@@ -268,9 +271,21 @@ async function loadEventInfo() {
             }
         }
 
+        // Diseño dinámico de la etiqueta de precios en el Banner
+        let priceBadgeHtml = "";
+        if (altPrice !== null) {
+            priceBadgeHtml = `
+                <div class="position-absolute top-0 end-0 m-3 p-2 bg-dark text-white rounded shadow-sm d-flex flex-column align-items-end">
+                    <span class="small text-decoration-line-through text-muted" style="font-size:0.75rem;">Gral: $${basePrice}</span>
+                    <span class="fw-bold text-warning" style="font-size:0.95rem;">👑 Club: $${altPrice}</span>
+                </div>`;
+        } else {
+            priceBadgeHtml = `<span class="badge ${basePrice === 0 ? 'bg-success' : 'bg-primary'} position-absolute top-0 end-0 m-3 p-2 fs-6 shadow-sm">${basePrice === 0 ? 'Gratis' : `$${basePrice}`}</span>`;
+        }
+
         let actionButtonHtml = isSoldOut 
             ? `<button class="btn btn-secondary btn-lg w-100 py-3 fw-bold shadow-sm" disabled>Cupos Cerrados 🔒</button>`
-            : `<button class="btn btn-success btn-lg w-100 py-3 fw-bold text-uppercase shadow-sm" onclick="payEvent('${event._id}', this)">🎟️ Comprar Entradas - ${price === 0 ? 'Gratis' : `$${price}`}</button>`;
+            : `<button class="btn btn-success btn-lg w-100 py-3 fw-bold text-uppercase shadow-sm" onclick="payEvent('${event._id}', this)">🎟️ Comprar Entradas - ${finalPrice === 0 ? 'Gratis' : `$${finalPrice}`}</button>`;
 
         const backendAgeValue = event.ageRange || event.age;
 
@@ -279,7 +294,7 @@ async function loadEventInfo() {
                 <div class="col-md-6">
                     <div class="position-relative">
                         <img src="${event.image || "img/default_event.jpg"}" class="img-fluid rounded shadow-sm" style="width: 100%; height: auto; max-height: 600px; object-fit: cover;" onerror="this.src='img/default_event.jpg'">
-                        <span class="badge ${price === 0 ? 'bg-success' : 'bg-primary'} position-absolute top-0 end-0 m-3 p-2 fs-6 shadow-sm">${price === 0 ? 'Gratis' : `$${price}`}</span>
+                        ${priceBadgeHtml}
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -294,6 +309,7 @@ async function loadEventInfo() {
                             <li class="mb-2"><strong>👶 Franja etaria:</strong> ${backendAgeValue === 'sin_limite' || !backendAgeValue ? '<span class="text-success fw-bold">Sin limite de edad</span>' : `${escapeHtml(backendAgeValue)} años`}</li>
                             <li class="mb-2"><strong>📅 Fecha:</strong> ${event.date}</li>
                             ${event.time ? `<li class="mb-0"><strong>⏰ Hora:</strong> ${event.time}</li>` : ''}
+                            ${altPrice !== null ? `<li class="mb-0 mt-2 text-primary"><strong>👑 Precio Club Suscriptores:</strong> $${altPrice}</li>` : ''}
                         </ul>
                     </div>
                     <hr class="text-muted my-4">
