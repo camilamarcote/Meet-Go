@@ -7,6 +7,7 @@ const eventDetails = document.getElementById("eventDetails");
 // Variable global para recordar qué botón disparó la compra y los cupos máximos permitidos
 let activePayButton = null;
 let maxAvailableQuantity = 10; // Límite por defecto
+let currentEventAltPrice = 0;   // Guarda el precio alternativo dinámicamente
 
 /* ========================================================
     📦 INICIALIZAR MODAL DE COMPRA EN EL HTML (Al cargar)
@@ -137,21 +138,32 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
 
         const currentUser = JSON.parse(localStorage.getItem("currentUser"));
         const token = currentUser?.token;
+        const isSubscriber = currentUser?.isSubscriber === true || currentUser?.roles?.includes("admin");
+
         const headers = { "Content-Type": "application/json" };
-        if (token) headers["Authorization"] = `Bearer ${token}`;
+        // Validamos que el Token se envíe de forma estricta al Backend
+        if (token) {
+            headers["Authorization"] = `Bearer ${token}`;
+        }
 
         console.log(`📡 Enviando petición de compra por ${guestData.quantity} entradas...`);
+
+        // Enviamos el flag de suscriptor y el precio correspondiente al backend
+        const ticketPayload = {
+            guestEmail: guestData.email,
+            guestName: guestData.fullName,
+            guestPhone: guestData.phone,
+            isGuest: !token, 
+            quantity: guestData.quantity,
+            isSubscriber: isSubscriber, // Enviamos el estado del rol del usuario
+            chosenPriceType: isSubscriber ? "altPrice" : "price", // Ayuda al backend a mapear el precio correcto
+            price: isSubscriber ? currentEventAltPrice : undefined // Si tu API acepta sobrescribir el valor
+        };
 
         const resTicket = await fetch(`${API_URL}/api/events/${eventId}/tickets`, {
             method: "POST",
             headers: headers,
-            body: JSON.stringify({
-                guestEmail: guestData.email,
-                guestName: guestData.fullName,
-                guestPhone: guestData.phone,
-                isGuest: !token, 
-                quantity: guestData.quantity 
-            })
+            body: JSON.stringify(ticketPayload)
         });
 
         const contentTypeTicket = resTicket.headers.get("content-type");
@@ -172,9 +184,13 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
         
         const mainTicketId = targetTickets[0]._id;
 
+        // Pasamos el token también al creador del checkout por si lee los valores del usuario allí
+        const paymentHeaders = { "Content-Type": "application/json" };
+        if (token) paymentHeaders["Authorization"] = `Bearer ${token}`;
+
         const resPayment = await fetch(`${API_URL}/api/payments/create/${mainTicketId}`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" }
+            headers: paymentHeaders
         });
 
         const contentTypePayment = resPayment.headers.get("content-type");
@@ -188,19 +204,21 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
             throw new Error("No se pudo iniciar el proceso de pago.");
         }
 
-        if (paymentData.status === "paid") {
+        // Si Mercado Pago retorna estatus aprobado, "free" o "paid" (para tickets con valor $0)
+        if (paymentData.status === "paid" || paymentData.status === "approved" || !paymentData.init_point) {
             if (btnElement) {
-                btnElement.innerText = "Cupos Cerrados 🔒";
+                btnElement.innerText = "Cupos Reservados 🔒";
                 btnElement.className = "btn btn-secondary btn-lg w-100 py-3 fw-bold shadow-sm";
                 btnElement.disabled = true;
             }
             
-            alert(`🎉 ¡Tus ${guestData.quantity} entrada(s) han sido procesadas con éxito! Revisa tu correo electrónico.`);
+            alert(`🎉 ¡Tus ${guestData.quantity} entrada(s) gratuitas han sido procesadas con éxito! Revisa tu correo electrónico.`);
             
             setTimeout(() => {
                 window.location.reload();
             }, 800);
         } else {
+            // Si tiene costo redirige a la pasarela de Mercado Pago
             window.location.href = paymentData.init_point;
         }
 
@@ -243,7 +261,7 @@ async function loadEventInfo() {
         const basePrice = Number(event.price) || 0;
         
         // Si altPrice no está definido en el backend, se asume 0 (Gratis)
-        const altPrice = (event.altPrice !== undefined && event.altPrice !== null) ? Number(event.altPrice) : 0; 
+        currentEventAltPrice = (event.altPrice !== undefined && event.altPrice !== null) ? Number(event.altPrice) : 0; 
 
         // Validamos si el cliente logueado es VIP/Suscriptor habilitado
         const savedUser = JSON.parse(localStorage.getItem("currentUser"));
@@ -278,7 +296,7 @@ async function loadEventInfo() {
         } else {
             // Si es suscriptor
             if (isSubscriber) {
-                if (altPrice === 0) {
+                if (currentEventAltPrice === 0) {
                     actionButtonHtml = `
                         <button class="btn btn-success btn-lg w-100 py-3 fw-bold text-uppercase shadow-sm" onclick="payEvent('${event._id}', this)">
                             🎟️ Entrada Gratuita
@@ -287,7 +305,7 @@ async function loadEventInfo() {
                 } else {
                     actionButtonHtml = `
                         <button class="btn btn-warning btn-lg w-100 py-3 fw-bold text-uppercase shadow-sm text-dark" onclick="payEvent('${event._id}', this)">
-                            👑 Comprar Entrada Club - $${altPrice}
+                            👑 Comprar Entrada Club - $${currentEventAltPrice}
                         </button>
                     `;
                 }
@@ -328,7 +346,7 @@ async function loadEventInfo() {
                                 <strong>💰 Precio General:</strong> ${basePrice === 0 ? '<span class="text-success fw-bold">Gratis</span>' : `$${basePrice}`}
                             </li>
                             <li class="mt-1 text-primary">
-                                <strong>👑 Precio Club Suscriptores:</strong> <span class="badge bg-primary">${altPrice === 0 ? 'Gratis' : `$${altPrice}`}</span>
+                                <strong>👑 Precio Club Suscriptores:</strong> <span class="badge bg-primary">${currentEventAltPrice === 0 ? 'Gratis' : `$${currentEventAltPrice}`}</span>
                             </li>
                         </ul>
                     </div>
