@@ -239,12 +239,10 @@ async function loadEventInfo() {
 
         const event = await res.json();
         
-        // 💰 Forzamos la lectura de los precios.
+        // 💰 Tratamiento seguro de los valores numéricos de precio
         const basePrice = Number(event.price) || 0;
         
-        // 🚨 AQUÍ ESTÁ EL TRUCO: Si altPrice no viene en el evento, pero sabemos que la app maneja 
-        // precio de suscriptores, por seguridad asumimos 0 (Gratis) en lugar de romper el diseño.
-        // Si prefieres que solo aparezca si existe, dejamos: event.hasOwnProperty('altPrice')
+        // Si altPrice no está definido en el backend, se asume 0 (Gratis) para evitar fallos de renderizado
         const altPrice = (event.altPrice !== undefined && event.altPrice !== null) ? Number(event.altPrice) : 0; 
 
         // Validamos si el cliente logueado es VIP/Suscriptor habilitado
@@ -285,7 +283,7 @@ async function loadEventInfo() {
         if (isSoldOut) {
             actionButtonHtml = `<button class="btn btn-secondary btn-lg w-100 py-3 fw-bold shadow-sm" disabled>Cupos Cerrados 🔒</button>`;
         } else {
-            // Si es suscriptor, el botón pasa a ser Dorado/Amarillo con su precio especial
+            // Si el usuario es suscriptor, el botón pasa a ser Dorado/Amarillo con su precio especial
             if (isSubscriber) {
                 const textPriceClub = altPrice === 0 ? 'Gratis' : `$${altPrice}`;
                 actionButtonHtml = `
@@ -347,3 +345,19 @@ async function loadEventInfo() {
         eventDetails.innerHTML = `<div class="alert alert-danger text-center shadow-sm"><p class="fw-bold">${error.message}</p></div>`;
     }
 }
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function validateEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    injectGuestModal();
+    loadEventInfo();
+});
