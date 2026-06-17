@@ -52,7 +52,7 @@ function injectGuestModal() {
                             </div>
                         </div>
                         <div class="modal-footer bg-light border-0 d-grid gap-2 p-4">
-                            <button type="submit" class="btn btn-primary btn-lg fw-bold rounded-3">Confirmar y Continuar al Pago</button>
+                            <button type="submit" id="submitModalBtn" class="btn btn-primary btn-lg fw-bold rounded-3">Confirmar y Continuar al Pago</button>
                         </div>
                     </form>
                 </div>
@@ -107,6 +107,8 @@ window.payEvent = function(eventId, btnElement) {
     document.getElementById("guestTicketForm").reset();
 
     const savedUser = JSON.parse(localStorage.getItem("currentUser"));
+    const isSubscriber = savedUser?.isSubscriber === true || savedUser?.roles?.includes("admin");
+
     if (savedUser) {
         if(document.getElementById("guestFullName")) document.getElementById("guestFullName").value = `${savedUser.firstName || ''} ${savedUser.lastName || ''}`.trim();
         if(document.getElementById("guestEmail")) document.getElementById("guestEmail").value = savedUser.email || "";
@@ -122,12 +124,24 @@ window.payEvent = function(eventId, btnElement) {
     if (noticeQty) {
         noticeQty.textContent = `Máx: ${maxAvailableQuantity}`;
     }
+
+    // Cambiar dinámicamente el texto del botón de confirmación en el modal
+    const submitModalBtn = document.getElementById("submitModalBtn");
+    if (submitModalBtn) {
+        if (isSubscriber && currentEventAltPrice === 0) {
+            submitModalBtn.textContent = "🎟️ Confirmar Entrada Gratuita";
+            submitModalBtn.className = "btn btn-success btn-lg fw-bold rounded-3";
+        } else {
+            submitModalBtn.textContent = "Confirmar y Continuar al Pago";
+            submitModalBtn.className = "btn btn-primary btn-lg fw-bold rounded-3";
+        }
+    }
     
     modal.show();
 }
 
 /* ========================================================
-    🚀 PROCESAMIENTO REAL DEL TICKET Y MERCADO PAGO
+    🚀 PROCESAMIENTO REAL DEL TICKET (MongoDB / Mercado Pago)
 ======================================================== */
 async function processGuestPurchase(eventId, btnElement, guestData) {
     try {
@@ -141,25 +155,22 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
         const isSubscriber = currentUser?.isSubscriber === true || currentUser?.roles?.includes("admin");
 
         const headers = { "Content-Type": "application/json" };
-        // Validamos que el Token se envíe de forma estricta al Backend
-        if (token) {
-            headers["Authorization"] = `Bearer ${token}`;
-        }
+        if (token) headers["Authorization"] = `Bearer ${token}`;
 
-        console.log(`📡 Enviando petición de compra por ${guestData.quantity} entradas...`);
+        console.log(`📡 Registrando entrada en base de datos...`);
 
-        // Enviamos el flag de suscriptor y el precio correspondiente al backend
+        // Enviamos la carga útil estructurada al backend
         const ticketPayload = {
             guestEmail: guestData.email,
             guestName: guestData.fullName,
             guestPhone: guestData.phone,
             isGuest: !token, 
             quantity: guestData.quantity,
-            isSubscriber: isSubscriber, // Enviamos el estado del rol del usuario
-            chosenPriceType: isSubscriber ? "altPrice" : "price", // Ayuda al backend a mapear el precio correcto
-            price: isSubscriber ? currentEventAltPrice : undefined // Si tu API acepta sobrescribir el valor
+            isSubscriber: isSubscriber,
+            chosenPriceType: isSubscriber ? "altPrice" : "price"
         };
 
+        // 1. Crear el ticket en MongoDB
         const resTicket = await fetch(`${API_URL}/api/events/${eventId}/tickets`, {
             method: "POST",
             headers: headers,
@@ -177,14 +188,29 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
             throw new Error(ticketData.message || "Error al generar los tickets");
         }
 
+        // Si el precio es 0 para el suscriptor, detenemos el flujo aquí (No va a Mercado Pago)
+        if (isSubscriber && currentEventAltPrice === 0) {
+            if (btnElement) {
+                btnElement.innerText = "Cupos Reservados 🔒";
+                btnElement.className = "btn btn-secondary btn-lg w-100 py-3 fw-bold shadow-sm";
+                btnElement.disabled = true;
+            }
+            
+            alert(`🎉 ¡Tus ${guestData.quantity} entrada(s) gratuita(s) han sido reservadas con éxito! Revisa tu correo electrónico.`);
+            
+            setTimeout(() => {
+                window.location.reload();
+            }, 800);
+            return; // Termina la ejecución de manera limpia
+        }
+
+        // 2. Si NO es gratuita, procedemos a iniciar pasarela de pagos
         const targetTickets = ticketData.tickets || [ticketData.ticket];
         if (!targetTickets || targetTickets.length === 0) {
             throw new Error("No se recibieron datos de tickets válidos.");
         }
         
         const mainTicketId = targetTickets[0]._id;
-
-        // Pasamos el token también al creador del checkout por si lee los valores del usuario allí
         const paymentHeaders = { "Content-Type": "application/json" };
         if (token) paymentHeaders["Authorization"] = `Bearer ${token}`;
 
@@ -204,26 +230,20 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
             throw new Error("No se pudo iniciar el proceso de pago.");
         }
 
-        // Si Mercado Pago retorna estatus aprobado, "free" o "paid" (para tickets con valor $0)
-        if (paymentData.status === "paid" || paymentData.status === "approved" || !paymentData.init_point) {
+        if (paymentData.status === "paid" || !paymentData.init_point) {
             if (btnElement) {
                 btnElement.innerText = "Cupos Reservados 🔒";
                 btnElement.className = "btn btn-secondary btn-lg w-100 py-3 fw-bold shadow-sm";
                 btnElement.disabled = true;
             }
-            
-            alert(`🎉 ¡Tus ${guestData.quantity} entrada(s) gratuitas han sido procesadas con éxito! Revisa tu correo electrónico.`);
-            
-            setTimeout(() => {
-                window.location.reload();
-            }, 800);
+            alert(`🎉 ¡Reserva procesada con éxito! Revisa tu correo electrónico.`);
+            setTimeout(() => { window.location.reload(); }, 800);
         } else {
-            // Si tiene costo redirige a la pasarela de Mercado Pago
             window.location.href = paymentData.init_point;
         }
 
     } catch (error) {
-        console.error("❌ Error en el proceso de pago:", error);
+        console.error("❌ Error en el proceso:", error);
         alert(error.message);
         
         if (btnElement) {
@@ -256,14 +276,9 @@ async function loadEventInfo() {
         if (!res.ok) throw new Error(`Error del servidor: ${res.status}`);
 
         const event = await res.json();
-        
-        // 💰 Tratamiento seguro de los valores numéricos de precio
         const basePrice = Number(event.price) || 0;
-        
-        // Si altPrice no está definido en el backend, se asume 0 (Gratis)
         currentEventAltPrice = (event.altPrice !== undefined && event.altPrice !== null) ? Number(event.altPrice) : 0; 
 
-        // Validamos si el cliente logueado es VIP/Suscriptor habilitado
         const savedUser = JSON.parse(localStorage.getItem("currentUser"));
         const isSubscriber = savedUser?.isSubscriber === true || savedUser?.roles?.includes("admin");
 
@@ -288,13 +303,11 @@ async function loadEventInfo() {
             }
         }
 
-        // ⚡ LÓGICA DE CONTROL DEL BOTÓN DINÁMICO EXCLUSIVO
         let actionButtonHtml = "";
 
         if (isSoldOut) {
             actionButtonHtml = `<button class="btn btn-secondary btn-lg w-100 py-3 fw-bold shadow-sm" disabled>Cupos Cerrados 🔒</button>`;
         } else {
-            // Si es suscriptor
             if (isSubscriber) {
                 if (currentEventAltPrice === 0) {
                     actionButtonHtml = `
@@ -310,7 +323,6 @@ async function loadEventInfo() {
                     `;
                 }
             } else {
-                // Si es invitado o usuario común, botón verde con precio general
                 const textPriceGral = basePrice === 0 ? 'Gratis' : `$${basePrice}`;
                 actionButtonHtml = `
                     <button class="btn btn-success btn-lg w-100 py-3 fw-bold text-uppercase shadow-sm" onclick="payEvent('${event._id}', this)">
