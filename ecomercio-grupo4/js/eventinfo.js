@@ -239,16 +239,14 @@ async function loadEventInfo() {
 
         const event = await res.json();
         
-        // 🎯 LOGICA DE PRECIOS ALTERNATIVOS
-        const basePrice = event.price ?? 0;
-        const altPrice = event.altPrice ?? null;
+        // 🎯 CONTROL DE PRECIOS SEGUROS CONTRA VALORES UNDEFINED DE MONGOOSE
+        const basePrice = Number(event.price) || 0;
+        const hasAltPrice = event.hasOwnProperty('altPrice') && event.altPrice !== null && event.altPrice !== undefined;
+        const altPrice = hasAltPrice ? Number(event.altPrice) : null;
 
-        // Validamos si el cliente logueado es VIP/Suscriptor
+        // Validamos si el cliente logueado es VIP/Suscriptor habilitado
         const savedUser = JSON.parse(localStorage.getItem("currentUser"));
         const isSubscriber = savedUser?.isSubscriber === true || savedUser?.roles?.includes("admin");
-        
-        // El precio final depende de su rol
-        const finalPrice = (isSubscriber && altPrice !== null) ? altPrice : basePrice;
 
         const hasLimit = event.hasCapacityLimit === true || event.hasCapacityLimit === "true";
         const maxCapacity = Number(event.maxCapacity) || 0;
@@ -271,21 +269,43 @@ async function loadEventInfo() {
             }
         }
 
-        // Diseño dinámico de la etiqueta de precios en el Banner
+        // 🎨 RENDERIZADO DINÁMICO DE BADGES DE PRECIO EN LA PORTADA
         let priceBadgeHtml = "";
         if (altPrice !== null) {
             priceBadgeHtml = `
-                <div class="position-absolute top-0 end-0 m-3 p-2 bg-dark text-white rounded shadow-sm d-flex flex-column align-items-end">
-                    <span class="small text-decoration-line-through text-muted" style="font-size:0.75rem;">Gral: $${basePrice}</span>
-                    <span class="fw-bold text-warning" style="font-size:0.95rem;">👑 Club: $${altPrice}</span>
+                <div class="position-absolute top-0 end-0 m-3 p-2 bg-dark text-white rounded shadow-sm d-flex flex-column align-items-end" style="z-index: 10;">
+                    <span class="small text-decoration-line-through text-muted" style="font-size:0.75rem; color: #adb5bd !important;">Gral: $${basePrice}</span>
+                    <span class="fw-bold text-warning" style="font-size:0.95rem;">👑 Club: ${altPrice === 0 ? 'Gratis' : `$${altPrice}`}</span>
                 </div>`;
         } else {
-            priceBadgeHtml = `<span class="badge ${basePrice === 0 ? 'bg-success' : 'bg-primary'} position-absolute top-0 end-0 m-3 p-2 fs-6 shadow-sm">${basePrice === 0 ? 'Gratis' : `$${basePrice}`}</span>`;
+            priceBadgeHtml = `<span class="badge ${basePrice === 0 ? 'bg-success' : 'bg-primary'} position-absolute top-0 end-0 m-3 p-2 fs-6 shadow-sm" style="z-index: 10;">${basePrice === 0 ? 'Gratis' : `$${basePrice}`}</span>`;
         }
 
-        let actionButtonHtml = isSoldOut 
-            ? `<button class="btn btn-secondary btn-lg w-100 py-3 fw-bold shadow-sm" disabled>Cupos Cerrados 🔒</button>`
-            : `<button class="btn btn-success btn-lg w-100 py-3 fw-bold text-uppercase shadow-sm" onclick="payEvent('${event._id}', this)">🎟️ Comprar Entradas - ${finalPrice === 0 ? 'Gratis' : `$${finalPrice}`}</button>`;
+        // ⚡ LÓGICA DE CONTROL DEL BOTÓN DINÁMICO EXCLUSIVO
+        let actionButtonHtml = "";
+
+        if (isSoldOut) {
+            actionButtonHtml = `<button class="btn btn-secondary btn-lg w-100 py-3 fw-bold shadow-sm" disabled>Cupos Cerrados 🔒</button>`;
+        } else {
+            // Se habilita el botón con precio preferencial SOLO si es suscriptor y el evento tiene altPrice asignado
+            if (isSubscriber && altPrice !== null) {
+                const textPriceClub = altPrice === 0 ? 'Gratis' : `$${altPrice}`;
+                actionButtonHtml = `
+                    <button class="btn btn-warning btn-lg w-100 py-3 fw-bold text-uppercase shadow-sm text-dark" onclick="payEvent('${event._id}', this)">
+                        👑 Comprar Entrada Club - ${textPriceClub}
+                    </button>
+                    <div class="text-center text-success small fw-bold mt-1">✨ ¡Suscripción Habilitada! Beneficio aplicado automáticamente.</div>
+                `;
+            } else {
+                // Caso contrario (Invitados, normales o eventos sin descuento): Botón General Verde
+                const textPriceGral = basePrice === 0 ? 'Gratis' : `$${basePrice}`;
+                actionButtonHtml = `
+                    <button class="btn btn-success btn-lg w-100 py-3 fw-bold text-uppercase shadow-sm" onclick="payEvent('${event._id}', this)">
+                        🎟️ Comprar Entrada General - ${textPriceGral}
+                    </button>
+                `;
+            }
+        }
 
         const backendAgeValue = event.ageRange || event.age;
 
@@ -308,8 +328,16 @@ async function loadEventInfo() {
                             ${event.department ? `<li class="mb-2"><strong>📍 Ubicación:</strong> ${escapeHtml(event.department)} ${event.neighborhood ? `- ${escapeHtml(event.neighborhood)}` : ''}</li>` : ''}
                             <li class="mb-2"><strong>👶 Franja etaria:</strong> ${backendAgeValue === 'sin_limite' || !backendAgeValue ? '<span class="text-success fw-bold">Sin limite de edad</span>' : `${escapeHtml(backendAgeValue)} años`}</li>
                             <li class="mb-2"><strong>📅 Fecha:</strong> ${event.date}</li>
-                            ${event.time ? `<li class="mb-0"><strong>⏰ Hora:</strong> ${event.time}</li>` : ''}
-                            ${altPrice !== null ? `<li class="mb-0 mt-2 text-primary"><strong>👑 Precio Club Suscriptores:</strong> $${altPrice}</li>` : ''}
+                            ${event.time ? `<li class="mb-2"><strong>⏰ Hora:</strong> ${event.time}</li>` : ''}
+                            
+                            <li class="mt-3 pt-2 border-top">
+                                <strong>💰 Precio General:</strong> ${basePrice === 0 ? '<span class="text-success fw-bold">Gratis</span>' : `$${basePrice}`}
+                            </li>
+                            ${altPrice !== null ? `
+                            <li class="mt-1 text-primary">
+                                <strong>👑 Precio Club Suscriptores:</strong> <span class="badge bg-primary">${altPrice === 0 ? 'Gratis' : `$${altPrice}`}</span>
+                                ${isSubscriber ? '<span class="text-success small ms-2 fw-bold">✓ Habilitado</span>' : '<span class="text-muted small ms-2">(No eres miembro Club)</span>'}
+                            </li>` : ''}
                         </ul>
                     </div>
                     <hr class="text-muted my-4">
