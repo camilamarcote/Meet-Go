@@ -242,7 +242,7 @@ async function loadEventInfo() {
         // 💰 Tratamiento seguro de los valores numéricos de precio
         const basePrice = Number(event.price) || 0;
         
-        // Si altPrice no está definido en el backend, se asume 0 (Gratis) para evitar fallos de renderizado
+        // Si altPrice no está definido en el backend, se asume 0 (Gratis)
         const altPrice = (event.altPrice !== undefined && event.altPrice !== null) ? Number(event.altPrice) : 0; 
 
         // Validamos si el cliente logueado es VIP/Suscriptor habilitado
@@ -270,28 +270,27 @@ async function loadEventInfo() {
             }
         }
 
-        // 🎨 RENDERIZADO DE BADGES DE PRECIO EN LA PORTADA
-        let priceBadgeHtml = `
-            <div class="position-absolute top-0 end-0 m-3 p-2 bg-dark text-white rounded shadow-sm d-flex flex-column align-items-end" style="z-index: 10;">
-                <span class="small text-decoration-line-through text-muted" style="font-size:0.75rem; color: #adb5bd !important;">Gral: $${basePrice}</span>
-                <span class="fw-bold text-warning" style="font-size:0.95rem;">👑 Club: ${altPrice === 0 ? 'Gratis' : `$${altPrice}`}</span>
-            </div>`;
-
         // ⚡ LÓGICA DE CONTROL DEL BOTÓN DINÁMICO EXCLUSIVO
         let actionButtonHtml = "";
 
         if (isSoldOut) {
             actionButtonHtml = `<button class="btn btn-secondary btn-lg w-100 py-3 fw-bold shadow-sm" disabled>Cupos Cerrados 🔒</button>`;
         } else {
-            // Si el usuario es suscriptor, el botón pasa a ser Dorado/Amarillo con su precio especial
+            // Si es suscriptor
             if (isSubscriber) {
-                const textPriceClub = altPrice === 0 ? 'Gratis' : `$${altPrice}`;
-                actionButtonHtml = `
-                    <button class="btn btn-warning btn-lg w-100 py-3 fw-bold text-uppercase shadow-sm text-dark" onclick="payEvent('${event._id}', this)">
-                        👑 Obtener Entrada Club - ${textPriceClub}
-                    </button>
-                    <div class="text-center text-success small fw-bold mt-1">✨ ¡Suscripción Habilitada! Beneficio aplicado automáticamente.</div>
-                `;
+                if (altPrice === 0) {
+                    actionButtonHtml = `
+                        <button class="btn btn-success btn-lg w-100 py-3 fw-bold text-uppercase shadow-sm" onclick="payEvent('${event._id}', this)">
+                            🎟️ Entrada Gratuita
+                        </button>
+                    `;
+                } else {
+                    actionButtonHtml = `
+                        <button class="btn btn-warning btn-lg w-100 py-3 fw-bold text-uppercase shadow-sm text-dark" onclick="payEvent('${event._id}', this)">
+                            👑 Comprar Entrada Club - $${altPrice}
+                        </button>
+                    `;
+                }
             } else {
                 // Si es invitado o usuario común, botón verde con precio general
                 const textPriceGral = basePrice === 0 ? 'Gratis' : `$${basePrice}`;
@@ -310,7 +309,6 @@ async function loadEventInfo() {
                 <div class="col-md-6">
                     <div class="position-relative">
                         <img src="${event.image || "img/default_event.jpg"}" class="img-fluid rounded shadow-sm" style="width: 100%; height: auto; max-height: 600px; object-fit: cover;" onerror="this.src='img/default_event.jpg'">
-                        ${priceBadgeHtml}
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -331,7 +329,6 @@ async function loadEventInfo() {
                             </li>
                             <li class="mt-1 text-primary">
                                 <strong>👑 Precio Club Suscriptores:</strong> <span class="badge bg-primary">${altPrice === 0 ? 'Gratis' : `$${altPrice}`}</span>
-                                ${isSubscriber ? '<span class="text-success small ms-2 fw-bold">✓ Habilitado</span>' : '<span class="text-muted small ms-2">(No eres miembro Club)</span>'}
                             </li>
                         </ul>
                     </div>
