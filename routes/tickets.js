@@ -81,5 +81,28 @@ router.post("/events/:eventId/tickets", protect, async (req, res) => {
     return res.status(500).json({ message: "Error interno al procesar la reserva de pases" });
   }
 });
+// ========================================================
+// 🟢 OBTENER TODOS LOS TICKETS (Para el Panel de Administración)
+// ========================================================
+router.get("/tickets", protect, async (req, res) => {
+  try {
+    // Verificación de seguridad: solo administradores u organizadores pueden ver el listado global
+    if (!req.user.isOrganizer && !req.user.roles?.includes("admin")) {
+      return res.status(403).json({ message: "Acceso denegado. No tienes permisos." });
+    }
+
+    // Buscamos todos los tickets en MongoDB y traemos la información limpia del evento y del usuario si existe
+    const tickets = await EventTicket.find()
+      .populate("event", "name title price altPrice date time") 
+      .populate("user", "firstName lastName username email phone");
+
+    return res.json(tickets);
+  } catch (error) {
+    console.error("❌ Error al obtener el listado global de tickets:", error);
+    return res.status(500).json({ message: "Error interno del servidor al procesar la lista" });
+  }
+});
+
+
 
 export default router;
