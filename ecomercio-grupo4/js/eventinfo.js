@@ -299,7 +299,7 @@ async function loadEventInfo() {
             if (isSoldOut) {
                 capacityBadgeHtml = `<div class="alert alert-danger fw-bold text-center border-0 shadow-sm mb-3">❌ Cupos agotados</div>`;
             } else {
-                capacityBadgeHtml = `<div class="alert alert-warning fw-bold text-center border-0 shadow-sm mb-3 text-dark">🔥 ¡Quedan solo ${remainingCapacity} cupos!</div>`;
+                capacityBadgeHtml = `<div class="alert alert-warning fw-bold text-center border-0 shadow-sm mb-3 text-dark">¡Quedan solo ${remainingCapacity} cupos!</div>`;
             }
         }
 
@@ -312,13 +312,13 @@ async function loadEventInfo() {
                 if (currentEventAltPrice === 0) {
                     actionButtonHtml = `
                         <button class="btn btn-success btn-lg w-100 py-3 fw-bold text-uppercase shadow-sm" onclick="payEvent('${event._id}', this)">
-                            🎟️ Entrada Gratuita
+                            Entrada Gratuita
                         </button>
                     `;
                 } else {
                     actionButtonHtml = `
                         <button class="btn btn-warning btn-lg w-100 py-3 fw-bold text-uppercase shadow-sm text-dark" onclick="payEvent('${event._id}', this)">
-                            👑 Comprar Entrada Club - $${currentEventAltPrice}
+                            Comprar Entrada - $${currentEventAltPrice}
                         </button>
                     `;
                 }
@@ -344,21 +344,21 @@ async function loadEventInfo() {
                 <div class="col-md-6">
                     <h2 class="mb-3 fw-bold">${escapeHtml(event.name)}</h2>
                     ${capacityBadgeHtml}
-                    ${event.description ? `<div class="mb-4"><h5 class="fw-bold text-secondary">📝 Descripción</h5><p class="text-muted" style="white-space: pre-line;">${escapeHtml(event.description)}</p></div>` : ''}
+                    ${event.description ? `<div class="mb-4"><h5 class="fw-bold text-secondary">Descripción</h5><p class="text-muted" style="white-space: pre-line;">${escapeHtml(event.description)}</p></div>` : ''}
                     <div class="event-info mb-4 bg-white p-3 border rounded shadow-sm">
-                        <h5 class="fw-bold text-secondary mb-3">📍 Detalles</h5>
+                        <h5 class="fw-bold text-secondary mb-3">Detalles</h5>
                         <ul class="list-unstyled mb-0">
-                            ${event.category ? `<li class="mb-2"><strong>🎯 Categoría:</strong> ${escapeHtml(event.category)}</li>` : ''}
-                            ${event.department ? `<li class="mb-2"><strong>📍 Ubicación:</strong> ${escapeHtml(event.department)} ${event.neighborhood ? `- ${escapeHtml(event.neighborhood)}` : ''}</li>` : ''}
-                            <li class="mb-2"><strong>👶 Franja etaria:</strong> ${backendAgeValue === 'sin_limite' || !backendAgeValue ? '<span class="text-success fw-bold">Sin limite de edad</span>' : `${escapeHtml(backendAgeValue)} años`}</li>
-                            <li class="mb-2"><strong>📅 Fecha:</strong> ${event.date}</li>
-                            ${event.time ? `<li class="mb-2"><strong>⏰ Hora:</strong> ${event.time}</li>` : ''}
+                            ${event.category ? `<li class="mb-2"><strong>Categoría:</strong> ${escapeHtml(event.category)}</li>` : ''}
+                            ${event.department ? `<li class="mb-2"><strong> Ubicación:</strong> ${escapeHtml(event.department)} ${event.neighborhood ? `- ${escapeHtml(event.neighborhood)}` : ''}</li>` : ''}
+                            <li class="mb-2"><strong> Franja etaria:</strong> ${backendAgeValue === 'sin_limite' || !backendAgeValue ? '<span class="text-success fw-bold">Sin limite de edad</span>' : `${escapeHtml(backendAgeValue)} años`}</li>
+                            <li class="mb-2"><strong>Fecha:</strong> ${event.date}</li>
+                            ${event.time ? `<li class="mb-2"><strong>Hora:</strong> ${event.time}</li>` : ''}
                             
                             <li class="mt-3 pt-2 border-top">
-                                <strong>💰 Precio General:</strong> ${basePrice === 0 ? '<span class="text-success fw-bold">Gratis</span>' : `$${basePrice}`}
+                                <strong>Precio General:</strong> ${basePrice === 0 ? '<span class="text-success fw-bold">Gratis</span>' : `$${basePrice}`}
                             </li>
                             <li class="mt-1 text-primary">
-                                <strong>👑 Precio Club Suscriptores:</strong> <span class="badge bg-primary">${currentEventAltPrice === 0 ? 'Gratis' : `$${currentEventAltPrice}`}</span>
+                                <strong>Precio Club Suscriptores:</strong> <span class="badge bg-primary">${currentEventAltPrice === 0 ? 'Gratis' : `$${currentEventAltPrice}`}</span>
                             </li>
                         </ul>
                     </div>
