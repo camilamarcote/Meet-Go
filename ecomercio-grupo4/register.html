@@ -1,138 +1,162 @@
-const API_URL = "https://api.meetandgouy.com";
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Mi perfil</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-document.addEventListener("DOMContentLoaded", async () => {
-  // 🔐 EXTRAER SESIÓN CORRECTAMENTE DESDE TU OBJETO BASE
-  const authUser = JSON.parse(localStorage.getItem("currentUser"));
-  const token = authUser?.token;
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+  
+  <link rel="stylesheet" href="css/forms.css">
+  <link rel="stylesheet" href="css/styles.css">
 
-  if (!token) {
-    console.warn("⚠️ No se detectó token de sesión activo. Redirigiendo...");
-    window.location.href = "login.html";
-    return;
-  }
+  <link rel="shortcut icon" href="img/favicon.ico">
+  <link rel="icon" type="image/x-icon" href="img/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="img/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="img/apple-touch-icon.png">
+  <link rel="manifest" href="img/site.webmanifest">
+</head>
 
-  const form = document.getElementById("profileForm");
-  if (!form) {
-    console.error("❌ No se encontró el formulario #profileForm en el DOM.");
-    return;
-  }
+<body>
+  <div id="navbar-container"></div>
 
-  /* ========================================================
-      📥 CARGAR DATOS REALES DESDE MONGOOSE (GET)
-     ======================================================== */
-  try {
-    const res = await fetch(`${API_URL}/api/users/me`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json"
-      }
-    });
+  <div class="app-container">
+    <form id="profileForm" enctype="multipart/form-data">
 
-    if (!res.ok) throw new Error(`Error del servidor: ${res.status}`);
+      <h2>👋 Mi perfil</h2>
 
-    const user = await res.json();
-    console.log("👤 Datos de perfil recuperados con éxito:", user);
+      <div class="card">
+        <label>Nombre*</label>
+        <input name="firstName" required>
 
-    // ✏️ Rellenar inputs de texto tradicionales
-    form.firstName.value = user.firstName || "";
-    form.lastName.value = user.lastName || "";
-    form.username.value = user.username || "";
-    form.email.value = user.email || "";
-    form.age.value = user.age || "";
-    form.phone.value = user.phone || "";
-    form.bio.value = user.bio || "";
+        <label>Apellido*</label>
+        <input name="lastName" required>
 
-    // 🌎 Rellenar Selectores Dropdown de forma limpia
-    if (user.nationality) form.nationality.value = user.nationality;
-    if (user.department) form.department.value = user.department;
-    if (user.personality) form.personality.value = user.personality;
+        <label>Usuario* (No editable)</label>
+        <input name="username" readonly>
 
-    // 📻 Rellenar opción única de tipo Radio Button (Estilo social)
-    if (user.style) {
-      const radioElement = form.querySelector(`input[name="style"][value="${user.style}"]`);
-      if (radioElement) radioElement.checked = true;
-    }
+        <label>Email* (No editable)</label>
+        <input type="email" name="email" readonly>
 
-    // 🎯 Rellenar array de Checkboxes de Intereses
-    if (user.interests && Array.isArray(user.interests)) {
-      user.interests.forEach(interest => {
-        const checkbox = form.querySelector(`input[name="interests"][value="${interest}"]`);
-        if (checkbox) checkbox.checked = true;
-      });
-    }
+        <label>Edad*</label>
+        <input type="number" name="age" min="18" required>
 
-    // 🗣️ Rellenar array de Checkboxes de Idiomas
-    if (user.languages && Array.isArray(user.languages)) {
-      user.languages.forEach(language => {
-        const checkbox = form.querySelector(`input[name="languages"][value="${language}"]`);
-        if (checkbox) checkbox.checked = true;
-      });
-    }
+        <label>Celular*</label>
+        <input type="text" name="phone" required placeholder="+598 9XXXXXXX">
 
-  } catch (error) {
-    console.error("❌ Error pintando datos en el formulario:", error);
-    alert("Hubo un problema al cargar tus datos desde el servidor.");
-  }
+        <label>Nacionalidad*</label>
+        <select name="nationality" required>
+          <option value="">Seleccionar...</option>
+          <option value="Uruguaya">Uruguaya</option>
+          <option value="Argentina">Argentina</option>
+          <option value="Brasileña">Brasileña</option>
+          <option value="Chilena">Chilena</option>
+          <option value="Paraguaya">Paraguaya</option>
+          <option value="Boliviana">Boliviana</option>
+          <option value="Peruana">Peruana</option>
+          <option value="Colombiana">Colombiana</option>
+          <option value="Venezolana">Venezolana</option>
+          <option value="Mexicana">Mexicana</option>
+          <option value="Española">Española</option>
+          <option value="Italiana">Italiana</option>
+          <option value="Francesa">Francesa</option>
+          <option value="Alemana">Alemana</option>
+          <option value="Estadounidense">Estadounidense</option>
+          <option value="Canadiense">Canadiense</option>
+          <option value="Otra">Otra</option>
+        </select>
 
-  /* ========================================================
-      ✏️ ENVIAR ACTUALIZACIÓN AL BACKEND (PUT)
-     ======================================================== */
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
+        <label>Departamento</label>
+        <select name="department">
+          <option value="">Seleccionar...</option>
+          <option value="Artigas">Artigas</option>
+          <option value="Canelones">Canelones</option>
+          <option value="Cerro Largo">Cerro Largo</option>
+          <option value="Colonia">Colonia</option>
+          <option value="Durazno">Durazno</option>
+          <option value="Flores">Flores</option>
+          <option value="Florida">Florida</option>
+          <option value="Lavalleja">Lavalleja</option>
+          <option value="Maldonado">Maldonado</option>
+          <option value="Montevideo">Montevideo</option>
+          <option value="Paysandú">Paysandú</option>
+          <option value="Río Negro">Río Negro</option>
+          <option value="Rivera">Rivera</option>
+          <option value="Rocha">Rocha</option>
+          <option value="Salto">Salto</option>
+          <option value="San José">San José</option>
+          <option value="Soriano">Soriano</option>
+          <option value="Tacuarembó">Tacuarembó</option>
+          <option value="Treinta y Tres">Treinta y Tres</option>
+        </select>
 
-    // Recolectar dinámicamente los estados checks activos de la pantalla
-    const selectedInterests = Array.from(
-      form.querySelectorAll("input[name='interests']:checked")
-    ).map(el => el.value);
+        <label class="mt-2">Actualizar foto de perfil</label>
+        <input type="file" name="profileImage" accept="image/*">
+      </div>
 
-    const selectedLanguages = Array.from(
-      form.querySelectorAll("input[name='languages']:checked")
-    ).map(el => el.value);
+      <h3>✨ Intereses</h3>
+      <p class="text-muted small px-2">Modifica las actividades que más te gustan:</p>
+      <div class="card checkbox-card">
+        <div class="checkbox-grid">
+          <label><input type="checkbox" name="interests" value="gastonomia"> Planes gastronómicos</label>
+          <label><input type="checkbox" name="interests" value="cine"> Cine</label>
+          <label><input type="checkbox" name="interests" value="mucica"> Musica</label>
+          <label><input type="checkbox" name="interests" value="museos"> Ir a museos</label>
+          <label><input type="checkbox" name="interests" value="teatro"> Teatro</label>
+          <label><input type="checkbox" name="interests" value="naturaleza"> Actividades al aire libre</label>
+          <label><input type="checkbox" name="interests" value="librerias"> Ir a librerías</label>
+          <label><input type="checkbox" name="interests" value="juegos"> Juegos de mesa</label>
+          <label><input type="checkbox" name="interests" value="cafe"> Tardes de café</label>
+          <label><input type="checkbox" name="interests" value="deportivo"> Actividades deportivas</label>
+          <label><input type="checkbox" name="interests" value="salidas nocturnas"> Salidas nocturnas</label>
+        </div>
+      </div>
 
-    // Empaquetar todo el HTMLFormElement en un FormData nativo para Cloudinary/Multer
-    const formData = new FormData(form);
-    
-    // Serializar los arrays para evitar conflictos con el enrutador de Express
-    formData.set("interests", JSON.stringify(selectedInterests));
-    formData.set("languages", JSON.stringify(selectedLanguages));
+      <h3>🌿 Personalidad</h3>
+      <div class="card">
+        <label>Temperamento</label>
+        <select name="personality">
+          <option value="">Seleccionar...</option>
+          <option value="Introvertido/a">Introvertido/a</option>
+          <option value="Ambivertido/a">Ambivertido/a</option>
+          <option value="Extrovertido/a">Extrovertido/a</option>
+        </select>
 
-    try {
-      const res = await fetch(`${API_URL}/api/users/me`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`
-          // NOTA CRÍTICA: Nunca definas "Content-Type" cuando mandas un FormData nativo
-        },
-        body: formData
-      });
+        <label class="mt-3">Estilo de interacción preferido</label>
+        <div class="d-flex flex-column gap-2 px-1 py-2">
+          <label><input type="radio" name="style" value="grupos"> Grupos grandes</label>
+          <label><input type="radio" name="style" value="pequenos"> Grupos pequeños</label>
+          <label><input type="radio" name="style" value="uno"> Encuentros 1 a 1</label>
+        </div>
 
-      const updatedUser = await res.json();
+        <label class="mt-2">Idiomas hablados</label>
+        <div class="checkbox-grid px-1 py-2">
+          <label><input type="checkbox" name="languages" value="espanol"> Español</label>
+          <label><input type="checkbox" name="languages" value="ingles"> Inglés</label>
+          <label><input type="checkbox" name="languages" value="portugues"> Portugués</label>
+          <label><input type="checkbox" name="languages" value="frances"> Francés</label>
+          <label><input type="checkbox" name="languages" value="italiano"> Italiano</label>
+          <label><input type="checkbox" name="languages" value="aleman"> Alemán</label>
+          <label><input type="checkbox" name="languages" value="otro"> Otro</label>
+        </div>
 
-      if (!res.ok) {
-        throw new Error(updatedUser.message || "Error al procesar la actualización");
-      }
+        <label class="mt-3">Sobre mí (Biografía)</label>
+        <textarea name="bio" rows="4" placeholder="Cuéntale un poco a la comunidad sobre ti..."></textarea>
+      </div>
 
-      // 🔄 Sincronizar LocalStorage para reflejar los cambios en el Header/Navbar al instante
-      const updatedSession = {
-        ...authUser,
-        user: {
-          ...authUser.user,
-          firstName: updatedUser.firstName,
-          lastName: updatedUser.lastName,
-          phone: updatedUser.phone,
-          profileImage: updatedUser.profileImage || authUser.user?.profileImage
-        }
-      };
+      <button type="submit" class="btn-primary mt-4">
+        Confirmar cambios 
+      </button>
 
-      localStorage.setItem("currentUser", JSON.stringify(updatedSession));
-      alert("✅ ¡Tu perfil ha sido actualizado con éxito!");
-      
-      // Redirección limpia
-      window.location.href = "index.html";
+    </form>
+  </div>
 
-    } catch (error) {
-      console.error("❌ Error guardando cambios de perfil:", error);
-      alert(error.message || "Ocurrió un error inesperado al salvar los datos.");
-    }
-  });
-});
+  <script src="js/init.js"></script>
+  <script src="js/myprofile.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
