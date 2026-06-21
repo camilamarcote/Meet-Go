@@ -2,147 +2,201 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Mi perfil</title>
+  <title>Mi Perfil Social</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- CSS compartido con register -->
   <link rel="stylesheet" href="css/forms.css">
-
-  <!-- Favicons -->
   <link rel="icon" href="img/favicon/favicon.ico">
+  <style>
+    /* Estilos inyectados específicos para simular una Red Social Real */
+    .profile-header {
+      text-align: center;
+      padding: 20px 0;
+      position: relative;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 12px;
+      color: white;
+      margin-bottom: 30px;
+    }
+    .avatar-wrapper {
+      position: relative;
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 10px auto;
+    }
+    .profile-avatar {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 4px solid white;
+      background-color: #eee;
+    }
+    .hidden { display: none !important; }
+    .btn-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .btn-secondary {
+      background-color: #e2e8f0;
+      color: #4a5568;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      width: 100%;
+    }
+    .checkbox-card label, .radio-label {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 12px;
+      background: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      margin: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    input[type="checkbox"]:checked + span, input[type="radio"]:checked + span {
+      font-weight: bold;
+    }
+    /* Estilo cuando está deshabilitado para simular red social */
+    input:disabled, select:disabled, textarea:disabled {
+      background-color: transparent !important;
+      border-color: transparent !important;
+      color: #2d3748 !important;
+      padding-left: 0 !important;
+      cursor: default;
+      appearance: none;
+    }
+    .checkbox-card input:disabled, input[type="radio"]:disabled {
+      display: none;
+    }
+    .checkbox-card input:disabled:not(:checked) + span, input[type="radio"]:disabled:not(:checked) + span {
+      display: none; /* Oculta intereses no seleccionados en modo lectura */
+    }
+    .checkbox-card input:disabled:checked + span, input[type="radio"]:disabled:checked + span {
+      background: #e2e8f0;
+      padding: 4px 12px;
+      border-radius: 15px;
+    }
+  </style>
 </head>
 
 <body>
 <div class="app-container">
-<form id="profileForm" enctype="multipart/form-data">
-
-
-<h2>👋 Mi perfil</h2>
-
-<div class="card">
-  <label>Nombre*</label>
-  <input name="firstName" required>
-
-  <label>Apellido*</label>
-  <input name="lastName" required>
-
-  <label>Usuario*</label>
-  <input name="username" required>
-
-  <label>Email*</label>
-  <input type="email" name="email" required>
-
-  <label>Edad*</label>
-  <input type="number" name="age" min="18" required>
-
-  <!-- 🌎 NACIONALIDAD -->
-  <label>Nacionalidad*</label>
-  <select name="nationality" required>
-    <option value="">Seleccionar...</option>
-    <option>Uruguaya</option>
-    <option>Argentina</option>
-    <option>Brasileña</option>
-    <option>Chilena</option>
-    <option>Paraguaya</option>
-    <option>Boliviana</option>
-    <option>Peruana</option>
-    <option>Colombiana</option>
-    <option>Venezolana</option>
-    <option>Mexicana</option>
-    <option>Española</option>
-    <option>Italiana</option>
-    <option>Francesa</option>
-    <option>Alemana</option>
-    <option>Estadounidense</option>
-    <option>Canadiense</option>
-    <option>Otra</option>
-  </select>
-
-  <!-- 🏙️ DEPARTAMENTO -->
-  <label>Departamento</label>
-  <select name="department">
-    <option value="">Seleccionar...</option>
-    <option>Artigas</option>
-    <option>Canelones</option>
-    <option>Cerro Largo</option>
-    <option>Colonia</option>
-    <option>Durazno</option>
-    <option>Flores</option>
-    <option>Florida</option>
-    <option>Lavalleja</option>
-    <option>Maldonado</option>
-    <option>Montevideo</option>
-    <option>Paysandú</option>
-    <option>Río Negro</option>
-    <option>Rivera</option>
-    <option>Rocha</option>
-    <option>Salto</option>
-    <option>San José</option>
-    <option>Soriano</option>
-    <option>Tacuarembó</option>
-    <option>Treinta y Tres</option>
-  </select>
-
-  <label>Foto de perfil</label>
-  <input type="file" name="profileImage" accept="image/*">
-</div>
-
-<!-- ⭐ INTERESES -->
-<h3>✨ Intereses</h3>
-<div class="card checkbox-card">
-  <label><input type="checkbox" name="interests" value="musica"> Música</label>
-  <label><input type="checkbox" name="interests" value="cine"> Cine</label>
-  <label><input type="checkbox" name="interests" value="lectura"> Lectura</label>
-  <label><input type="checkbox" name="interests" value="deporte"> Deporte</label>
-  <label><input type="checkbox" name="interests" value="viajes"> Viajes</label>
-  <label><input type="checkbox" name="interests" value="arte"> Arte</label>
-
-  <!-- extras que ya tenías -->
-  <label><input type="checkbox" name="interests" value="senderismo"> Senderismo</label>
-  <label><input type="checkbox" name="interests" value="cafe"> Café</label>
-  <label><input type="checkbox" name="interests" value="museos"> Museos</label>
-  <label><input type="checkbox" name="interests" value="juegos"> Juegos</label>
-  <label><input type="checkbox" name="interests" value="salir"> Salir</label>
-</div>
-
-<!-- 🌿 PERSONALIDAD -->
-<h3>🌿 Personalidad</h3>
-<div class="card">
-
-  <label>Temperamento</label>
-  <select name="personality">
-    <option value="">Seleccionar...</option>
-    <option>Introvertido/a</option>
-    <option>Ambivertido/a</option>
-    <option>Extrovertido/a</option>
-  </select>
-
-  <label>Estilo social</label>
-  <label><input type="radio" name="style" value="grupos"> Grupos grandes</label>
-  <label><input type="radio" name="style" value="pequenos"> Grupos pequeños</label>
-  <label><input type="radio" name="style" value="uno"> 1 a 1</label>
-
-  <!-- 🗣️ IDIOMAS -->
-  <label>Idiomas</label>
-  <div class="checkbox-card">
-    <label><input type="checkbox" name="languages" value="espanol"> Español</label>
-    <label><input type="checkbox" name="languages" value="ingles"> Inglés</label>
-    <label><input type="checkbox" name="languages" value="portugues"> Portugués</label>
-    <label><input type="checkbox" name="languages" value="frances"> Francés</label>
-    <label><input type="checkbox" name="languages" value="italiano"> Italiano</label>
-    <label><input type="checkbox" name="languages" value="aleman"> Alemán</label>
-    <label><input type="checkbox" name="languages" value="otro"> Otro</label>
+  
+  <!-- Encabezado de Red Social -->
+  <div class="profile-header">
+    <div class="avatar-wrapper">
+      <img id="profilePreview" src="img/default-avatar.png" class="profile-avatar" alt="Avatar">
+    </div>
+    <h3>Meet & Go Perfil</h3>
+    <p>Gestiona tu información e intereses públicos</p>
   </div>
 
-  <label>Biografía</label>
-  <textarea name="bio" rows="4"></textarea>
-</div>
+  <form id="profileForm" enctype="multipart/form-data">
+    
+    <!-- BOTÓN DE ACCIÓN PRINCIPAL -->
+    <button type="button" id="editProfileBtn" class="btn-primary">✏️ Editar Perfil</button>
 
-<button type="submit" class="btn-primary">
-  Confirmar cambios 
-</button>
+    <div class="card">
+      <label>Foto de perfil (Solo en modo edición)</label>
+      <input type="file" id="avatarInput" name="profileImage" accept="image/*" style="display: none;">
 
-</form>
+      <label>Nombre*</label>
+      <input name="firstName" required>
+
+      <label>Apellido*</label>
+      <input name="lastName" required>
+
+      <label>Usuario</label>
+      <input name="username" readonly>
+
+      <label>Email</label>
+      <input type="email" name="email" readonly>
+
+      <label>Edad*</label>
+      <input type="number" name="age" min="18" required>
+
+      <label>Nacionalidad*</label>
+      <select name="nationality" required>
+        <option value="">Seleccionar...</option>
+        <option value="Uruguaya">Uruguaya</option>
+        <option value="Argentina">Argentina</option>
+        <option value="Brasileña">Brasileña</option>
+        <option value="Chilena">Chilena</option>
+        <option value="Paraguaya">Paraguaya</option>
+        <option value="Otra">Otra</option>
+      </select>
+
+      <label>Departamento</label>
+      <select name="department">
+        <option value="">Seleccionar...</option>
+        <option value="Montevideo">Montevideo</option>
+        <option value="Canelones">Canelones</option>
+        <option value="Maldonado">Maldonado</option>
+        <option value="Colonia">Colonia</option>
+        <option value="San José">San José</option>
+        <!-- Agregar otros si se requiere -->
+      </select>
+
+      <label>Teléfono</label>
+      <input name="phone">
+    </div>
+
+    <!-- ⭐ INTERESES -->
+    <h3>✨ Mis Intereses y Pasiones</h3>
+    <div class="card checkbox-card">
+      <label><input type="checkbox" name="interests" value="musica"><span>🎵 Música</span></label>
+      <label><input type="checkbox" name="interests" value="cine"><span>🎬 Cine</span></label>
+      <label><input type="checkbox" name="interests" value="lectura"><span>📚 Lectura</span></label>
+      <label><input type="checkbox" name="interests" value="deporte"><span>⚽ Deporte</span></label>
+      <label><input type="checkbox" name="interests" value="viajes"><span>✈️ Viajes</span></label>
+      <label><input type="checkbox" name="interests" value="arte"><span>🎨 Arte</span></label>
+      <label><input type="checkbox" name="interests" value="senderismo"><span>🥾 Senderismo</span></label>
+      <label><input type="checkbox" name="interests" value="cafe"><span>☕ Café</span></label>
+    </div>
+
+    <!-- 🌿 PERSONALIDAD -->
+    <h3>🌿 Estilo de Personalidad</h3>
+    <div class="card">
+      <label>Temperamento</label>
+      <select name="personality">
+        <option value="">Seleccionar...</option>
+        <option value="Introvertido/a">Introvertido/a</option>
+        <option value="Ambivertido/a">Ambivertido/a</option>
+        <option value="Extrovertido/a">Extrovertido/a</option>
+      </select>
+
+      <label style="margin-top: 15px; display: block;">Preferencia Social</label>
+      <div class="checkbox-card">
+        <label class="radio-label"><input type="radio" name="style" value="grupos"><span>👥 Grupos grandes</span></label>
+        <label class="radio-label"><input type="radio" name="style" value="pequenos"><span>🤝 Grupos pequeños</span></label>
+        <label class="radio-label"><input type="radio" name="style" value="uno"><span>👤 Conversación 1 a 1</span></label>
+      </div>
+
+      <!-- 🗣️ IDIOMAS -->
+      <label style="margin-top: 15px; display: block;">Idiomas que hablo</label>
+      <div class="checkbox-card">
+        <label><input type="checkbox" name="languages" value="espanol"><span>Castellano</span></label>
+        <label><input type="checkbox" name="languages" value="ingles"><span>Inglés</span></label>
+        <label><input type="checkbox" name="languages" value="portugues"><span>Portugués</span></label>
+        <label><input type="checkbox" name="languages" value="frances"><span>Francés</span></label>
+      </div>
+
+      <label style="margin-top: 15px; display: block;">Sobre mí (Biografía)</label>
+      <textarea name="bio" rows="4" placeholder="¡Cuéntale a la comunidad quién eres!"></textarea>
+    </div>
+
+    <!-- BOTONES SECUNDARIOS ACCIONABLES (OCULTOS POR DEFECTO) -->
+    <div class="btn-actions">
+      <button type="button" id="cancelEditBtn" class="btn-secondary hidden">Cancelar</button>
+      <button type="submit" id="saveProfileBtn" class="btn-primary hidden">Guardar Cambios</button>
+    </div>
+
+  </form>
 </div>
 
   <script src="js/myprofile.js"></script>
