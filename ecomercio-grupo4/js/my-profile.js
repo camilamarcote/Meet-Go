@@ -18,67 +18,71 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   /* ========================================================
-      📥 CARGAR PERFIL (GET) - Rellenado de campos corregido
-     ======================================================== */
-  try {
-    const res = await fetch(`${API_URL}/api/users/me`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-
-    if (!res.ok) throw new Error("Error al obtener perfil desde el servidor");
-
-    const user = await res.json();
-
-    // 1. Rellenar campos de texto de manera segura
-    form.firstName.value = user.firstName || "";
-    form.lastName.value = user.lastName || "";
-    form.username.value = user.username || "";
-    form.email.value = user.email || "";
-    form.age.value = user.age || "";
-    form.phone.value = user.phone || "";
-    form.nationality.value = user.nationality || "";
-    form.department.value = user.department || "";
-    form.personality.value = user.personality || "";
-    form.bio.value = user.bio || "";
-
-    // 2. Rellenar Radio Button ("style") de forma segura
-    if (user.style) {
-      const radio = form.querySelector(`input[name="style"][value="${user.style}"]`);
-      if (radio) radio.checked = true;
+   📥 CARGAR PERFIL (GET) - Versión Sincronizada y Tolerante
+   ======================================================== */
+try {
+  const res = await fetch(`${API_URL}/api/users/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`
     }
+  });
 
-    // 3. Rellenar Checkboxes de IDIOMAS (Normalizando a minúsculas y limpiando tildes)
-    if (user.languages && Array.isArray(user.languages)) {
-      user.languages.forEach(lang => {
-        if (!lang) return;
-        // Normalizar el valor de la base de datos para emparejarlo con el HTML
-        const normalizedLang = lang.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        const checkbox = form.querySelector(`input[name="languages"][value="${normalizedLang}"]`);
-        if (checkbox) checkbox.checked = true;
-      });
-    }
+  if (!res.ok) throw new Error("Error al obtener perfil desde el servidor");
 
-    // 4. Rellenar Checkboxes de INTERESES (Normalizando string)
-    if (user.interests && Array.isArray(user.interests)) {
-      user.interests.forEach(int => {
-        if (!int) return;
-        const normalizedInt = int.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        const checkbox = form.querySelector(`input[name="interests"][value="${normalizedInt}"]`);
-        if (checkbox) checkbox.checked = true;
-      });
-    }
+  const user = await res.json();
 
-    // Restricciones de edición normales
-    form.email.disabled = true;
-    form.username.disabled = true;
+  // 1. Rellenar campos de texto normales
+  form.firstName.value = user.firstName || "";
+  form.lastName.value = user.lastName || "";
+  form.username.value = user.username || "";
+  form.email.value = user.email || "";
+  form.age.value = user.age || "";
+  form.phone.value = user.phone || "";
+  form.personality.value = user.personality || "";
+  form.style.value = user.style || "";
+  form.bio.value = user.bio || "";
 
-  } catch (error) {
-    console.error("❌ Error cargando perfil:", error);
-    alert("Error al cargar los datos de tu perfil. Por favor, reintenta.");
+  // 2. Rellenar select de Nacionalidad (Maneja el valor exacto o la opción por defecto)
+  if (user.nationality) {
+    // Si viene "Paraguaya" o "Uruguaya", el select se adaptará perfectamente
+    form.nationality.value = user.nationality;
   }
 
+  // 3. Rellenar select de Departamento
+  if (user.department) {
+    form.department.value = user.department;
+  }
+
+  /* 🗣️ IDIOMAS (CHECKBOXES CON PASO A MINÚSCULAS) */
+  if (user.languages && Array.isArray(user.languages)) {
+    user.languages.forEach(lang => {
+      if (!lang) return;
+      // Convertimos a minúsculas y quitamos tildes: "Español" -> "espanol"
+      const cleanLang = lang.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const checkbox = document.querySelector(`input[name="languages"][value="${cleanLang}"]`);
+      if (checkbox) checkbox.checked = true;
+    });
+  }
+
+  /* 🎯 INTERESES (CHECKBOXES CON PASO A MINÚSCULAS) */
+  if (user.interests && Array.isArray(user.interests)) {
+    user.interests.forEach(int => {
+      if (!int) return;
+      // Convertimos a minúsculas y quitamos tildes: "Música" -> "musica"
+      const cleanInt = int.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const checkbox = document.querySelector(`input[name="interests"][value="${cleanInt}"]`);
+      if (checkbox) checkbox.checked = true;
+    });
+  }
+
+  /* 🔒 RESTRICCIONES DE EDICIÓN */
+  form.email.disabled = true;
+  form.username.disabled = true;
+
+} catch (error) {
+  console.error("❌ Error cargando perfil:", error);
+  alert("Error al cargar los datos de tu perfil. Por favor, reintenta.");
+}
   /* ========================================================
       ✏️ GUARDAR CAMBIOS (PUT) - Envío Limpio sin duplicados
      ======================================================== */
