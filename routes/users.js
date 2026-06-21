@@ -428,7 +428,22 @@ router.put("/me/experience", protect, async (req, res) => {
   }
 });
 
+// Asegúrate de que esta sección en tu routes/users.js maneje los bloques try-catch para los JSON.parse:
+if (req.body.languages) {
+  try {
+    updates.languages = typeof req.body.languages === 'string' ? JSON.parse(req.body.languages) : req.body.languages;
+  } catch (e) {
+    updates.languages = [];
+  }
+}
 
+if (req.body.interests) {
+  try {
+    updates.interests = typeof req.body.interests === 'string' ? JSON.parse(req.body.interests) : req.body.interests;
+  } catch (e) {
+    updates.interests = [];
+  }
+}
 
 
 export default router;
