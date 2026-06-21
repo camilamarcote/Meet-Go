@@ -127,15 +127,15 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
     const user = await User.create({
       firstName,
       lastName,
-      username: username || email, // Usar email como username si no se proporciona
+      username: username || email, 
       email,
       phone: phone || "",
       password: hashedPassword,
       age: parseInt(age),
-      nationality: "Uruguay", // Valor por defecto
-      department: "", // Vacío por defecto
+      nationality: "Uruguay", 
+      department: "", 
       interests: parsedInterests,
-      languages: [], // Array vacío por defecto
+      languages: [], 
       personality: "",
       style: "",
       bio: "",
@@ -143,7 +143,6 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       isVerified: false,
       roles: ["user"],
       subscription: { isActive: false },
-      // Perfil de experiencia completado por defecto como falso
       experienceProfile: {
         completed: false,
         icebreakers: {
@@ -233,6 +232,7 @@ router.post("/login", async (req, res) => {
     res.status(500).json({ message: "Error al iniciar sesión" });
   }
 });
+
 /* =============================
    ✅ VERIFY ACCOUNT
 ============================= */
@@ -248,7 +248,6 @@ router.get("/verify", async (req, res) => {
       return res.status(400).json({ message: "Token faltante" });
     }
 
-    // Verificar el token JWT
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     console.log("🔓 Token decodificado:", decoded);
 
@@ -273,7 +272,6 @@ router.get("/verify", async (req, res) => {
     const frontendUrl = process.env.FRONT_URL || "https://meetandgof.netlify.app";
     console.log("🔄 Redirigiendo a:", `${frontendUrl}/login.html?verified=true`);
     
-    // Redirigir al frontend
     return res.redirect(`${frontendUrl}/login.html?verified=true`);
     
   } catch (error) {
@@ -282,6 +280,7 @@ router.get("/verify", async (req, res) => {
     return res.redirect(`${frontendUrl}/login.html?verified=false`);
   }
 });
+
 /* =============================
    🔁 FORGOT PASSWORD
 ============================= */
@@ -295,7 +294,6 @@ router.post("/forgot-password", async (req, res) => {
 
     const user = await User.findOne({ email });
 
-    // Seguridad: no revelar si existe
     if (!user) {
       return res.json({ message: "Si el email existe, se enviará un enlace" });
     }
@@ -365,7 +363,7 @@ router.put("/me", protect, upload.single("profileImage"), async (req, res) => {
     const updates = {
       firstName: req.body.firstName,
       lastName: req.body.lastName,
-      age: req.body.age,
+      age: req.body.age ? parseInt(req.body.age) : undefined,
       nationality: req.body.nationality,
       department: req.body.department,
       phone: req.body.phone,
@@ -374,14 +372,29 @@ router.put("/me", protect, upload.single("profileImage"), async (req, res) => {
       bio: req.body.bio
     };
 
+    // Parsear idiomas correctamente dentro de la ruta
     if (req.body.languages) {
-      updates.languages = JSON.parse(req.body.languages);
+      try {
+        updates.languages = typeof req.body.languages === 'string' 
+          ? JSON.parse(req.body.languages) 
+          : req.body.languages;
+      } catch (e) {
+        updates.languages = [];
+      }
     }
 
+    // Parsear intereses correctamente dentro de la ruta
     if (req.body.interests) {
-      updates.interests = JSON.parse(req.body.interests);
+      try {
+        updates.interests = typeof req.body.interests === 'string' 
+          ? JSON.parse(req.body.interests) 
+          : req.body.interests;
+      } catch (e) {
+        updates.interests = [];
+      }
     }
 
+    // Manejar subida de foto de perfil con Cloudinary
     if (req.file) {
       const uploadResult = await cloudinary.uploader.upload(
         `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`,
@@ -397,6 +410,10 @@ router.put("/me", protect, upload.single("profileImage"), async (req, res) => {
       new: true
     }).select("-password");
 
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
     res.json(user);
   } catch (error) {
     console.error("❌ Update profile error:", error);
@@ -404,6 +421,9 @@ router.put("/me", protect, upload.single("profileImage"), async (req, res) => {
   }
 });
 
+/* =============================
+   🎯 EXPERIENCE PROFILE
+============================= */
 router.put("/me/experience", protect, async (req, res) => {
   try {
     const updates = {
@@ -427,23 +447,5 @@ router.put("/me/experience", protect, async (req, res) => {
     res.status(500).json({ message: "Error al guardar perfil de experiencia" });
   }
 });
-
-// Asegúrate de que esta sección en tu routes/users.js maneje los bloques try-catch para los JSON.parse:
-if (req.body.languages) {
-  try {
-    updates.languages = typeof req.body.languages === 'string' ? JSON.parse(req.body.languages) : req.body.languages;
-  } catch (e) {
-    updates.languages = [];
-  }
-}
-
-if (req.body.interests) {
-  try {
-    updates.interests = typeof req.body.interests === 'string' ? JSON.parse(req.body.interests) : req.body.interests;
-  } catch (e) {
-    updates.interests = [];
-  }
-}
-
 
 export default router;
