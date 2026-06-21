@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   /* ========================================================
-     📥 CARGAR PERFIL (GET) - Versión Sincronizada y Tolerante
+     📥 CARGAR PERFIL (GET) - Adaptado a tu estructura Real
      ======================================================== */
   try {
     const res = await fetch(`${API_URL}/api/users/me`, {
@@ -31,69 +31,71 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const user = await res.json();
     
-    // 🔍 CORROBORACIÓN: Imprime los datos en la consola para auditar qué trae MongoDB
-    console.log("✅ Datos del usuario recuperados con éxito:");
-    console.table({
-      Nombre: user.firstName,
-      Apellido: user.lastName,
-      Usuario: user.username,
-      Email: user.email,
-      Nacionalidad: user.nationality,
-      Intereses: user.interests?.join(", "),
-      Idiomas: user.languages?.join(", ")
-    });
+    // 🔍 AUDITORÍA EN CONSOLA: Abre F12 para ver exactamente qué llegó del servidor
+    console.log("⬇️ Esto es lo que devuelve el servidor /api/users/me:", user);
 
-    // 1. Rellenar campos de texto normales (Ahora son 100% modificables)
-    form.firstName.value = user.firstName || "";
-    form.lastName.value = user.lastName || "";
-    form.username.value = user.username || "";
-    form.email.value = user.email || "";
-    form.age.value = user.age || "";
-    form.phone.value = user.phone || "";
-    form.personality.value = user.personality || "";
-    form.bio.value = user.bio || "";
+    // Función auxiliar para rellenar de forma segura sin importar cómo responda el formulario
+    const setFieldValue = (inputName, value) => {
+      const element = form.elements[inputName] || document.getElementById(inputName);
+      if (element) {
+        element.value = value || "";
+      } else {
+        console.warn(`⚠️ No se encontró ningún input en el HTML con name o id: "${inputName}"`);
+      }
+    };
 
-    // 2. Rellenar select de Nacionalidad de forma segura
-    if (user.nationality && form.nationality) {
-      form.nationality.value = user.nationality;
+    // 1. Asignación directa y segura de campos de texto comunes
+    setFieldValue("firstName", user.firstName || authUser.firstName);
+    setFieldValue("lastName", user.lastName || authUser.lastName);
+    setFieldValue("username", user.username || authUser.username);
+    setFieldValue("email", user.email || authUser.email);
+    setFieldValue("phone", user.phone || authUser.phone);
+    setFieldValue("age", user.age || authUser.age);
+    setFieldValue("personality", user.personality || authUser.personality);
+    setFieldValue("bio", user.bio || authUser.bio);
+
+    // 2. Selects dinámicos
+    if (user.nationality || authUser.nationality) {
+      setFieldValue("nationality", user.nationality || authUser.nationality);
+    }
+    if (user.department || authUser.department) {
+      setFieldValue("department", user.department || authUser.department);
     }
 
-    // 3. Rellenar select de Departamento
-    if (user.department && form.department) {
-      form.department.value = user.department;
-    }
-
-    // 4. Rellenar Radio Button de "Style" correctamente buscando su valor
-    if (user.style) {
-      const radioStyle = form.querySelector(`input[name="style"][value="${user.style}"]`);
+    // 3. Radio button para el "Style"
+    const targetStyle = user.style || authUser.style;
+    if (targetStyle) {
+      const radioStyle = form.querySelector(`input[name="style"][value="${targetStyle}"]`);
       if (radioStyle) radioStyle.checked = true;
     }
 
-    /* 🗣️ IDIOMAS (CHECKBOXES CON PASO A MINÚSCULAS) */
-    if (user.languages && Array.isArray(user.languages)) {
-      user.languages.forEach(lang => {
+    // 4. Checkboxes de Idiomas
+    const languagesArray = user.languages || authUser.languages;
+    if (languagesArray && Array.isArray(languagesArray)) {
+      languagesArray.forEach(lang => {
         if (!lang) return;
-        // Convertimos a minúsculas y quitamos tildes: "Español" -> "espanol"
         const cleanLang = lang.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         const checkbox = form.querySelector(`input[name="languages"][value="${cleanLang}"]`);
         if (checkbox) checkbox.checked = true;
       });
     }
 
-    /* 🎯 INTERESES (CHECKBOXES CON PASO A MINÚSCULAS) */
-    if (user.interests && Array.isArray(user.interests)) {
-      user.interests.forEach(int => {
+    // 5. Checkboxes de Intereses
+    const interestsArray = user.interests || authUser.interests;
+    if (interestsArray && Array.isArray(interestsArray)) {
+      interestsArray.forEach(int => {
         if (!int) return;
-        // Convertimos a minúsculas y quitamos tildes: "Música" -> "musica"
         const cleanInt = int.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         const checkbox = form.querySelector(`input[name="interests"][value="${cleanInt}"]`);
         if (checkbox) checkbox.checked = true;
       });
     }
 
-    /* 🔒 RESTRICCIONES DE EDICIÓN */
-    form.email.disabled = true;
-    form.username.disabled = true;
+    // Bloqueos de seguridad estándar
+    const emailInput = form.elements["email"] || document.getElementById("email");
+    const userInput = form.elements["username"] || document.getElementById("username");
+    if (emailInput) emailInput.disabled = true;
+    if (userInput) userInput.disabled = true;
 
   } catch (error) {
     console.error("❌ Error cargando perfil:", error);
@@ -101,71 +103,48 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   /* ========================================================
-      ✏️ GUARDAR CAMBIOS (PUT) - Envío Limpio sin duplicados
+      ✏️ GUARDAR CAMBIOS (PUT) - Sincronizado a la Raíz
      ======================================================== */
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    // Recolectar dinámicamente los checkboxes seleccionados por el usuario
-    const interests = Array.from(
-      form.querySelectorAll("input[name='interests']:checked")
-    ).map(i => i.value);
+    const interests = Array.from(form.querySelectorAll("input[name='interests']:checked")).map(i => i.value);
+    const languages = Array.from(form.querySelectorAll("input[name='languages']:checked")).map(l => l.value);
 
-    const languages = Array.from(
-      form.querySelectorAll("input[name='languages']:checked")
-    ).map(l => l.value);
-
-    // Creamos un FormData manual y controlado para evitar sobreescrituras con Multer
     const formData = new FormData();
-    formData.append("firstName", form.firstName.value);
-    formData.append("lastName", form.lastName.value);
-    formData.append("age", form.age.value);
-    formData.append("nationality", form.nationality.value);
-    formData.append("department", form.department.value);
-    formData.append("phone", form.phone.value);
-    formData.append("personality", form.personality.value);
-    formData.append("bio", form.bio.value);
+    formData.append("firstName", form.querySelector("[name='firstName']", "#firstName")?.value || "");
+    formData.append("lastName", form.querySelector("[name='lastName']", "#lastName")?.value || "");
+    formData.append("age", form.querySelector("[name='age']", "#age")?.value || "");
+    formData.append("nationality", form.querySelector("[name='nationality']", "#nationality")?.value || "");
+    formData.append("department", form.querySelector("[name='department']", "#department")?.value || "");
+    formData.append("phone", form.querySelector("[name='phone']", "#phone")?.value || "");
+    formData.append("personality", form.querySelector("[name='personality']", "#personality")?.value || "");
+    formData.append("bio", form.querySelector("[name='bio']", "#bio")?.value || "");
 
-    // Capturar radio button de estilo
     const styleRadio = form.querySelector("input[name='style']:checked");
-    if (styleRadio) {
-      formData.append("style", styleRadio.value);
-    }
+    if (styleRadio) formData.append("style", styleRadio.value);
 
-    // Serializar los arrays como cadenas JSON limpias
     formData.append("languages", JSON.stringify(languages));
     formData.append("interests", JSON.stringify(interests));
 
-    // Capturar el archivo de imagen de perfil si el usuario seleccionó uno
-    if (form.profileImage.files[0]) {
+    if (form.profileImage?.files[0]) {
       formData.append("profileImage", form.profileImage.files[0]);
     }
 
     try {
       const res = await fetch(`${API_URL}/api/users/me`, {
         method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}` 
-        },
+        headers: { Authorization: `Bearer ${token}` },
         body: formData
       });
 
       const updatedUser = await res.json();
+      if (!res.ok) throw new Error(updatedUser.message || "Error al actualizar perfil");
 
-      if (!res.ok) {
-        throw new Error(updatedUser.message || "Error al actualizar perfil");
-      }
-
-      /* 🔄 Actualizar el LocalStorage local para reflejar los cambios en vivo */
+      // 🔄 Guardamos los nuevos datos guardando la estructura plana original en LocalStorage
       const newSessionData = { 
-        ...authUser,
-        user: {
-          ...authUser.user,
-          firstName: updatedUser.firstName,
-          lastName: updatedUser.lastName,
-          phone: updatedUser.phone,
-          profileImage: updatedUser.profileImage || authUser.user?.profileImage
-        }
+        ...authUser, // Conserva el Token actual
+        ...updatedUser // Sobreescribe con los datos nuevos actualizados del servidor
       };
       
       localStorage.setItem("currentUser", JSON.stringify(newSessionData));
