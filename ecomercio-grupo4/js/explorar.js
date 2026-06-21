@@ -1,10 +1,14 @@
 const API_URL = "https://api.meetandgouy.com";
 
 // ============================
-// 🔐 TOKEN (OPCIONAL AHORA)
+// 🔐 TOKEN Y DATOS DE USUARIO
 // ============================
 const token = localStorage.getItem("token");
 console.log("TOKEN EN EXPLORAR:", token ? "Presente" : "No hay token");
+
+// Leer el objeto completo del usuario actual para verificar el rol/suscripción
+const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+const isSubscriber = currentUser?.isSubscriber === true || currentUser?.roles?.includes("admin");
 
 // ============================
 // 📍 EVENTO SELECCIONADO
@@ -34,7 +38,6 @@ function goToProfile() {
 // ============================
 async function loadEvents() {
   try {
-    // Usar el nuevo endpoint público que no requiere autenticación
     const res = await fetch(`${API_URL}/api/events/public/all`);
     
     if (!res.ok) {
@@ -61,9 +64,6 @@ async function loadEvents() {
     events.forEach(event => {
       const isSelected = event._id === selectedEventId;
       
-      // Formatear fecha si existe
-      const formattedDate = event.date ? new Date(event.date).toLocaleDateString('es-ES') : 'Fecha por confirmar';
-
       eventsContainer.innerHTML += `
         <div class="col-md-4 col-lg-3 mb-4">
           <div class="card h-100 shadow-sm ${isSelected ? "selected-event border-primary" : ""}">
@@ -94,7 +94,6 @@ async function loadEvents() {
       `;
     });
 
-    // 🧭 Scroll automático al evento seleccionado
     if (selectedEventId) {
       setTimeout(() => {
         const selectedCard = document.querySelector(".selected-event");
@@ -136,7 +135,7 @@ function escapeHtml(text) {
 document.addEventListener("DOMContentLoaded", () => {
   loadEvents();
   
-  // Mostrar banner informativo para usuarios no autenticados
+  // 1. Mostrar banner informativo SOLO para usuarios NO autenticados
   if (!token) {
     const container = document.querySelector(".container");
     if (container && !document.querySelector(".info-banner")) {
@@ -151,5 +150,13 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
       container.insertBefore(infoBanner, eventsContainer);
     }
+  }
+
+  // 2. Controlar la visibilidad del cartel de "Suscribite" si el usuario ya es suscriptor
+  // (Busca un elemento con id "subscribeBanner" o la clase que uses en tu HTML para ese banner estático)
+  const subscribeBanner = document.getElementById("subscribeBanner") || document.querySelector(".subscribe-banner");
+  
+  if (subscribeBanner && isSubscriber) {
+    subscribeBanner.style.setProperty("display", "none", "important"); // Lo oculta de inmediato si ya está suscrito
   }
 });
