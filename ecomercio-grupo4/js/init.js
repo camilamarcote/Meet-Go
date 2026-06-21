@@ -108,6 +108,9 @@ document.addEventListener("DOMContentLoaded", async () => {
           <li>
             <a class="dropdown-item" href="#" id="logoutLink">Cerrar sesión</a>
           </li>
+          <li>
+            <a class="dropdown-item" href="my-profile.html" id="logoutLink">Mi perfil</a>
+          </li>
         </ul>
       </div>
     `;
