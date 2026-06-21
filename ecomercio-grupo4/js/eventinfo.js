@@ -291,7 +291,7 @@ async function loadEventInfo() {
         if (hasLimit) {
             maxAvailableQuantity = Math.min(10, remainingCapacity);
         } else {
-            maxAvailableQuantity = 10;
+            maxAvailableQuantity = 3;
         }
 
         let capacityBadgeHtml = "";
