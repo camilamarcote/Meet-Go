@@ -18,71 +18,88 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   /* ========================================================
-   📥 CARGAR PERFIL (GET) - Versión Sincronizada y Tolerante
-   ======================================================== */
-try {
-  const res = await fetch(`${API_URL}/api/users/me`, {
-    headers: {
-      Authorization: `Bearer ${token}`
+     📥 CARGAR PERFIL (GET) - Versión Sincronizada y Tolerante
+     ======================================================== */
+  try {
+    const res = await fetch(`${API_URL}/api/users/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    if (!res.ok) throw new Error("Error al obtener perfil desde el servidor");
+
+    const user = await res.json();
+    
+    // 🔍 CORROBORACIÓN: Imprime los datos en la consola para auditar qué trae MongoDB
+    console.log("✅ Datos del usuario recuperados con éxito:");
+    console.table({
+      Nombre: user.firstName,
+      Apellido: user.lastName,
+      Usuario: user.username,
+      Email: user.email,
+      Nacionalidad: user.nationality,
+      Intereses: user.interests?.join(", "),
+      Idiomas: user.languages?.join(", ")
+    });
+
+    // 1. Rellenar campos de texto normales (Ahora son 100% modificables)
+    form.firstName.value = user.firstName || "";
+    form.lastName.value = user.lastName || "";
+    form.username.value = user.username || "";
+    form.email.value = user.email || "";
+    form.age.value = user.age || "";
+    form.phone.value = user.phone || "";
+    form.personality.value = user.personality || "";
+    form.bio.value = user.bio || "";
+
+    // 2. Rellenar select de Nacionalidad de forma segura
+    if (user.nationality && form.nationality) {
+      form.nationality.value = user.nationality;
     }
-  });
 
-  if (!res.ok) throw new Error("Error al obtener perfil desde el servidor");
+    // 3. Rellenar select de Departamento
+    if (user.department && form.department) {
+      form.department.value = user.department;
+    }
 
-  const user = await res.json();
+    // 4. Rellenar Radio Button de "Style" correctamente buscando su valor
+    if (user.style) {
+      const radioStyle = form.querySelector(`input[name="style"][value="${user.style}"]`);
+      if (radioStyle) radioStyle.checked = true;
+    }
 
-  // 1. Rellenar campos de texto normales
-  form.firstName.value = user.firstName || "";
-  form.lastName.value = user.lastName || "";
-  form.username.value = user.username || "";
-  form.email.value = user.email || "";
-  form.age.value = user.age || "";
-  form.phone.value = user.phone || "";
-  form.personality.value = user.personality || "";
-  form.style.value = user.style || "";
-  form.bio.value = user.bio || "";
+    /* 🗣️ IDIOMAS (CHECKBOXES CON PASO A MINÚSCULAS) */
+    if (user.languages && Array.isArray(user.languages)) {
+      user.languages.forEach(lang => {
+        if (!lang) return;
+        // Convertimos a minúsculas y quitamos tildes: "Español" -> "espanol"
+        const cleanLang = lang.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const checkbox = form.querySelector(`input[name="languages"][value="${cleanLang}"]`);
+        if (checkbox) checkbox.checked = true;
+      });
+    }
 
-  // 2. Rellenar select de Nacionalidad (Maneja el valor exacto o la opción por defecto)
-  if (user.nationality) {
-    // Si viene "Paraguaya" o "Uruguaya", el select se adaptará perfectamente
-    form.nationality.value = user.nationality;
+    /* 🎯 INTERESES (CHECKBOXES CON PASO A MINÚSCULAS) */
+    if (user.interests && Array.isArray(user.interests)) {
+      user.interests.forEach(int => {
+        if (!int) return;
+        // Convertimos a minúsculas y quitamos tildes: "Música" -> "musica"
+        const cleanInt = int.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const checkbox = form.querySelector(`input[name="interests"][value="${cleanInt}"]`);
+        if (checkbox) checkbox.checked = true;
+      });
+    }
+
+    /* 🔒 RESTRICCIONES DE EDICIÓN */
+    form.email.disabled = true;
+    form.username.disabled = true;
+
+  } catch (error) {
+    console.error("❌ Error cargando perfil:", error);
+    alert("Error al cargar los datos de tu perfil. Por favor, reintenta.");
   }
 
-  // 3. Rellenar select de Departamento
-  if (user.department) {
-    form.department.value = user.department;
-  }
-
-  /* 🗣️ IDIOMAS (CHECKBOXES CON PASO A MINÚSCULAS) */
-  if (user.languages && Array.isArray(user.languages)) {
-    user.languages.forEach(lang => {
-      if (!lang) return;
-      // Convertimos a minúsculas y quitamos tildes: "Español" -> "espanol"
-      const cleanLang = lang.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      const checkbox = document.querySelector(`input[name="languages"][value="${cleanLang}"]`);
-      if (checkbox) checkbox.checked = true;
-    });
-  }
-
-  /* 🎯 INTERESES (CHECKBOXES CON PASO A MINÚSCULAS) */
-  if (user.interests && Array.isArray(user.interests)) {
-    user.interests.forEach(int => {
-      if (!int) return;
-      // Convertimos a minúsculas y quitamos tildes: "Música" -> "musica"
-      const cleanInt = int.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      const checkbox = document.querySelector(`input[name="interests"][value="${cleanInt}"]`);
-      if (checkbox) checkbox.checked = true;
-    });
-  }
-
-  /* 🔒 RESTRICCIONES DE EDICIÓN */
-  form.email.disabled = true;
-  form.username.disabled = true;
-
-} catch (error) {
-  console.error("❌ Error cargando perfil:", error);
-  alert("Error al cargar los datos de tu perfil. Por favor, reintenta.");
-}
   /* ========================================================
       ✏️ GUARDAR CAMBIOS (PUT) - Envío Limpio sin duplicados
      ======================================================== */
@@ -129,7 +146,6 @@ try {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}` 
-          // ⚠️ Recordatorio: NO agregues Content-Type aquí, el navegador lo gestiona solo
         },
         body: formData
       });
