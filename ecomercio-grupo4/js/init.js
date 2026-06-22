@@ -1,8 +1,8 @@
 document.addEventListener("DOMContentLoaded", async () => {
 
   /* ============================
-     1. INSERTAR NAVBAR
-  ============================ */
+      1. INSERTAR NAVBAR
+     ============================ */
   const navbarHTML = `
 <nav class="navbar navbar-expand-lg navbar-light modern-navbar">
   <div class="container-fluid">
@@ -18,39 +18,37 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     <div class="collapse navbar-collapse" id="navbarNav">
 
-     <ul class="navbar-nav">
-  <li class="nav-item">
-    <a class="nav-link" href="explorar.html">Eventos</a>
-  </li>
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <a class="nav-link" href="explorar.html">Eventos</a>
+        </li>
 
-  <li class="nav-item">
-    <a class="nav-link" href="aboutus.html">Acerca de </a>
-  </li>
+        <li class="nav-item">
+          <a class="nav-link" href="aboutus.html">Acerca de</a>
+        </li>
 
-  <li class="nav-item" id="nav-create-event" style="display:none">
-    <a class="nav-link" href="createevent.html">Crear Evento</a>
-  </li>
+        <li class="nav-item" id="nav-create-event" style="display:none">
+          <a class="nav-link" href="createevent.html">Crear Evento</a>
+        </li>
 
-  <li class="nav-item" id="nav-users" style="display:none">
-    <a class="nav-link" href="admin-users.html">Usuarios</a>
-  </li>
+        <li class="nav-item" id="nav-users" style="display:none">
+          <a class="nav-link" href="admin-users.html">Usuarios</a>
+        </li>
 
-    <li class="nav-item" id="nav-users" style="display:none">
-    <a class="nav-link" href="my-tickets.html">Mis tickets</a>
-  </li>
+        <li class="nav-item" id="nav-my-tickets" style="display:none">
+          <a class="nav-link" href="my-tickets.html">Mis Pases</a>
+        </li>
 
-  <!-- ✅ BENEFICIOS -->
-  <li class="nav-item" id="nav-benefits">
-    <a class="nav-link" href="benefits.html">Beneficios</a>
-  </li>
+        <li class="nav-item" id="nav-benefits">
+          <a class="nav-link" href="benefits.html">Beneficios</a>
+        </li>
 
-  <li class="nav-item" id="nav-suscripcion">
-    <a class="nav-link fw-semibold text-warning" href="suscripcion.html">
-      ⭐ Suscribite
-    </a>
-  </li>
-</ul>
-
+        <li class="nav-item" id="nav-suscripcion">
+          <a class="nav-link fw-semibold text-warning" href="suscripcion.html">
+            ⭐ Suscribite
+          </a>
+        </li>
+      </ul>
 
       <div class="ms-auto d-flex align-items-center gap-2" id="nav-right"></div>
 
@@ -67,8 +65,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   rightZone.innerHTML = "";
 
   /* ============================
-     2. VALIDAR SESIÓN REAL
-  ============================ */
+      2. VALIDAR SESIÓN REAL
+     =========================== */
   const token = localStorage.getItem("token");
 
   // 🔓 NO LOGUEADO
@@ -92,8 +90,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     const user = await res.json();
 
     /* ============================
-       3. NAV LOGUEADO
-    ============================ */
+        3. NAV LOGUEADO
+       ============================ */
     rightZone.innerHTML = `
       <span class="fw-semibold">${user.username}</span>
 
@@ -113,16 +111,23 @@ document.addEventListener("DOMContentLoaded", async () => {
             <a class="dropdown-item" href="#" id="logoutLink">Cerrar sesión</a>
           </li>
           <li>
-            <a class="dropdown-item" href="my-profile.html" id="logoutLink">Mi perfil</a>
+            <a class="dropdown-item" href="my-profile.html">Mi perfil</a>
           </li>
         </ul>
       </div>
     `;
 
-    // 👮 ADMIN / ORGANIZADORA
+    // 🎟️ VISIBILIDAD DE TICKETS: Cualquier usuario logueado exitosamente puede ver sus pases
+    const ticketsLink = document.getElementById("nav-my-tickets");
+    if (ticketsLink) ticketsLink.style.display = "block";
+
+    // 👮 ADMIN / ORGANIZADORA (Solo para ellos)
     if (user.isOrganizer || user.roles?.includes("admin")) {
-      document.getElementById("nav-create-event").style.display = "block";
-      document.getElementById("nav-users").style.display = "block";
+      const createEventLink = document.getElementById("nav-create-event");
+      const usersLink = document.getElementById("nav-users");
+      
+      if (createEventLink) createEventLink.style.display = "block";
+      if (usersLink) usersLink.style.display = "block";
     }
 
     // ⭐ OCULTAR SUSCRIPCIÓN SI ESTÁ ACTIVA
