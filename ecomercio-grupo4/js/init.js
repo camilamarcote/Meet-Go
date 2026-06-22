@@ -36,7 +36,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   </li>
 
     <li class="nav-item" id="nav-users" style="display:none">
-    <a class="nav-link" href="my-tickets.html">Usuarios</a>
+    <a class="nav-link" href="my-tickets.html">Mis tickets</a>
   </li>
 
   <!-- ✅ BENEFICIOS -->
