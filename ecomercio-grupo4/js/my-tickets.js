@@ -112,15 +112,16 @@ function renderMyTickets(tickets) {
             <p class="mb-0 text-muted small"><strong>🆔 ID Pase:</strong> ${ticket._id.substring(0, 10)}...</p>
           </div>
           
-          <div class="col-4 text-end">
-            <div class="qr-container" style="display: inline-block; background: #f8f9fa; padding: 5px; border-radius: 4px;">
-              ${
-                ticket.qrCodeImage 
-                  ? `<img src="${ticket.qrCodeImage}" alt="QR" style="width: 75px; height: 75px; object-fit: contain;">`
-                  : `<div class="small text-muted text-center" style="width: 75px; font-size: 0.65rem; padding-top: 20px;">🎟️ Presentar ID</div>`
-              }
-            </div>
-          </div>
+         // Cambia esto en el renderizado de tu JS de frontend:
+<div class="col-4 text-end">
+  <div class="qr-container" style="display: inline-block; background: #f8f9fa; padding: 5px; border-radius: 4px;">
+    ${
+      ticket.qrImage // 🎯 CAMBIADO: Coincide perfectamente con tu modelo de Mongoose (qrImage)
+        ? `<img src="${ticket.qrImage}" alt="QR" style="width: 75px; height: 75px; object-fit: contain;">`
+        : `<div class="small text-muted text-center" style="width: 75px; font-size: 0.65rem; padding-top: 20px;">🎟️ Presentar ID</div>`
+    }
+  </div>
+</div>
         </div>
       </div>
     `;

@@ -103,6 +103,23 @@ router.get("/tickets", protect, async (req, res) => {
   }
 });
 
+// ========================================================
+// 🎟️ OBTENER TICKETS DEL USUARIO ACTUAL (Para My-Tickets)
+// ========================================================
+router.get("/my", protect, async (req, res) => {
+  try {
+    // Buscamos los tickets donde coincida el campo 'user' con el del token actual
+    const tickets = await EventTicket.find({ user: req.user._id })
+      .populate("event", "name title price date time") // Trae los datos clave del evento
+      .populate("user", "firstName lastName username email");
+
+    return res.json(tickets);
+  } catch (error) {
+    console.error("❌ Error al obtener los tickets del usuario:", error);
+    return res.status(500).json({ message: "Error interno al recuperar tus pases." });
+  }
+});
+
 
 
 export default router;
