@@ -40,8 +40,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // 🎯 NUEVO: Captura opcional (con ?.value) para evitar que la pantalla quede en blanco si falla el selector
     const usernameInput = form.querySelector("input[name='username']");
     const username = usernameInput ? usernameInput.value.trim() : email.split('@')[0]; // Si no hay username usa el inicio del mail
-
-    const nationality = form.querySelector("[name='nationality'] Marina")?.value || "";
+// ✅ Código corregido
+const nationality = form.querySelector("[name='nationality']")?.value || "";
     const department = form.querySelector("[name='department']")?.value || "";
     const personality = form.querySelector("[name='personality']")?.value || "";
     const bio = form.querySelector("textarea[name='bio']")?.value || "";
