@@ -12,123 +12,115 @@ document.addEventListener("DOMContentLoaded", () => {
     e.preventDefault();
 
     /* ============================
-       🔐 VALIDACIÓN PASSWORD
-    ============================ */
+        🔐 VALIDACIÓN PASSWORD
+       ============================ */
     const passwordInput = form.querySelector("input[name='password']");
+    if (!passwordInput) {
+      alert("❌ Error crítico: Falta el campo de contraseña en el HTML.");
+      return;
+    }
     const password = passwordInput.value;
 
-    const passwordRegex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 
     if (!passwordRegex.test(password)) {
-      alert(
-        "La contraseña debe tener mínimo 8 caracteres, mayúscula, minúscula, número y símbolo"
-      );
+      alert("La contraseña debe tener mínimo 8 caracteres, mayúscula, minúscula, número y símbolo");
       return;
     }
 
     /* ============================
-       📌 OBTENER DATOS DEL FORMULARIO
-    ============================ */
+        📌 OBTENER DATOS BASICOS
+       ============================ */
     const firstName = form.querySelector("input[name='firstName']").value;
     const lastName = form.querySelector("input[name='lastName']").value;
+    const username = form.querySelector("input[name='username']").value; // 🎯 NUEVO EXTRAÍDO
     const email = form.querySelector("input[name='email']").value;
     const age = parseInt(form.querySelector("input[name='age']").value);
     const phone = form.querySelector("input[name='phone']").value;
 
+    // Campos Select / Radio / Textarea nuevos de tu interfaz:
+    const nationality = form.querySelector("[name='nationality']").value;
+    const department = form.querySelector("[name='department']").value;
+    const personality = form.querySelector("[name='personality']").value;
+    const bio = form.querySelector("textarea[name='bio']")?.value || "";
+
+    const styleRadio = form.querySelector("input[name='style']:checked");
+    const style = styleRadio ? styleRadio.value : "";
+
     /* ============================
-       📌 CHECKBOXES (INTERESES)
-    ============================ */
+        📌 CHECKBOXES (INTERESES E IDIOMAS)
+       ============================ */
     const interests = Array.from(
-      document.querySelectorAll("input[name='interests']:checked")
+      form.querySelectorAll("input[name='interests']:checked")
     ).map(i => i.value);
 
-    // Validar que al menos haya un interés seleccionado
+    const languages = Array.from(
+      form.querySelectorAll("input[name='languages']:checked")
+    ).map(l => l.value);
+
     if (interests.length === 0) {
       alert("Por favor, selecciona al menos un interés");
       return;
     }
 
-    /* ============================
-       📌 VALIDAR EDAD
-    ============================ */
     if (age < 18) {
       alert("Debes tener al menos 18 años para registrarte");
       return;
     }
 
-    /* ============================
-       📌 VALIDAR CELULAR
-    ============================ */
     if (!phone || phone.trim() === "") {
       alert("Por favor, ingresa tu número de celular");
       return;
     }
 
     /* ============================
-       📦 PREPARAR DATOS PARA ENVIAR
-    ============================ */
+        📦 PREPARAR DATOS COMPLETOS
+       ============================ */
     const userData = {
       firstName: firstName.trim(),
       lastName: lastName.trim(),
+      username: username.trim(), // 🎯 Enviado al backend
       email: email.trim().toLowerCase(),
       password: password,
       age: age,
       phone: phone.trim(),
-      interests: interests
+      nationality: nationality,
+      department: department,
+      personality: personality,
+      style: style,
+      languages: languages,
+      interests: interests,
+      bio: bio.trim()
     };
 
-    console.log("📤 Enviando datos de registro a:", `${API_URL}/api/users/register`);
-    console.log("📦 Datos:", userData);
+    console.log("📤 Enviando datos de registro...", userData);
 
     try {
-      /* ============================
-         🚀 ENVIAR AL BACKEND
-         🔴 RUTA CORRECTA: /api/users/register (NO /api/auth/register)
-      ============================ */
       const response = await fetch(`${API_URL}/api/users/register`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(userData)
       });
 
-      console.log("📥 Status code:", response.status);
-      
       const data = await response.json();
-      console.log("📥 Respuesta del servidor:", data);
 
       if (!response.ok) {
-        // Manejar errores específicos
-        if (data.message) {
-          if (data.message.includes("email") || data.message.includes("Email")) {
-            alert("❌ Este email ya está registrado. Por favor, usa otro email o inicia sesión.");
-          } else if (data.message.includes("contraseña")) {
-            alert(`❌ ${data.message}`);
-          } else {
-            alert(`❌ Error: ${data.message}`);
-          }
-        } else {
-          alert("❌ Error al registrar usuario. Por favor, intenta de nuevo.");
-        }
+        alert(`❌ Error: ${data.message || "No se pudo registrar"}`);
         return;
       }
 
-      // Registro exitoso
       localStorage.removeItem("token");
       localStorage.removeItem("currentUser");
 
       alert("🎉 ¡Registro exitoso! Revisá tu email para verificar la cuenta antes de iniciar sesión.");
       
-      // Redirigir al login después de 2 segundos
       setTimeout(() => {
         window.location.href = "login.html?registered=true";
       }, 2000);
 
     } catch (error) {
       console.error("❌ Error de conexión:", error);
-      alert("❌ No se pudo conectar con el servidor. Por favor, verifica tu conexión a internet e intenta de nuevo.");
+      alert("❌ No se pudo conectar con el servidor.");
     }
   });
 });
