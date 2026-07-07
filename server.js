@@ -46,23 +46,24 @@ app.use(cors({
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ limit: "10mb" }));
 
-// ========================================================
-// 🛣️ REGISTRO DE RUTAS
-// ========================================================
+/* ========================================================
+   🛣️ REGISTRO DE RUTAS 
+   ======================================================== */
 app.use("/api/events", eventsRouter);
 app.use("/api/users", usersRoutes);
-app.use("/api", paymentsRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/public", publicRoutes);
 
-// Enrutadores espejo para tickets: Esto asegura que responda a /api/tickets y /api/admin/tickets sin fallar
-app.use("/api", ticketRoutes); 
-app.use("/api/admin", ticketRoutes);
+// 🎯 CORRECCIÓN CLAVE ENRUTADOR DE TICKETS: 
+// Se asocia directamente al prefijo explícito /api/tickets.
+// Esto permite que el backend entienda perfectamente tanto /api/tickets como /api/tickets/my.
+app.use("/api/tickets", ticketRoutes); 
+app.use("/api", paymentsRoutes);
 
-// =============================
-// 🗄️ Conexión Base de Datos MongoDB
-// =============================
+/* ========================================================
+   🗄️ CONEXIÓN BASE DE DATOS MONGOOSE
+   ======================================================== */
 const PORT = process.env.PORT || 5000;
 
 mongoose
@@ -89,9 +90,9 @@ mongoose
   })
   .catch((err) => console.error("❌ Error crítico en MongoDB:", err));
 
-// =============================
-// 🚀 Inicialización del Servidor
-// =============================
+/* ========================================================
+   🚀 INICIALIZACIÓN GLOBAL DEL SERVIDOR
+   ======================================================== */
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Servidor corriendo de forma global en el puerto ${PORT}`);
 });

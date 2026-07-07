@@ -25,7 +25,6 @@ async function loadMyTickets(token) {
       }
     });
 
-    // Nota: Si tu backend usa el mismo '/api/tickets' y filtra solo por el JWT del usuario, cambia la URL a esa.
     if (!res.ok) throw new Error("No se pudieron cargar tus pases.");
 
     const tickets = await res.json();
@@ -58,7 +57,7 @@ function renderMyTickets(tickets) {
     container.innerHTML = `
       <div class="text-center p-5 text-muted">
         <p class="fs-5">🎟️ Aún no tienes pases adquiridos.</p>
-        <a href="events.html" class="btn btn-primary btn-sm mt-2">Explorar Eventos</a>
+        <a href="explorar.html" class="btn btn-primary btn-sm mt-2">Explorar Eventos</a>
       </div>
     `;
     return;
@@ -87,9 +86,7 @@ function renderMyTickets(tickets) {
     const labelBadge = ticket.isGuest ? "badge bg-warning text-dark" : "badge bg-primary";
     const labelText = ticket.isGuest ? "Para Invitado" : "Pase Personal";
 
-    // 4. Procesar el QR (Si el backend manda una URL de imagen, la usamos, sino mostramos el código)
-    const qrContent = ticket.qrCode || ticket._id;
-
+    // 4. Inyección del diseño HTML estructurado de forma limpia
     container.innerHTML += `
       <div class="user-card border-start border-4 ${isPaid ? 'border-success' : 'border-warning'} mb-3" style="background: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.05); padding: 20px; border-radius: 8px;">
         <div class="user-header d-flex justify-content-between align-items-start flex-wrap gap-2">
@@ -112,16 +109,15 @@ function renderMyTickets(tickets) {
             <p class="mb-0 text-muted small"><strong>🆔 ID Pase:</strong> ${ticket._id.substring(0, 10)}...</p>
           </div>
           
-         // Cambia esto en el renderizado de tu JS de frontend:
-<div class="col-4 text-end">
-  <div class="qr-container" style="display: inline-block; background: #f8f9fa; padding: 5px; border-radius: 4px;">
-    ${
-      ticket.qrImage // 🎯 CAMBIADO: Coincide perfectamente con tu modelo de Mongoose (qrImage)
-        ? `<img src="${ticket.qrImage}" alt="QR" style="width: 75px; height: 75px; object-fit: contain;">`
-        : `<div class="small text-muted text-center" style="width: 75px; font-size: 0.65rem; padding-top: 20px;">🎟️ Presentar ID</div>`
-    }
-  </div>
-</div>
+          <div class="col-4 text-end">
+            <div class="qr-container" style="display: inline-block; background: #f8f9fa; padding: 5px; border-radius: 4px;">
+              ${
+                ticket.qrImage 
+                  ? `<img src="${ticket.qrImage}" alt="QR" style="width: 75px; height: 75px; object-fit: contain;">`
+                  : `<div class="small text-muted text-center" style="width: 75px; font-size: 0.65rem; padding-top: 20px;">🎟️ Presentar ID</div>`
+              }
+            </div>
+          </div>
         </div>
       </div>
     `;
