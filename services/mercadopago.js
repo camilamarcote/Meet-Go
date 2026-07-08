@@ -14,18 +14,23 @@ const mpClient = new MercadoPagoConfig({
 const preferenceClient = new Preference(mpClient);
 
 // =============================
-// 🎟️ PAGO DE EVENTO
+// 🎟️ PAGO DE EVENTO CORREGIDO
 // =============================
-// 🎯 SE AÑADE EL PARÁMETRO QUANTITY (Por defecto 1)
 export async function createPaymentPreference({ event, user, ticketId, quantity = 1 }) {
   try {
     if (!event || !user || !ticketId) {
       throw new Error("Datos insuficientes para crear el pago");
     }
 
-    const price = Number(event.price);
+    // 🎯 CORRECCIÓN CLAVE: Verificar si el usuario que paga califica como suscriptor/admin
+    const esSuscriptorValido = user && (user.isSubscriber === true || user.roles?.includes("admin"));
+    
+    // Si es suscriptor, usa altPrice; si no, usa el precio normal
+    const selectedPrice = esSuscriptorValido ? (event.altPrice ?? 0) : (event.price ?? 0);
+    const price = Number(selectedPrice);
+
     if (isNaN(price) || price <= 0) {
-      throw new Error("Precio inválido");
+      throw new Error("Precio inválido para procesar en Mercado Pago");
     }
 
     const inputQuantity = Number(quantity);
@@ -44,15 +49,14 @@ export async function createPaymentPreference({ event, user, ticketId, quantity 
             title: event.name,
             description: event.description || "Entrada a evento",
             category_id: "tickets",
-            quantity: inputQuantity, // 🎯 AHORA MERCADO PAGO MULTIPLICA EL PRECIO CORRECTAMENTE EN SU PROPIA PANTALLA
+            quantity: inputQuantity, 
             currency_id: "UYU",
-            unit_price: price
+            unit_price: price // 💸 Ahora enviará el precio con descuento si corresponde
           }
         ],
 
         payer: {
           email: user.email,
-          // Ajustamos para que use 'name' (del objeto invitado) o firstName (del usuario real)
           first_name: user.firstName || user.name || "Usuario",
           last_name: user.lastName || "Invitado"
         },
@@ -69,17 +73,14 @@ export async function createPaymentPreference({ event, user, ticketId, quantity 
         metadata: {
           ticketId: ticketId.toString(),
           eventId: event._id.toString(),
-          // 🛠️ CORRECCIÓN AQUÍ:
-          // Si user._id existe (usuario registrado), lo convierte a string.
-          // Si no existe (invitado), usa user.id (que enviamos como "guest") o "guest_user".
           userId: user._id ? user._id.toString() : (user.id ? user.id.toString() : "guest_user"),
           type: "event",
-          quantity: inputQuantity // Guardamos la cantidad también en la metadata por seguridad
+          quantity: inputQuantity 
         }
       }
     });
 
-    console.log(`🧾 Preference creada con éxito para ${inputQuantity} entrada(s). ID:`, preference.id);
+    console.log(`🧾 Preference creada con éxito para suscriptor=${esSuscriptorValido} a $${price} c/u. ID:`, preference.id);
     return preference;
 
   } catch (error) {
@@ -104,7 +105,6 @@ export async function createSubscription({ user }) {
       throw new Error("Usuario inválido para suscripción");
     }
 
-    // Para suscripciones, usualmente sí necesitas un ID real de usuario
     const userId = user._id ? user._id.toString() : user.id;
 
     const subscription = await preapprovalClient.create({
