@@ -1,12 +1,5 @@
-import {
-  MercadoPagoConfig,
-  Preference,
-  PreApproval
-} from "mercadopago";
+import { MercadoPagoConfig, Preference, PreApproval } from "mercadopago";
 
-// =============================
-// 🔐 Configuración base
-// =============================
 const mpClient = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN
 });
@@ -14,20 +7,16 @@ const mpClient = new MercadoPagoConfig({
 const preferenceClient = new Preference(mpClient);
 
 // =============================
-// 🎟️ PAGO DE EVENTO CORREGIDO
+// 🎟️ PAGO DE EVENTO (CON PRECIO DIRECTO)
 // =============================
-export async function createPaymentPreference({ event, user, ticketId, quantity = 1 }) {
+export async function createPaymentPreference({ event, user, ticketId, quantity = 1, finalUnitPrice }) {
   try {
     if (!event || !user || !ticketId) {
       throw new Error("Datos insuficientes para crear el pago");
     }
 
-    // 🎯 CORRECCIÓN CLAVE: Verificar si el usuario que paga califica como suscriptor/admin
-    const esSuscriptorValido = user && (user.isSubscriber === true || user.roles?.includes("admin"));
-    
-    // Si es suscriptor, usa altPrice; si no, usa el precio normal
-    const selectedPrice = esSuscriptorValido ? (event.altPrice ?? 0) : (event.price ?? 0);
-    const price = Number(selectedPrice);
+    // 🎯 Usamos el precio final unitario que ya calculamos de forma segura en el controlador
+    const price = Number(finalUnitPrice);
 
     if (isNaN(price) || price <= 0) {
       throw new Error("Precio inválido para procesar en Mercado Pago");
@@ -51,7 +40,7 @@ export async function createPaymentPreference({ event, user, ticketId, quantity 
             category_id: "tickets",
             quantity: inputQuantity, 
             currency_id: "UYU",
-            unit_price: price // 💸 Ahora enviará el precio con descuento si corresponde
+            unit_price: price // 💸 El precio exacto sin redundancias
           }
         ],
 
@@ -80,53 +69,30 @@ export async function createPaymentPreference({ event, user, ticketId, quantity 
       }
     });
 
-    console.log(`🧾 Preference creada con éxito para suscriptor=${esSuscriptorValido} a $${price} c/u. ID:`, preference.id);
+    console.log(`🧾 [Mercado Pago] Preferencia creada exitosamente a un precio unitario de $${price}`);
     return preference;
 
   } catch (error) {
-    console.error("❌ Error creando pago Mercado Pago");
-    if (error.cause) {
-      console.error("MP Error Details:", JSON.stringify(error.cause, null, 2));
-    } else {
-      console.error(error);
-    }
+    console.error("❌ Error creando pago Mercado Pago", error);
     throw error;
   }
 }
 
-// =============================
-// 🔁 SUSCRIPCIÓN MENSUAL
-// =============================
-const preapprovalClient = new PreApproval(mpClient);
-
+// (El resto de la función createSubscription se mantiene exactamente igual...)
 export async function createSubscription({ user }) {
   try {
-    if (!user || !user.email) {
-      throw new Error("Usuario inválido para suscripción");
-    }
-
+    if (!user || !user.email) throw new Error("Usuario inválido para suscripción");
     const userId = user._id ? user._id.toString() : user.id;
-
-    const subscription = await preapprovalClient.create({
+    return await new PreApproval(mpClient).create({
       body: {
         reason: "Suscripción mensual Meet&Go",
         external_reference: `subscription_${userId}`,
         payer_email: user.email,
-        auto_recurring: {
-          frequency: 1,
-          frequency_type: "months",
-          transaction_amount: 390,
-          currency_id: "UYU"
-        },
+        auto_recurring: { frequency: 1, frequency_type: "months", transaction_amount: 390, currency_id: "UYU" },
         back_url: `${process.env.FRONT_URL}/suscripcion-success`,
         notification_url: `${process.env.BACKEND_URL}/api/subscriptions/webhook`,
         status: "pending"
       }
     });
-
-    return subscription;
-  } catch (error) {
-    console.error("❌ Error suscripción Mercado Pago");
-    throw error;
-  }
+  } catch (error) { console.error("❌ Error suscripción Mercado Pago", error); throw error; }
 }
