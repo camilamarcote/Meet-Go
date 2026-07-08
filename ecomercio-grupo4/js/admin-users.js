@@ -262,55 +262,46 @@ function renderUsers(users) {
 /* ===============================
     🧩 RENDER USUARIOS INVITADOS HÍBRIDO (MongoDB Dinámico)
 =============================== */
-function renderGuests(guests) {
-  const container = document.getElementById("guestsContainer");
-  if (!container) return;
 
-  container.innerHTML = "";
+async function loadGuests(token) {
+  try {
+    // 🎯 Apuntamos directamente al endpoint administrativo que unificamos en el server
+    const resAdmin = await fetch(`${API_URL}/api/admin/tickets`, {
+      headers: { 
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
+      }
+    });
 
-  if (guests.length === 0) {
-    container.innerHTML = `<p class="text-muted p-3">No hay pases individuales ni invitados registrados para los eventos actuales.</p>`;
-    return;
-  }
-
-  guests.forEach(guest => {
-    // 1. Obtener el nombre real del evento poblado
-    const eventName = guest.event?.name || guest.event?.title || "Evento No Especificado";
-    
-    // 2. Extracción híbrida: Si el ticket tiene un objeto "user" (comprador registrado), extrae sus datos.
-    // Si no, recurre a los campos manuales de invitado que cargó el formulario.
-    let guestName = "Invitado anónimo";
-    if (guest.guestName) {
-      guestName = guest.guestName;
-    } else if (guest.user) {
-      guestName = `${guest.user.firstName || ""} ${guest.user.lastName || ""}`.trim() || guest.user.username;
+    if (!resAdmin.ok) {
+      // Intento alternativo en caso de que use la ruta base limpia
+      const resBase = await fetch(`${API_URL}/api/tickets`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!resBase.ok) throw new Error("No se pudo conectar con ningún endpoint de tickets del backend.");
+      
+      const tickets = await resBase.json();
+      procesarYRenderizarInvitados(tickets);
+      return;
     }
 
-    const guestEmail = guest.guestEmail || guest.user?.email || "—";
-    const guestPhone = guest.guestPhone || guest.user?.phone || "—";
-    
-    // Status del ticket traducido al panel de control
-    const ticketStatus = guest.payment?.status === "paid" || guest.payment?.status === "free" ? "✅ Pagado/Liberado" : "⏳ Pendiente";
-    const badgeType = guest.isGuest ? "bg-warning text-dark" : "bg-info text-dark";
-    const userLabel = guest.isGuest ? "Invitado Externo" : "Pase Individual";
+    const tickets = await resAdmin.json();
+    procesarYRenderizarInvitados(tickets);
 
-    container.innerHTML += `
-      <div class="user-card border-start border-4 border-info">
-        <div class="user-header">
-          <h3>${guestName} <span class="fs-6 text-muted">(${userLabel})</span></h3>
-          <div class="badges">
-            <span class="badge ${badgeType}">🎟️ ${guest.accessType || "Pase"}</span>
-            <span class="badge bg-secondary text-white">${ticketStatus}</span>
-          </div>
+  } catch (error) {
+    console.error("❌ Error cargando invitados reales:", error);
+    const guestContainer = document.getElementById("guestsContainer");
+    if (guestContainer) {
+      guestContainer.innerHTML = `
+        <div class="alert alert-danger" style="padding: 15px; background-color: #f8d7da; color: #721c24; border-radius: 6px; font-weight: 500;">
+          <strong>⚠️ Error de conexión backend:</strong> No se pudieron traer los invitados reales de MongoDB.<br>
+          <span style="font-size: 0.9rem; font-weight: normal; opacity: 0.8;">
+            La ruta administrativa se sincronizó. Si el error persiste, asegúrate de refrescar la caché del navegador.
+          </span>
         </div>
-        
-        <p class="mb-2"><strong>🎉 Evento de Destino:</strong> <span class="text-primary fw-bold">${eventName}</span></p>
-        <p class="mb-1"><strong>📧 Email:</strong> ${guestEmail}</p>
-        <p class="mb-1"><strong>📱 Celular:</strong> ${guestPhone}</p>
-        <p class="mb-0 text-muted small"><strong>🆔 Código Pase:</strong> ${guest.qrCode ? guest.qrCode.substring(0, 23) : "—"}...</p>
-      </div>
-    `;
-  });
+      `;
+    }
+  }
 }
 
 /* ===============================
