@@ -7,16 +7,16 @@ const mpClient = new MercadoPagoConfig({
 const preferenceClient = new Preference(mpClient);
 
 // =============================
-// 🎟️ PAGO DE EVENTO (CON PRECIO DIRECTO)
+// 🎟️ PAGO DE EVENTO
 // =============================
-export async function createPaymentPreference({ event, user, ticketId, quantity = 1, finalUnitPrice }) {
+export async function createPaymentPreference({ event, user, ticketId, quantity = 1, targetPrice }) {
   try {
     if (!event || !user || !ticketId) {
       throw new Error("Datos insuficientes para crear el pago");
     }
 
-    // 🎯 Usamos el precio final unitario que ya calculamos de forma segura en el controlador
-    const price = Number(finalUnitPrice);
+    // Asignamos directamente el precio evaluado por el controlador (price o altPrice)
+    const price = Number(targetPrice);
 
     if (isNaN(price) || price <= 0) {
       throw new Error("Precio inválido para procesar en Mercado Pago");
@@ -40,7 +40,7 @@ export async function createPaymentPreference({ event, user, ticketId, quantity 
             category_id: "tickets",
             quantity: inputQuantity, 
             currency_id: "UYU",
-            unit_price: price // 💸 El precio exacto sin redundancias
+            unit_price: price // 💸 Aquí va el precio del camino correspondiente
           }
         ],
 
@@ -69,7 +69,7 @@ export async function createPaymentPreference({ event, user, ticketId, quantity 
       }
     });
 
-    console.log(`🧾 [Mercado Pago] Preferencia creada exitosamente a un precio unitario de $${price}`);
+    console.log(`🧾 Preferencia generada con éxito en Mercado Pago. Valor unitario enviado: $${price}`);
     return preference;
 
   } catch (error) {
@@ -78,21 +78,39 @@ export async function createPaymentPreference({ event, user, ticketId, quantity 
   }
 }
 
-// (El resto de la función createSubscription se mantiene exactamente igual...)
+// =============================
+// 🔁 SUSCRIPCIÓN MENSUAL
+// =============================
+const preapprovalClient = new PreApproval(mpClient);
+
 export async function createSubscription({ user }) {
   try {
-    if (!user || !user.email) throw new Error("Usuario inválido para suscripción");
+    if (!user || !user.email) {
+      throw new Error("Usuario inválido para suscripción");
+    }
+
     const userId = user._id ? user._id.toString() : user.id;
-    return await new PreApproval(mpClient).create({
+
+    const subscription = await preapprovalClient.create({
       body: {
         reason: "Suscripción mensual Meet&Go",
         external_reference: `subscription_${userId}`,
         payer_email: user.email,
-        auto_recurring: { frequency: 1, frequency_type: "months", transaction_amount: 390, currency_id: "UYU" },
+        auto_recurring: {
+          frequency: 1,
+          frequency_type: "months",
+          transaction_amount: 390,
+          currency_id: "UYU"
+        },
         back_url: `${process.env.FRONT_URL}/suscripcion-success`,
         notification_url: `${process.env.BACKEND_URL}/api/subscriptions/webhook`,
         status: "pending"
       }
     });
-  } catch (error) { console.error("❌ Error suscripción Mercado Pago", error); throw error; }
+
+    return subscription;
+  } catch (error) {
+    console.error("❌ Error suscripción Mercado Pago", error);
+    throw error;
+  }
 }
