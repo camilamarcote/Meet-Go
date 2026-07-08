@@ -87,7 +87,6 @@ function injectGuestModal() {
             return;
         }
 
-        // Quitar el foco del botón antes de cerrar el modal para evitar errores ARIA en consola
         document.getElementById("submitModalBtn").blur();
 
         const modalElement = document.getElementById("guestModal");
@@ -128,7 +127,6 @@ window.payEvent = function(eventId, btnElement) {
         noticeQty.textContent = `Máx: ${maxAvailableQuantity}`;
     }
 
-    // Cambiar dinámicamente el texto del botón de confirmación en el modal
     const submitModalBtn = document.getElementById("submitModalBtn");
     if (submitModalBtn) {
         if (isSubscriber && currentEventAltPrice === 0) {
@@ -162,9 +160,7 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
 
         console.log(`📡 Registrando entrada en base de datos...`);
 
-        // Enviamos la carga útil estructurada al backend incorporando el eventId
         const ticketPayload = {
-            event: eventId, // 🎯 CORRECCIÓN: El backend mapea el ID del evento aquí ahora
             guestEmail: guestData.email,
             guestName: guestData.fullName,
             guestPhone: guestData.phone,
@@ -174,8 +170,8 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
             chosenPriceType: isSubscriber ? "altPrice" : "price"
         };
 
-        // 🎯 URL CORREGIDA: Apuntamos de manera directa al endpoint global /api/tickets
-        const resTicket = await fetch(`${API_URL}/api/tickets`, {
+        // 🎯 URL ADAPTADA AL BACKEND: Hacemos match perfecto con la ruta combinada de Express
+        const resTicket = await fetch(`${API_URL}/api/tickets/events/${eventId}/tickets`, {
             method: "POST",
             headers: headers,
             body: JSON.stringify(ticketPayload)
@@ -192,7 +188,6 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
             throw new Error(ticketData.message || "Error al generar los tickets");
         }
 
-        // Si el precio es 0 para el suscriptor, detenemos el flujo aquí (No va a Mercado Pago)
         if (isSubscriber && currentEventAltPrice === 0) {
             if (btnElement) {
                 btnElement.innerText = "Cupos Reservados 🔒";
@@ -208,7 +203,6 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
             return; 
         }
 
-        // 2. Si NO es gratuita, procedemos a iniciar pasarela de pagos
         const targetTickets = ticketData.tickets || [ticketData.ticket];
         if (!targetTickets || targetTickets.length === 0) {
             throw new Error("No se recibieron datos de tickets válidos.");
@@ -259,7 +253,7 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
 
 /* =============================
     📄 CARGAR INFO DEL EVENTO
-============================= */
+============================ */
 async function loadEventInfo() {
     if (!eventId) {
         eventDetails.innerHTML = "<p class='text-center'>Evento no válido</p>";
