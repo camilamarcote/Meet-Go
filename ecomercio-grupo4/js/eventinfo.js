@@ -87,6 +87,9 @@ function injectGuestModal() {
             return;
         }
 
+        // Quitar el foco del botón antes de cerrar el modal para evitar errores ARIA en consola
+        document.getElementById("submitModalBtn").blur();
+
         const modalElement = document.getElementById("guestModal");
         const modalInstance = bootstrap.Modal.getInstance(modalElement);
         if (modalInstance) modalInstance.hide();
@@ -159,8 +162,9 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
 
         console.log(`📡 Registrando entrada en base de datos...`);
 
-        // Enviamos la carga útil estructurada al backend
+        // Enviamos la carga útil estructurada al backend incorporando el eventId
         const ticketPayload = {
+            event: eventId, // 🎯 CORRECCIÓN: El backend mapea el ID del evento aquí ahora
             guestEmail: guestData.email,
             guestName: guestData.fullName,
             guestPhone: guestData.phone,
@@ -170,8 +174,8 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
             chosenPriceType: isSubscriber ? "altPrice" : "price"
         };
 
-        // 1. Crear el ticket en MongoDB
-        const resTicket = await fetch(`${API_URL}/api/events/${eventId}/tickets`, {
+        // 🎯 URL CORREGIDA: Apuntamos de manera directa al endpoint global /api/tickets
+        const resTicket = await fetch(`${API_URL}/api/tickets`, {
             method: "POST",
             headers: headers,
             body: JSON.stringify(ticketPayload)
@@ -201,7 +205,7 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
             setTimeout(() => {
                 window.location.reload();
             }, 800);
-            return; // Termina la ejecución de manera limpia
+            return; 
         }
 
         // 2. Si NO es gratuita, procedemos a iniciar pasarela de pagos
@@ -291,7 +295,7 @@ async function loadEventInfo() {
         if (hasLimit) {
             maxAvailableQuantity = Math.min(10, remainingCapacity);
         } else {
-            maxAvailableQuantity = 2;
+            maxAvailableQuantity = 10;
         }
 
         let capacityBadgeHtml = "";
