@@ -1,6 +1,7 @@
 import express from "express";
 import Event from "../models/event.js";
 import EventTicket from "../models/eventTicket.js";
+import User from "../models/user.js"; // 🎯 Importamos el modelo User para chequear el estado real en DB
 import { protect } from "../middlewares/auth.js";
 import crypto from "crypto";
 
@@ -14,7 +15,6 @@ router.post("/events/:eventId/tickets", protect, async (req, res) => {
     const { eventId } = req.params;
     const { guestEmail, guestName, guestPhone, isGuest, quantity } = req.body;
 
-    // Capturamos la cantidad enviada por el front (por defecto 1 si no viene)
     const cantidadAComprar = parseInt(quantity) || 1;
 
     const evento = await Event.findById(eventId);
@@ -30,23 +30,33 @@ router.post("/events/:eventId/tickets", protect, async (req, res) => {
       }
     }
 
-    // 🛒 ID DE CARRITO ÚNICO: Agrupa todos los pases pertenecientes a este lote de compra
+    // 🕵️‍♂️ RECOGER EL ESTADO ACTUALIZADO DEL USUARIO DESDE MONGO
+    // Esto previene fallos si el token JWT del frontend quedó viejo o sin actualizar
+    let esSuscriptorValido = false;
+    if (req.user) {
+      const usuarioEnDb = await User.findById(req.user._id);
+      esSuscriptorValido = usuarioEnDb && (usuarioEnDb.isSubscriber === true || usuarioEnDb.roles?.includes("admin"));
+    }
+
+    // 🎯 ASIGNACIÓN DEFINITIVA DEL PRECIO
+    const precioFinal = esSuscriptorValido ? (evento.altPrice ?? 0) : (evento.price ?? 0);
+
+    // 🛒 ID DE CARRITO ÚNICO
     const idLoteCompra = crypto.randomBytes(12).toString("hex");
     const ticketsCreados = [];
 
-    // 🔄 BUCLE: Creamos pases individuales con QRs distintos para evitar el error E11000 de duplicados
+    // 🔄 BUCLE: Creación de pases individuales con QRs distintos
     for (let i = 0; i < cantidadAComprar; i++) {
       
-      // Cada ticket tiene un código QR único e irrepetible 🎉
       const qrUnicoIndividual = crypto.randomBytes(16).toString("hex");
 
       const ticketData = {
         event: eventId,
-        qrCode: qrUnicoIndividual,  // 🎯 ÚNICO: Soluciona el error MongoServerError E11000
-        cartId: idLoteCompra,        // 🛒 NUEVO: Los vincula bajo el mismo lote de pago
+        qrCode: qrUnicoIndividual,  
+        cartId: idLoteCompra,        
         payment: {
           status: "pending",
-          amount: evento.price || 0
+          amount: precioFinal // 💸 Aplicado dinámicamente según la consulta en vivo
         }
       };
 
@@ -71,9 +81,8 @@ router.post("/events/:eventId/tickets", protect, async (req, res) => {
       $inc: { ticketsSold: cantidadAComprar }
     });
 
-    console.log(`✅ [BACKEND] Creados con éxito ${cantidadAComprar} tickets independientes en el lote: ${idLoteCompra}`);
+    console.log(`✅ [BACKEND] Creados con éxito ${cantidadAComprar} tickets para suscriptor=${esSuscriptorValido} con precio $${precioFinal} en lote: ${idLoteCompra}`);
 
-    // Devolvemos el array de tickets creados al frontend
     return res.status(201).json({ tickets: ticketsCreados });
 
   } catch (error) {
@@ -81,17 +90,16 @@ router.post("/events/:eventId/tickets", protect, async (req, res) => {
     return res.status(500).json({ message: "Error interno al procesar la reserva de pases" });
   }
 });
+
 // ========================================================
 // 🟢 OBTENER TODOS LOS TICKETS (Para el Panel de Administración)
 // ========================================================
 router.get("/tickets", protect, async (req, res) => {
   try {
-    // Verificación de seguridad: solo administradores u organizadores pueden ver el listado global
     if (!req.user.isOrganizer && !req.user.roles?.includes("admin")) {
       return res.status(403).json({ message: "Acceso denegado. No tienes permisos." });
     }
 
-    // Buscamos todos los tickets en MongoDB y traemos la información limpia del evento y del usuario si existe
     const tickets = await EventTicket.find()
       .populate("event", "name title price altPrice date time") 
       .populate("user", "firstName lastName username email phone");
@@ -108,9 +116,8 @@ router.get("/tickets", protect, async (req, res) => {
 // ========================================================
 router.get("/my", protect, async (req, res) => {
   try {
-    // Buscamos los tickets donde coincida el campo 'user' con el del token actual
     const tickets = await EventTicket.find({ user: req.user._id })
-      .populate("event", "name title price date time") // Trae los datos clave del evento
+      .populate("event", "name title price date time") 
       .populate("user", "firstName lastName username email");
 
     return res.json(tickets);
@@ -119,7 +126,5 @@ router.get("/my", protect, async (req, res) => {
     return res.status(500).json({ message: "Error interno al recuperar tus pases." });
   }
 });
-
-
 
 export default router;
