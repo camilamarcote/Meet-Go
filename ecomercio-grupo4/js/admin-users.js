@@ -93,23 +93,16 @@ async function loadUsers(token) {
 =============================== */
 async function loadGuests(token) {
   try {
-    // 🎯 Conectamos al enrutador general que acabamos de agregar en el backend
+    // 🎯 Apuntamos directamente al enrutador unificado del backend corregido: /api/tickets
     const res = await fetch(`${API_URL}/api/tickets`, {
-      headers: {
-        Authorization: `Bearer ${token}`
+      headers: { 
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
       }
     });
 
     if (!res.ok) {
-      // Intento alternativo por si las políticas de roles bloquean la raíz
-      const resAdmin = await fetch(`${API_URL}/api/admin/tickets`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!resAdmin.ok) throw new Error("No se pudo conectar con ningún endpoint de tickets del backend.");
-      
-      const tickets = await resAdmin.json();
-      procesarYRenderizarInvitados(tickets);
-      return;
+      throw new Error("No se pudo obtener la respuesta correcta del servidor de tickets.");
     }
 
     const tickets = await res.json();
@@ -123,7 +116,7 @@ async function loadGuests(token) {
         <div class="alert alert-danger" style="padding: 15px; background-color: #f8d7da; color: #721c24; border-radius: 6px; font-weight: 500;">
           <strong>⚠️ Error de conexión backend:</strong> No se pudieron traer los invitados reales de MongoDB.<br>
           <span style="font-size: 0.9rem; font-weight: normal; opacity: 0.8;">
-            Verifica que los cambios en tu archivo routes/tickets.js y server.js estén subidos a tu hosting de producción.
+            Asegúrate de que los cambios del server.js estén desplegados en el hosting de producción.
           </span>
         </div>
       `;
@@ -133,7 +126,7 @@ async function loadGuests(token) {
 
 // Función auxiliar para filtrar y mandar a pintar
 function procesarYRenderizarInvitados(tickets) {
-  // Filtramos pases de invitados externos, pases individuales sueltos (single-event) o marcados explícitamente como guest
+  // Filtramos pases de invitados externos, pases individuales sueltos o marcados explícitamente como guest
   allGuests = tickets.filter(ticket => 
     ticket.guestEmail || 
     ticket.isGuest === true || 
@@ -260,48 +253,53 @@ function renderUsers(users) {
 }
 
 /* ===============================
-    🧩 RENDER USUARIOS INVITADOS HÍBRIDO (MongoDB Dinámico)
+    🧩 RENDER USUARIOS INVITADOS HÍBRIDO 
 =============================== */
+function renderGuests(guests) {
+  const container = document.getElementById("guestsContainer");
+  if (!container) return;
 
-async function loadGuests(token) {
-  try {
-    // 🎯 Apuntamos directamente al endpoint administrativo que unificamos en el server
-    const resAdmin = await fetch(`${API_URL}/api/admin/tickets`, {
-      headers: { 
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json"
-      }
-    });
+  container.innerHTML = "";
 
-    if (!resAdmin.ok) {
-      // Intento alternativo en caso de que use la ruta base limpia
-      const resBase = await fetch(`${API_URL}/api/tickets`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!resBase.ok) throw new Error("No se pudo conectar con ningún endpoint de tickets del backend.");
-      
-      const tickets = await resBase.json();
-      procesarYRenderizarInvitados(tickets);
-      return;
-    }
-
-    const tickets = await resAdmin.json();
-    procesarYRenderizarInvitados(tickets);
-
-  } catch (error) {
-    console.error("❌ Error cargando invitados reales:", error);
-    const guestContainer = document.getElementById("guestsContainer");
-    if (guestContainer) {
-      guestContainer.innerHTML = `
-        <div class="alert alert-danger" style="padding: 15px; background-color: #f8d7da; color: #721c24; border-radius: 6px; font-weight: 500;">
-          <strong>⚠️ Error de conexión backend:</strong> No se pudieron traer los invitados reales de MongoDB.<br>
-          <span style="font-size: 0.9rem; font-weight: normal; opacity: 0.8;">
-            La ruta administrativa se sincronizó. Si el error persiste, asegúrate de refrescar la caché del navegador.
-          </span>
-        </div>
-      `;
-    }
+  if (guests.length === 0) {
+    container.innerHTML = `<p class="text-muted p-3">No hay pases individuales ni invitados registrados para los eventos actuales.</p>`;
+    return;
   }
+
+  guests.forEach(guest => {
+    const eventName = guest.event?.name || guest.event?.title || "Evento No Especificado";
+    
+    let guestName = "Invitado anónimo";
+    if (guest.guestName) {
+      guestName = guest.guestName;
+    } else if (guest.user) {
+      guestName = `${guest.user.firstName || ""} ${guest.user.lastName || ""}`.trim() || guest.user.username;
+    }
+
+    const guestEmail = guest.guestEmail || guest.user?.email || "—";
+    const guestPhone = guest.guestPhone || guest.user?.phone || "—";
+    
+    const ticketStatus = guest.payment?.status === "paid" || guest.payment?.status === "free" ? "✅ Pagado/Liberado" : "⏳ Pendiente";
+    const badgeType = guest.isGuest ? "bg-warning text-dark" : "bg-info text-dark";
+    const userLabel = guest.isGuest ? "Invitado Externo" : "Pase Individual";
+
+    container.innerHTML += `
+      <div class="user-card border-start border-4 border-info">
+        <div class="user-header">
+          <h3>${guestName} <span class="fs-6 text-muted">(${userLabel})</span></h3>
+          <div class="badges">
+            <span class="badge ${badgeType}">🎟️ ${guest.accessType || "Pase"}</span>
+            <span class="badge bg-secondary text-white">${ticketStatus}</span>
+          </div>
+        </div>
+        
+        <p class="mb-2"><strong>🎉 Evento de Destino:</strong> <span class="text-primary fw-bold">${eventName}</span></p>
+        <p class="mb-1"><strong>📧 Email:</strong> ${guestEmail}</p>
+        <p class="mb-1"><strong>📱 Celular:</strong> ${guestPhone}</p>
+        <p class="mb-0 text-muted small"><strong>🆔 Código Pase:</strong> ${guest.qrCode ? guest.qrCode.substring(0, 23) : "—"}...</p>
+      </div>
+    `;
+  });
 }
 
 /* ===============================
