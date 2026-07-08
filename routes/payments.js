@@ -1,6 +1,7 @@
 import express from "express";
 import EventTicket from "../models/eventTicket.js";
 import Event from "../models/event.js"; 
+import User from "../models/user.js"; // Importado para seguridad en la metadata
 import { createPaymentPreference } from "../services/mercadopago.js";
 import { Payment, MercadoPagoConfig } from "mercadopago";
 import { sendTicketMail } from "../utils/mailer.js"; 
@@ -35,25 +36,25 @@ router.post("/payments/create/:ticketId", async (req, res) => {
       return res.status(409).json({ message: "Ticket ya pagado" });
     }
 
-    // 🎯 IDENTIFICAR GRUPO: Ahora buscamos todos los tickets asociados al mismo carrito/lote (cartId)
+    // 🎯 IDENTIFICAR GRUPO: Buscamos todos los tickets asociados al mismo carrito/lote (cartId)
     const ticketsDelGrupo = await EventTicket.find({
       event: ticketMaestro.event?._id,
-      cartId: ticketMaestro.cartId // 👈 Cambiado de qrCode a cartId
+      cartId: ticketMaestro.cartId 
     }).populate("user").populate("event");
 
     const cantidadEntradas = ticketsDelGrupo.length || 1;
     console.log(`📦 Se detectó un grupo de ${cantidadEntradas} ticket(s) asociados a esta transacción.`);
 
-    const price = ticketMaestro.event?.price;
-    const isGratis = price === 0 || price === "0" || !price || Number(price) <= 0;
+    // 🎯 CORRECCIÓN FUNDAMENTAL: Usamos el precio precalculado en el ticket, NO el genérico del evento
+    const price = Number(ticketMaestro.payment?.amount ?? ticketMaestro.event?.price ?? 0);
+    const isGratis = price <= 0;
 
-    // 🌟 VALIDACIÓN PARA EVENTOS GRATUITOS (PROCESAMIENTO EN LOTE)
+    // 🌟 VALIDACIÓN PARA EVENTOS GRATUITOS / O SUSCRIPTORES CON PRECIO $0
     if (isGratis) {
-      console.log(`🎁 [NUEVO FLUJO - GRATIS] Validado como GRATUITO. Procesando ${cantidadEntradas} entrada(s).`);
+      console.log(`🎁 [NUEVO FLUJO - GRATIS] Validado como GRATUITO ($${price}). Procesando ${cantidadEntradas} entrada(s).`);
 
       const transactionIdComun = `FREE-${Date.now()}`;
 
-      // Recorremos cada ticket del lote para activarlo y enviar su correo
       for (const t of ticketsDelGrupo) {
         t.payment = {
           status: "paid",
@@ -88,22 +89,35 @@ router.post("/payments/create/:ticketId", async (req, res) => {
       });
     }
 
-    // 🔥 FLUJO EXCLUSIVO PARA EVENTOS DE PAGO
-    console.log(`💰 [NUEVO FLUJO - DE PAGO] Precio unitario: ${price}. Multiplicando x ${cantidadEntradas}...`);
+    // 🔥 FLUJO EXCLUSIVO PARA EVENTOS DE PAGO (YA SEA CON PRECIO SUSCRIPTOR O GENERAL)
+    console.log(`💰 [NUEVO FLUJO - DE PAGO] Precio asignado definitivo: $${price}. Multiplicando x ${cantidadEntradas}...`);
+
+    // Inyectamos de forma temporal el precio real asignado al evento para que createPaymentPreference lo use sin cambiar la firma de la función
+    const eventoConPrecioAjustado = ticketMaestro.event.toObject();
+    eventoConPrecioAjustado.price = price; 
+
+    // Verificamos si el usuario de la orden tiene privilegios para guardarlo en payerData
+    let userDb = null;
+    if (ticketMaestro.user?._id) {
+      userDb = await User.findById(ticketMaestro.user._id);
+    }
 
     const payerData = ticketMaestro.guestEmail ? {
       name: ticketMaestro.guestName || "Invitado",
       email: ticketMaestro.guestEmail,
-      id: "guest"
+      id: "guest",
+      isSubscriber: false
     } : {
       name: ticketMaestro.user?.name || "Usuario Meet&Go",
       email: ticketMaestro.user?.email,
-      id: ticketMaestro.user?._id
+      id: ticketMaestro.user?._id,
+      isSubscriber: userDb?.isSubscriber === true || userDb?.roles?.includes("admin"),
+      roles: userDb?.roles || []
     };
 
-    // Pasamos la cantidad total encontrada al generador de preferencias de MP
+    // Pasamos el evento modificado con el precio dinámico ($500 de suscriptor en tu prueba)
     const preference = await createPaymentPreference({
-      event: ticketMaestro.event,
+      event: eventoConPrecioAjustado,
       user: payerData,
       ticketId: ticketMaestro._id,
       quantity: cantidadEntradas 
@@ -158,15 +172,15 @@ router.post("/payments/webhook", async (req, res) => {
         return res.sendStatus(200);
       }
 
-      // 🎯 Traemos todos los tickets que pertenecen al lote usando cartId
+      // Traemos todos los tickets del lote usando el cartId
       const ticketsDelGrupo = await EventTicket.find({
         event: ticketMaestro.event,
-        cartId: ticketMaestro.cartId // 👈 Cambiado de qrCode a cartId
+        cartId: ticketMaestro.cartId 
       }).populate("user").populate("event");
 
       const cantidadEntradas = ticketsDelGrupo.length || 1;
 
-      // Procesamos cada ticket aprobado del lote para guardar estados y enviar emails individuales
+      // El monto cobrado individualmente será el que se guardó al crear el ticket original
       for (const t of ticketsDelGrupo) {
         const recipientEmail = t.guestEmail || t.user?.email;
         const userName = t.user?.name || t.guestName || "Invitado";
@@ -187,7 +201,7 @@ router.post("/payments/webhook", async (req, res) => {
 
         t.payment = {
           status: "paid",
-          amount: t.event?.price || 0, 
+          amount: t.payment?.amount ?? t.event?.price || 0, // 🎯 Guarda el precio real que se le cobró
           transactionId: payment.id,
           paidAt: new Date()
         };
