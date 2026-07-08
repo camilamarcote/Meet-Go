@@ -38,14 +38,15 @@ router.post("/payments/create/:ticketId", async (req, res) => {
     // 🎯 IDENTIFICAR GRUPO: Ahora buscamos todos los tickets asociados al mismo carrito/lote (cartId)
     const ticketsDelGrupo = await EventTicket.find({
       event: ticketMaestro.event?._id,
-      cartId: ticketMaestro.cartId // 👈 Cambiado de qrCode a cartId
+      cartId: ticketMaestro.cartId
     }).populate("user").populate("event");
 
     const cantidadEntradas = ticketsDelGrupo.length || 1;
     console.log(`📦 Se detectó un grupo de ${cantidadEntradas} ticket(s) asociados a esta transacción.`);
 
-    const price = ticketMaestro.event?.price;
-    const isGratis = price === 0 || price === "0" || !price || Number(price) <= 0;
+    // 🎯 Obtenemos el precio real asignado individualmente al ticket desde la base de datos
+    const precioAsignado = ticketMaestro.payment?.amount ?? ticketMaestro.event?.price;
+    const isGratis = precioAsignado === 0 || precioAsignado === "0" || !precioAsignado || Number(precioAsignado) <= 0;
 
     // 🌟 VALIDACIÓN PARA EVENTOS GRATUITOS (PROCESAMIENTO EN LOTE)
     if (isGratis) {
@@ -89,7 +90,7 @@ router.post("/payments/create/:ticketId", async (req, res) => {
     }
 
     // 🔥 FLUJO EXCLUSIVO PARA EVENTOS DE PAGO
-    console.log(`💰 [NUEVO FLUJO - DE PAGO] Precio unitario: ${price}. Multiplicando x ${cantidadEntradas}...`);
+    console.log(`💰 [NUEVO FLUJO - DE PAGO] Precio unitario aplicado: ${precioAsignado}. Multiplicando x ${cantidadEntradas}...`);
 
     const payerData = ticketMaestro.guestEmail ? {
       name: ticketMaestro.guestName || "Invitado",
@@ -101,12 +102,13 @@ router.post("/payments/create/:ticketId", async (req, res) => {
       id: ticketMaestro.user?._id
     };
 
-    // Pasamos la cantidad total encontrada al generador de preferencias de MP
+    // Pasamos la cantidad total encontrada y enviamos el precio asignado al generador de preferencias
     const preference = await createPaymentPreference({
       event: ticketMaestro.event,
       user: payerData,
       ticketId: ticketMaestro._id,
-      quantity: cantidadEntradas 
+      quantity: cantidadEntradas,
+      overridePrice: precioAsignado // 👈 ENVIAMOS EL PRECIO REAL (Puede ser price o altPrice)
     });
 
     return res.json({ 
@@ -161,7 +163,7 @@ router.post("/payments/webhook", async (req, res) => {
       // 🎯 Traemos todos los tickets que pertenecen al lote usando cartId
       const ticketsDelGrupo = await EventTicket.find({
         event: ticketMaestro.event,
-        cartId: ticketMaestro.cartId // 👈 Cambiado de qrCode a cartId
+        cartId: ticketMaestro.cartId
       }).populate("user").populate("event");
 
       const cantidadEntradas = ticketsDelGrupo.length || 1;
@@ -185,9 +187,12 @@ router.post("/payments/webhook", async (req, res) => {
           }
         }
 
+        // 🎯 En lugar de reescribir con t.event.price de forma estática, respetamos el amount dinámico que ya poseía el ticket
+        const precioTicketEfectivo = t.payment?.amount > 0 ? t.payment.amount : (t.event?.price || 0);
+
         t.payment = {
           status: "paid",
-          amount: t.event?.price || 0, 
+          amount: precioTicketEfectivo, 
           transactionId: payment.id,
           paidAt: new Date()
         };
