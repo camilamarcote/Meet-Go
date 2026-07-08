@@ -93,8 +93,9 @@ async function loadUsers(token) {
 =============================== */
 async function loadGuests(token) {
   try {
-    // 🎯 Apuntamos directamente al enrutador unificado del backend corregido: /api/tickets
-    const res = await fetch(`${API_URL}/api/tickets`, {
+    // 🎯 URL CORREGIDA: Apunta al endpoint combinado de Express (/api/tickets/tickets)
+    // Esto hace match exacto con el prefijo de tu server.js y el enrutador de tickets.js
+    const res = await fetch(`${API_URL}/api/tickets/tickets`, {
       headers: { 
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json"
@@ -116,7 +117,7 @@ async function loadGuests(token) {
         <div class="alert alert-danger" style="padding: 15px; background-color: #f8d7da; color: #721c24; border-radius: 6px; font-weight: 500;">
           <strong>⚠️ Error de conexión backend:</strong> No se pudieron traer los invitados reales de MongoDB.<br>
           <span style="font-size: 0.9rem; font-weight: normal; opacity: 0.8;">
-            Asegúrate de que los cambios del server.js estén desplegados en el hosting de producción.
+            Verifica que la API responda correctamente en /api/tickets/tickets.
           </span>
         </div>
       `;
@@ -126,6 +127,8 @@ async function loadGuests(token) {
 
 // Función auxiliar para filtrar y mandar a pintar
 function procesarYRenderizarInvitados(tickets) {
+  if (!Array.isArray(tickets)) return;
+  
   // Filtramos pases de invitados externos, pases individuales sueltos o marcados explícitamente como guest
   allGuests = tickets.filter(ticket => 
     ticket.guestEmail || 
