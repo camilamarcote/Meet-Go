@@ -34,27 +34,39 @@ p strong, b {
   height: auto;
 }
 
-.subtitulo-bienvenida,
-h1,
-h2 {
-  font-family: "DM Sans", sans-serif;
-}
+/* =======================
+   TÍTULOS
+======================= */
 
+h1,
+h2,
+h3,
 .subtitulo-bienvenida {
-  font-weight: 400;
-  font-size: 2rem;
-  text-align: center;
-  letter-spacing: 0.2px;
+    font-family: "DM Sans", sans-serif;
+    color: #111111;
+    letter-spacing: -0.04em;
+    line-height: 1.15;
 }
 
 h1 {
-  font-weight: 700;
+    font-size: 3rem;
+    font-weight: 500;
 }
 
 h2 {
-  font-weight: 600;
+    font-size: 2.2rem;
+    font-weight: 500;
 }
 
+h3 {
+    font-size: 1.45rem;
+    font-weight: 500;
+}
+
+.subtitulo-bienvenida {
+    font-size: 2rem;
+    font-weight: 400;
+}
 
 .album {
   padding-top: 1rem;   /* antes era 3rem */
@@ -346,13 +358,11 @@ a.custom-card:hover {
 
 /* Título */
 .custom-card h3 {
- .custom-card h3 {
-  font-family: "DM Sans", sans-serif;
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 0;
-}
+    font-family: "DM Sans", sans-serif;
+    font-size: 1.35rem;
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    color: #111;
 }
 
 /* Texto */
@@ -460,12 +470,9 @@ a.custom-card:hover {
 
 
 .partners-title {
-  color: #ffffff;
-  text-align: center;
-  font-family: sans-serif;
-  font-weight: 400;
-  margin-bottom: 2rem;
-  letter-spacing: 0.5px;
+    font-family: "DM Sans", sans-serif;
+    font-weight: 500;
+    letter-spacing: -0.03em;
 }
 
 /* Contenedor de logos */
@@ -558,4 +565,22 @@ i[class*=" fa-"] {
 .event-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+.display-1,
+.display-2,
+.display-3,
+.display-4,
+.display-5,
+.display-6,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: "DM Sans", sans-serif !important;
+    font-weight: 500 !important;
+    letter-spacing: -0.04em;
+    line-height: 1.15;
 }
