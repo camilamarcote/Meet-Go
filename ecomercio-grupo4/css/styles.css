@@ -567,3 +567,43 @@ i[class*=" fa-"] {
   box-shadow: 0 8px 20px rgba(0,0,0,0.15);
 }
 
+/* Fondo general */
+html,
+body {
+    background: #ffffff !important;
+}
+
+/* Contenido principal */
+main {
+    background: #ffffff;
+}
+
+/* Contenedores */
+.container,
+.container-fluid {
+    background: transparent;
+}
+
+/* Sección de eventos */
+section {
+    background: #ffffff;
+}
+
+/* Carrusel */
+#eventsCarousel,
+.carousel-inner,
+.carousel-item {
+    background: #ffffff;
+}
+
+.subtitulo-bienvenida {
+    width: 100%;
+    display: block;
+    text-align: center !important;
+    margin: 1rem auto 3rem;
+    font-family: "DM Sans", sans-serif;
+    font-size: 2rem;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    color: #111;
+}
