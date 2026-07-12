@@ -1,41 +1,25 @@
 /* ======================= */
 /* Estilos generales INDEX */
 /* ======================= */
-
 body {
-  background-color: rgb(249, 249, 249);
-  color: rgb(6, 6, 6);
+  background-color: #ffffff;
+  color: #060606;
 }
-/* Título Principal - Sofisticado, elegante y cálido */
-h1 {
-    font-family: "Ogg", "Playfair Display", serif;
-    font-weight: 700;
-    font-size: 42px;
-    line-height: 1.2em;
-    letter-spacing: -0.01em; /* Un poco más abierto que el párrafo para que respire */
-    color: #100f0a; /* Negro suave de Happn */
-    margin-bottom: 20px;
-}
-
-/* Título Secundario - Mantiene el estilo refinado */
-h2 {
-    font-family: "Ogg", "Playfair Display", serif;
-    font-weight: 600;
-    font-size: 30px;
-    line-height: 1.25em;
-    color: #1c1a12;
-    margin-bottom: 16px;
-}
-
-/* Tus párrafos - Modernos, limpios y muy legibles */
+/* Aplicado a toda la etiqueta de párrafo */
 p {
     font-family: "La Nord Regular", "Inter", sans-serif;
     font-weight: 400;
     font-size: 16px;
-    line-height: 1.45em;
-    letter-spacing: -0.02em; /* Estilo cerrado tipo Happn */
-    color: #4a4943; /* Un gris muy oscuro en vez de negro puro ayuda a dar calidez visual */
-    margin-bottom: 15px;
+    line-height: 1.45;
+    letter-spacing: -0.02em;
+    color: #100f0a; /* El color casi negro que usa Happn */
+    margin-bottom: 15px; /* Espaciado entre párrafos */
+}
+
+/* Para cuando uses negritas dentro de los párrafos */
+p strong, b {
+    font-family: "La Nord Bold", "Inter", sans-serif;
+    font-weight: 700;
 }
 
 .logo-MeetGo {
@@ -50,14 +34,26 @@ p {
   height: auto;
 }
 
-.subtitulo-bienvenida {
-  font-family: "Montserrat Alternates", sans-serif;
-  font-weight: 300; /* Fino */
-  font-size: 2rem;
-  text-align: center;
-  letter-spacing: 0.5px;
+.subtitulo-bienvenida,
+h1,
+h2 {
+  font-family: "DM Sans", sans-serif;
 }
 
+.subtitulo-bienvenida {
+  font-weight: 400;
+  font-size: 2rem;
+  text-align: center;
+  letter-spacing: 0.2px;
+}
+
+h1 {
+  font-weight: 700;
+}
+
+h2 {
+  font-weight: 600;
+}
 
 
 .album {
@@ -268,9 +264,8 @@ a.custom-card:hover {
 
 /* NAVBAR MODERNA */
 .modern-navbar {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(12px);
-  border-bottom: 1.5px solid #e6e6e6;
+  background: #ffffff;
+  border-bottom: 1px solid #e9e9e9;
   padding: 12px 20px;
 }
 
@@ -351,11 +346,13 @@ a.custom-card:hover {
 
 /* Título */
 .custom-card h3 {
-  font-family: "Montserrat Alternates", sans-serif;
+ .custom-card h3 {
+  font-family: "DM Sans", sans-serif;
   font-size: 1.3rem;
-  font-weight: 500;
+  font-weight: 600;
   color: #333;
   margin-bottom: 0;
+}
 }
 
 /* Texto */
