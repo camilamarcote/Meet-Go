@@ -6,21 +6,36 @@ body {
   background-color: rgb(249, 249, 249);
   color: rgb(6, 6, 6);
 }
-/* Aplicado a toda la etiqueta de párrafo */
+/* Título Principal - Sofisticado, elegante y cálido */
+h1 {
+    font-family: "Ogg", "Playfair Display", serif;
+    font-weight: 700;
+    font-size: 42px;
+    line-height: 1.2em;
+    letter-spacing: -0.01em; /* Un poco más abierto que el párrafo para que respire */
+    color: #100f0a; /* Negro suave de Happn */
+    margin-bottom: 20px;
+}
+
+/* Título Secundario - Mantiene el estilo refinado */
+h2 {
+    font-family: "Ogg", "Playfair Display", serif;
+    font-weight: 600;
+    font-size: 30px;
+    line-height: 1.25em;
+    color: #1c1a12;
+    margin-bottom: 16px;
+}
+
+/* Tus párrafos - Modernos, limpios y muy legibles */
 p {
     font-family: "La Nord Regular", "Inter", sans-serif;
     font-weight: 400;
     font-size: 16px;
-    line-height: 1.45;
-    letter-spacing: -0.02em;
-    color: #100f0a; /* El color casi negro que usa Happn */
-    margin-bottom: 15px; /* Espaciado entre párrafos */
-}
-
-/* Para cuando uses negritas dentro de los párrafos */
-p strong, b {
-    font-family: "La Nord Bold", "Inter", sans-serif;
-    font-weight: 700;
+    line-height: 1.45em;
+    letter-spacing: -0.02em; /* Estilo cerrado tipo Happn */
+    color: #4a4943; /* Un gris muy oscuro en vez de negro puro ayuda a dar calidez visual */
+    margin-bottom: 15px;
 }
 
 .logo-MeetGo {
