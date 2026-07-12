@@ -44,7 +44,7 @@ async function loadMyTickets(token) {
 }
 
 /* ========================================================
-    🧩 RENDERIZAR ENTRADAS (Basado en tu lógica híbrida)
+    🧩 RENDERIZAR ENTRADAS (Sin estados de pago)
    ======================================================== */
 function renderMyTickets(tickets) {
   const container = document.getElementById("ticketsContainer");
@@ -64,10 +64,18 @@ function renderMyTickets(tickets) {
   }
 
   tickets.forEach(ticket => {
-    // 1. Obtener el nombre del evento poblado desde MongoDB
+    // 1. Obtener los datos del evento poblados desde MongoDB
     const eventName = ticket.event?.name || ticket.event?.title || "Evento de Meet & Go";
-    // Formatear fecha del evento si viene disponible
-    const eventDate = ticket.event?.date ? new Date(ticket.event.date).toLocaleDateString() : "";
+    
+    // Formatear fecha del evento de forma amigable
+    const eventDate = ticket.event?.date ? new Date(ticket.event.date).toLocaleDateString(undefined, { day: 'numeric', month: 'long' }) : "";
+    const eventTime = ticket.event?.time || "";
+
+    // Construcción del lugar combinando barrio y departamento
+    const neighborhood = ticket.event?.neighborhood || "";
+    const department = ticket.event?.department || "";
+    let eventLocation = [neighborhood, department].filter(Boolean).join(", ");
+    if (!eventLocation) eventLocation = "Uruguay";
 
     // 2. Comprobar nombre en el pase (Por si compró para un invitado externo)
     let holderName = "Titular de la cuenta";
@@ -76,27 +84,27 @@ function renderMyTickets(tickets) {
     } else if (ticket.user) {
       holderName = `${ticket.user.firstName || ""} ${ticket.user.lastName || ""}`.trim();
     }
-
-    // 3. Traducir estados de pagos y tipos de pases
-    const isPaid = ticket.payment?.status === "paid" || ticket.payment?.status === "free";
-    const ticketStatus = isPaid ? "✅ Válido" : "⏳ Pago Pendiente";
-    const badgeType = isPaid ? "bg-success" : "bg-warning text-dark";
     
     // Identificar si es un pase propio o para un amigo
     const labelBadge = ticket.isGuest ? "badge bg-warning text-dark" : "badge bg-primary";
     const labelText = ticket.isGuest ? "Para Invitado" : "Pase Personal";
 
-    // 4. Inyección del diseño HTML estructurado de forma limpia
+    // 4. Inyección del diseño HTML estructurado de forma limpia sin estados de pago
     container.innerHTML += `
-      <div class="user-card border-start border-4 ${isPaid ? 'border-success' : 'border-warning'} mb-3" style="background: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.05); padding: 20px; border-radius: 8px;">
+      <div class="user-card border-start border-4 border-primary mb-3" style="background: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.05); padding: 20px; border-radius: 8px;">
         <div class="user-header d-flex justify-content-between align-items-start flex-wrap gap-2">
           <div>
             <h3 class="m-0 h5 fw-bold text-dark">${eventName}</h3>
-            ${eventDate ? `<small class="text-muted"><i class="bi bi-calendar"></i> ${eventDate}</small>` : ''}
+            <div class="text-muted small mt-1 d-flex flex-wrap gap-2">
+              ${eventDate ? `<span><i class="bi bi-calendar-event"></i> ${eventDate}</span>` : ''}
+              ${eventTime ? `<span><i class="bi bi-clock"></i> ${eventTime}</span>` : ''}
+            </div>
+            <div class="text-muted small mt-1">
+              <span><i class="bi bi-geo-alt"></i> ${eventLocation}</span>
+            </div>
           </div>
           <div class="badges">
             <span class="${labelBadge}">${labelText}</span>
-            <span class="badge ${badgeType}">${ticketStatus}</span>
           </div>
         </div>
 

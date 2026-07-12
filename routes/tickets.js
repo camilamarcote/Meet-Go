@@ -101,7 +101,8 @@ router.get("/tickets", protect, async (req, res) => {
     }
 
     const tickets = await EventTicket.find()
-      .populate("event", "name title price altPrice date time") 
+      // ✨ Agregados department y neighborhood para consistencia en paneles de admin
+      .populate("event", "name title price altPrice date time department neighborhood") 
       .populate("user", "firstName lastName username email phone");
 
     return res.json(tickets);
@@ -117,7 +118,8 @@ router.get("/tickets", protect, async (req, res) => {
 router.get("/my", protect, async (req, res) => {
   try {
     const tickets = await EventTicket.find({ user: req.user._id })
-      .populate("event", "name title price date time") 
+      // 🔥 CORRECCIÓN CRUCIAL: Añadidos 'department' y 'neighborhood' al populate de event
+      .populate("event", "name title price date time department neighborhood") 
       .populate("user", "firstName lastName username email");
 
     return res.json(tickets);
