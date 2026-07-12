@@ -567,20 +567,3 @@ i[class*=" fa-"] {
   box-shadow: 0 8px 20px rgba(0,0,0,0.15);
 }
 
-.display-1,
-.display-2,
-.display-3,
-.display-4,
-.display-5,
-.display-6,
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-    font-family: "DM Sans", sans-serif !important;
-    font-weight: 500 !important;
-    letter-spacing: -0.04em;
-    line-height: 1.15;
-}
