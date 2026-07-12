@@ -56,7 +56,7 @@ function renderMyTickets(tickets) {
   if (!tickets || tickets.length === 0) {
     container.innerHTML = `
       <div class="text-center p-5 text-muted">
-        <p class="fs-5">🎟️ Aún no tienes pases adquiridos.</p>
+        <p class="fs-5">Aún no tienes pases adquiridos.</p>
         <a href="explorar.html" class="btn btn-primary btn-sm mt-2">Explorar Eventos</a>
       </div>
     `;
@@ -112,9 +112,9 @@ function renderMyTickets(tickets) {
         
         <div class="row align-items-center">
           <div class="col-8">
-            <p class="mb-1"><strong>👤 Beneficiario:</strong> ${holderName}</p>
-            <p class="mb-1"><strong>🎟️ Tipo de Entrada:</strong> <span class="text-capitalize">${ticket.accessType || "Pase General"}</span></p>
-            <p class="mb-0 text-muted small"><strong>🆔 ID Pase:</strong> ${ticket._id.substring(0, 10)}...</p>
+            <p class="mb-1"><strong>Beneficiario:</strong> ${holderName}</p>
+            <p class="mb-1"><strong>Tipo de Entrada:</strong> <span class="text-capitalize">${ticket.accessType || "Pase General"}</span></p>
+            <p class="mb-0 text-muted small"><strong>ID Pase:</strong> ${ticket._id.substring(0, 10)}...</p>
           </div>
           
           <div class="col-4 text-end">
@@ -122,7 +122,7 @@ function renderMyTickets(tickets) {
               ${
                 ticket.qrImage 
                   ? `<img src="${ticket.qrImage}" alt="QR" style="width: 75px; height: 75px; object-fit: contain;">`
-                  : `<div class="small text-muted text-center" style="width: 75px; font-size: 0.65rem; padding-top: 20px;">🎟️ Presentar ID</div>`
+                  : `<div class="small text-muted text-center" style="width: 75px; font-size: 0.65rem; padding-top: 20px;">Presentar ID</div>`
               }
             </div>
           </div>
