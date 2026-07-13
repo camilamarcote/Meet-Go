@@ -20,7 +20,7 @@ function injectGuestModal() {
             <div class="modal-content modal-dialog modal-dialog-centered">
                 <div class="modal-content shadow-lg border-0 rounded-4">
                     <div class="modal-header bg-light border-0 pt-4 px-4">
-                        <h5 class="modal-title fw-bold" id="guestModalLabel">🎟️ Completa tus datos para el Ticket</h5>
+                        <h5 class="modal-title fw-bold" id="guestModalLabel">Completa tus datos para el Ticket</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="closeGuestModalBtn"></button>
                     </div>
                     <form id="guestTicketForm">
@@ -130,7 +130,7 @@ window.payEvent = function(eventId, btnElement) {
     const submitModalBtn = document.getElementById("submitModalBtn");
     if (submitModalBtn) {
         if (isSubscriber && currentEventAltPrice === 0) {
-            submitModalBtn.textContent = "🎟️ Confirmar Entrada Gratuita";
+            submitModalBtn.textContent = "Confirmar Entrada Gratuita";
             submitModalBtn.className = "btn btn-success btn-lg fw-bold rounded-3";
         } else {
             submitModalBtn.textContent = "Confirmar y Continuar al Pago";
@@ -245,7 +245,7 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
         alert(error.message);
         
         if (btnElement) {
-            btnElement.innerText = "🎟️ Intentar de nuevo";
+            btnElement.innerText = "Intentar de nuevo";
             btnElement.disabled = false;
         }
     }
@@ -324,7 +324,7 @@ async function loadEventInfo() {
                 const textPriceGral = basePrice === 0 ? 'Gratis' : `$${basePrice}`;
                 actionButtonHtml = `
                     <button class="btn btn-success btn-lg w-100 py-3 fw-bold text-uppercase shadow-sm" onclick="payEvent('${event._id}', this)">
-                        🎟️ Comprar Entrada General - ${textPriceGral}
+                         Comprar Entrada General - ${textPriceGral}
                     </button>
                 `;
             }
@@ -366,7 +366,7 @@ async function loadEventInfo() {
             </div>
         `;
     } catch (error) {
-        console.error("❌ Error cargando evento:", error);
+        console.error("Error cargando evento:", error);
         eventDetails.innerHTML = `<div class="alert alert-danger text-center shadow-sm"><p class="fw-bold">${error.message}</p></div>`;
     }
 }
