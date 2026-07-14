@@ -12,7 +12,7 @@
 }
 
 .login-card h2 {
-  font-family:sans-serif;
+  font-family: sans-serif;
   letter-spacing: 1px;
 }
 
@@ -22,14 +22,21 @@ button {
   font-weight: bold !important;
 }
 
-/* Ajuste de posición para el botón del ojito */
+/* ========================================================
+   🎯 AJUSTE DE POSICIÓN DEL OJITO (Solución definitiva)
+   ======================================================== */
 #togglePassword {
-  /* Forzamos que suba un poco restando unos píxeles al centrado vertical */
-  transform: translateY(-57%) !important;
+  /* Al usar 'top' directo en lugar de 'top-50' y anular el transform,
+    forzamos al navegador a subirlo los píxeles exactos que necesitas.
+  */
+  top: 15px !important; 
+  transform: none !important; /* Desactivamos el translate-middle-y de Bootstrap */
   
   /* Removemos cualquier borde o sombra azul de enfoque que da MDBootstrap */
   outline: none !important;
   box-shadow: none !important;
+  height: auto !important;
+  padding: 0 12px !important;
 }
 
 /* Opcional: Dale un color gris sutil y cambia el cursor al pasar por arriba */
