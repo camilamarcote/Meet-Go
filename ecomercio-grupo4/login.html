@@ -5,28 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Iniciar Sesión</title>
 
-  <!-- MDBootstrap -->
   <link
     href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/7.2.0/mdb.min.css"
     rel="stylesheet"
   />
 
-  <!-- CSS personalizado -->
+  <link 
+    rel="stylesheet" 
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" 
+  />
+
   <link rel="stylesheet" href="css/login.css">
 
-<!-- Favicon básico -->
-<link rel="shortcut icon" href="img/favicon.ico">
-<link rel="icon" type="image/x-icon" href="img/favicon.ico">
+  <link rel="shortcut icon" href="img/favicon.ico">
+  <link rel="icon" type="image/x-icon" href="img/favicon.ico">
 
-<!-- Favicons PNG -->
-<link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="img/favicon-16x16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="img/favicon-16x16.png">
 
-<!-- Apple Touch -->
-<link rel="apple-touch-icon" sizes="180x180" href="img/apple-touch-icon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="img/apple-touch-icon.png">
 
-<!-- Manifest -->
-<link rel="manifest" href="img/site.webmanifest">
+  <link rel="manifest" href="img/site.webmanifest">
 </head>
 
 <body class="login-bg d-flex align-items-center justify-content-center vh-100">
@@ -46,7 +45,6 @@
         >
       </div>
 
-      <!-- 🔐 PASSWORD CON PREVISUALIZACIÓN -->
       <div class="mb-3 position-relative">
         <input
           type="password"
@@ -59,16 +57,18 @@
         <button
           type="button"
           id="togglePassword"
-          class="btn btn-link position-absolute top-50 end-0 translate-middle-y me-2"
-          style="text-decoration: none;"
+          class="btn btn-link position-absolute top-50 end-0 translate-middle-y me-2 text-muted"
+          style="text-decoration: none; padding: 0 10px; z-index: 10;"
           aria-label="Mostrar contraseña"
         >
+          <i id="eyeIcon" class="fa-regular fa-eye-slash"></i>
         </button>
+        
         <div class="text-center mt-3">
-  <a href="forgot-password.html" class="text-decoration-none">
-    ¿Olvidaste tu contraseña?
-  </a>
-</div>
+          <a href="forgot-password.html" class="text-decoration-none">
+            ¿Olvidaste tu contraseña?
+          </a>
+        </div>
 
       </div>
 
@@ -76,10 +76,8 @@
     </form>
   </div>
 
-  <!-- MDBootstrap JS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/7.2.0/mdb.min.js"></script>
 
-  <!-- JS del login -->
   <script src="js/login.js"></script>
 </body>
 </html>

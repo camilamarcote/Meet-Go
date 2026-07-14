@@ -1,13 +1,28 @@
 const API_URL = "https://api.meetandgouy.com";
 
-const passwordInput = document.getElementById("loginPass");
-const togglePasswordBtn = document.getElementById("togglePassword");
 const loginForm = document.getElementById("loginForm");
 
-/* 👁️ Mostrar / ocultar password */
-togglePasswordBtn.addEventListener("click", () => {
-  passwordInput.type =
-    passwordInput.type === "password" ? "text" : "password";
+document.addEventListener("DOMContentLoaded", () => {
+  const togglePasswordBtn = document.getElementById("togglePassword");
+  const passwordInput = document.getElementById("loginPass");
+  const eyeIcon = document.getElementById("eyeIcon");
+
+  if (togglePasswordBtn && passwordInput && eyeIcon) {
+    togglePasswordBtn.addEventListener("click", () => {
+      // Alternar el tipo de input entre password y text
+      const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
+      passwordInput.setAttribute("type", type);
+
+      // Alternar las clases del icono de Font Awesome
+      if (type === "password") {
+        eyeIcon.classList.remove("fa-eye");
+        eyeIcon.classList.add("fa-eye-slash");
+      } else {
+        eyeIcon.classList.remove("fa-eye-slash");
+        eyeIcon.classList.add("fa-eye");
+      }
+    });
+  }
 });
 
 /* ✅ Mensajes post-verificación */
