@@ -1,10 +1,11 @@
 const API_URL = "https://api.meetandgouy.com";
 
 const loginForm = document.getElementById("loginForm");
+// 🎯 Declaramos el input de contraseña aquí para que sea accesible en todo el archivo
+const passwordInput = document.getElementById("loginPass");
 
 document.addEventListener("DOMContentLoaded", () => {
   const togglePasswordBtn = document.getElementById("togglePassword");
-  const passwordInput = document.getElementById("loginPass");
   const eyeIcon = document.getElementById("eyeIcon");
 
   if (togglePasswordBtn && passwordInput && eyeIcon) {
@@ -41,7 +42,7 @@ loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const user = document.getElementById("loginUser").value.trim();
-  const password = passwordInput.value;
+  const password = passwordInput ? passwordInput.value : ""; // 🔒 Acceso seguro al valor de la contraseña
 
   if (!user || !password) {
     alert("Completá todos los campos");
