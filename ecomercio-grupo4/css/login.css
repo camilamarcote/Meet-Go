@@ -21,3 +21,24 @@ button {
   color: black !important;
   font-weight: bold !important;
 }
+
+/* Ajuste de posición para el botón del ojito */
+#togglePassword {
+  /* Forzamos que suba un poco restando unos píxeles al centrado vertical */
+  transform: translateY(-57%) !important;
+  
+  /* Removemos cualquier borde o sombra azul de enfoque que da MDBootstrap */
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Opcional: Dale un color gris sutil y cambia el cursor al pasar por arriba */
+#togglePassword i {
+  color: #757575;
+  font-size: 1.1rem;
+  transition: color 0.2s ease;
+}
+
+#togglePassword:hover i {
+  color: #4f4f4f; /* Se oscurece ligeramente al pasar el mouse */
+}
