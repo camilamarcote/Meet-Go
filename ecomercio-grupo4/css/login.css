@@ -29,7 +29,7 @@ button {
   /* Al usar 'top' directo en lugar de 'top-50' y anular el transform,
     forzamos al navegador a subirlo los píxeles exactos que necesitas.
   */
-  top: 15px !important; 
+  top: 18px !important; 
   transform: none !important; /* Desactivamos el translate-middle-y de Bootstrap */
   
   /* Removemos cualquier borde o sombra azul de enfoque que da MDBootstrap */
