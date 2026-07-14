@@ -16,8 +16,7 @@
   letter-spacing: 1px;
 }
 
-/* Aplicamos el estilo de botón únicamente a los botones normales del formulario,
-   evitando que rompa el botón de toggle del ojito */
+/* Estilo para los botones normales del login */
 button:not(#togglePassword) {
   background-color: rgba(255, 253, 253, 0.411) !important;
   color: black !important;
@@ -25,40 +24,44 @@ button:not(#togglePassword) {
 }
 
 /* ========================================================
-   🎯 AJUSTE DE POSICIÓN DEL OJITO (Solución Definitiva)
+   🎯 AJUSTE DE POSICIÓN DEL OJITO (Control total por píxeles)
    ======================================================== */
 #togglePassword {
-  /* 1. Lo posicionamos de manera absoluta a la mitad exacta del input */
   position: absolute !important;
-  top: 50% !important;
+  
+  /* 📍 Ajuste manual de altura: 
+     Si ves que aún queda un milímetro abajo, reduce este número (ej: 8px).
+     Si queda muy arriba, auméntalo (ej: 12px). 
+  */
+  top: 10px !important; 
   right: 12px !important;
   
-  /* 2. Subimos el botón exactamente la mitad de su propia altura para centrarlo verticalmente */
-  transform: translateY(-50%) !important;
+  /* Desactivamos el centrado dinámico de Bootstrap para evitar conflictos */
+  transform: none !important; 
   
-  /* 3. Limpiamos las alturas y rellenos de Bootstrap que lo tiran hacia abajo */
-  height: auto !important;
-  min-height: auto !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  line-height: 1 !important;
+  /* Forzamos que se comporte como una caja invisible sin interferencias */
   background: transparent !important;
   border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  height: auto !important;
+  width: auto !important;
+  line-height: 1 !important;
   
-  /* 4. Quitamos efectos visuales molestos al hacer clic */
+  /* Quitamos efectos y sombras al enfocar o hacer clic */
   outline: none !important;
   box-shadow: none !important;
   z-index: 10;
 }
 
-/* Estilo del icono interno */
+/* Estilo visual del icono interno */
 #togglePassword i {
   color: #757575;
   font-size: 1.1rem;
-  display: block; /* Evita heredar alturas de línea raras de texto */
+  display: block; /* Evita que herede espaciados de texto */
   transition: color 0.2s ease;
 }
 
 #togglePassword:hover i {
-  color: #4f4f4f; /* Se oscurece ligeramente al pasar el mouse */
+  color: #4f4f4f;
 }
