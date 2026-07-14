@@ -16,33 +16,46 @@
   letter-spacing: 1px;
 }
 
-button {
+/* Aplicamos el estilo de botón únicamente a los botones normales del formulario,
+   evitando que rompa el botón de toggle del ojito */
+button:not(#togglePassword) {
   background-color: rgba(255, 253, 253, 0.411) !important;
   color: black !important;
   font-weight: bold !important;
 }
 
 /* ========================================================
-   🎯 AJUSTE DE POSICIÓN DEL OJITO (Solución definitiva)
+   🎯 AJUSTE DE POSICIÓN DEL OJITO (Solución Definitiva)
    ======================================================== */
 #togglePassword {
-  /* Al usar 'top' directo en lugar de 'top-50' y anular el transform,
-    forzamos al navegador a subirlo los píxeles exactos que necesitas.
-  */
-  top: 40px !important; 
-  transform: none !important; /* Desactivamos el translate-middle-y de Bootstrap */
+  /* 1. Lo posicionamos de manera absoluta a la mitad exacta del input */
+  position: absolute !important;
+  top: 50% !important;
+  right: 12px !important;
   
-  /* Removemos cualquier borde o sombra azul de enfoque que da MDBootstrap */
+  /* 2. Subimos el botón exactamente la mitad de su propia altura para centrarlo verticalmente */
+  transform: translateY(-50%) !important;
+  
+  /* 3. Limpiamos las alturas y rellenos de Bootstrap que lo tiran hacia abajo */
+  height: auto !important;
+  min-height: auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: 1 !important;
+  background: transparent !important;
+  border: none !important;
+  
+  /* 4. Quitamos efectos visuales molestos al hacer clic */
   outline: none !important;
   box-shadow: none !important;
-  height: auto !important;
-  padding: 0 12px !important;
+  z-index: 10;
 }
 
-/* Opcional: Dale un color gris sutil y cambia el cursor al pasar por arriba */
+/* Estilo del icono interno */
 #togglePassword i {
   color: #757575;
   font-size: 1.1rem;
+  display: block; /* Evita heredar alturas de línea raras de texto */
   transition: color 0.2s ease;
 }
 
