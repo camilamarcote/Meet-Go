@@ -7,9 +7,12 @@ backend/node_modules/
 backend/.env
 backend/uploads/
 
+# credenciales de google (¡MUY IMPORTANTE!)
+google-credentials.json
+backend/google-credentials.json
+*.json.secret
+
 # logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
-google-credentials.json

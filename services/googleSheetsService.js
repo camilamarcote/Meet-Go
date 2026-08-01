@@ -1,4 +1,5 @@
 import { google } from "googleapis";
+import fs from "fs";
 
 const SPREADSHEET_ID = "1svmNFKF4ZD33Ro6RFAXXS9rHQpz-VQs4qksrBSY4cQA";
 const SCOPES = ["https://www.googleapis.com/auth/spreadsheets"];
@@ -23,9 +24,16 @@ function getAuthCredentials() {
 export async function appendTicketsToSheet(rowsData) {
   try {
     const credentials = getAuthCredentials();
+    const localCredentialPath = "./google-credentials.json";
+
+    // Si no se encuentra ni la variable en Render ni el archivo local (desarrollo)
+    if (!credentials && !fs.existsSync(localCredentialPath)) {
+      console.error("❌ [SHEETS ERROR] No se encontraron credenciales válidas (ni en variable de entorno ni archivo local).");
+      return;
+    }
 
     const auth = new google.auth.GoogleAuth({
-      ...(credentials ? { credentials } : { keyFile: "./google-credentials.json" }),
+      ...(credentials ? { credentials } : { keyFile: localCredentialPath }),
       scopes: SCOPES,
     });
 
@@ -34,14 +42,14 @@ export async function appendTicketsToSheet(rowsData) {
 
     const response = await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
-      range: "A:G", // 👈 Cambiado a A:G para que escriba en la primera pestaña sin importar cómo se llame
+      range: "A:G", // Escribe en la primera pestaña sin importar cómo se llame
       valueInputOption: "USER_ENTERED",
       resource: {
         values: rowsData,
       },
     });
 
-    console.log("📊 [SHEETS SUCCESS] Fila(s) enviada(s) con éxito a Google Sheets! Filas actualizadas:", response.data.updates?.updatedRows);
+    console.log("📊 [SHEETS SUCCESS] ¡Fila(s) enviada(s) con éxito a Google Sheets! Filas actualizadas:", response.data.updates?.updatedRows);
   } catch (error) {
     console.error("❌ [SHEETS API ERROR]:", error.message || error);
   }
