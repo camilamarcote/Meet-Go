@@ -1,9 +1,10 @@
 import express from "express";
 import Event from "../models/event.js";
 import EventTicket from "../models/eventTicket.js";
-import User from "../models/user.js"; // 🎯 Importamos el modelo User para chequear el estado real en DB
+import User from "../models/user.js"; 
 import { protect } from "../middlewares/auth.js";
 import crypto from "crypto";
+import { appendTicketsToSheet } from "../services/googleSheetsService.js"; // 👈 IMPORTADO
 
 const router = express.Router();
 
@@ -31,10 +32,10 @@ router.post("/events/:eventId/tickets", protect, async (req, res) => {
     }
 
     // 🕵️‍♂️ RECOGER EL ESTADO ACTUALIZADO DEL USUARIO DESDE MONGO
-    // Esto previene fallos si el token JWT del frontend quedó viejo o sin actualizar
     let esSuscriptorValido = false;
+    let usuarioEnDb = null;
     if (req.user) {
-      const usuarioEnDb = await User.findById(req.user._id);
+      usuarioEnDb = await User.findById(req.user._id);
       esSuscriptorValido = usuarioEnDb && (usuarioEnDb.isSubscriber === true || usuarioEnDb.roles?.includes("admin"));
     }
 
@@ -44,6 +45,7 @@ router.post("/events/:eventId/tickets", protect, async (req, res) => {
     // 🛒 ID DE CARRITO ÚNICO
     const idLoteCompra = crypto.randomBytes(12).toString("hex");
     const ticketsCreados = [];
+    const filasParaSheets = []; // 📊 Array acumulador para Google Sheets
 
     // 🔄 BUCLE: Creación de pases individuales con QRs distintos
     for (let i = 0; i < cantidadAComprar; i++) {
@@ -56,9 +58,13 @@ router.post("/events/:eventId/tickets", protect, async (req, res) => {
         cartId: idLoteCompra,        
         payment: {
           status: "pending",
-          amount: precioFinal // 💸 Aplicado dinámicamente según la consulta en vivo
+          amount: precioFinal 
         }
       };
+
+      let compradorNombre = "";
+      let compradorEmail = "";
+      let compradorTelefono = "";
 
       // Manejo de roles (Invitado vs Registrado)
       if (isGuest === true || isGuest === "true" || !req.user) {
@@ -66,20 +72,45 @@ router.post("/events/:eventId/tickets", protect, async (req, res) => {
         ticketData.guestEmail = guestEmail;
         ticketData.guestName = guestName;
         ticketData.guestPhone = guestPhone;
+
+        compradorNombre = guestName || "Invitado";
+        compradorEmail = guestEmail || "";
+        compradorTelefono = guestPhone || "";
       } else {
         ticketData.user = req.user._id;
         ticketData.isGuest = false;
+
+        compradorNombre = `${usuarioEnDb?.firstName || ''} ${usuarioEnDb?.lastName || ''}`.trim() || usuarioEnDb?.username || "Usuario Registrado";
+        compradorEmail = usuarioEnDb?.email || "";
+        compradorTelefono = usuarioEnDb?.phone || "";
       }
 
       const nuevoTicket = new EventTicket(ticketData);
       await nuevoTicket.save();
       ticketsCreados.push(nuevoTicket);
+
+      // 🟢 Armar la fila correspondiente para Google Sheets
+      // Columnas: [Fecha, ID Ticket, Nombre, Email, Evento, Monto, Estado]
+      filasParaSheets.push([
+        new Date().toISOString().split("T")[0],
+        nuevoTicket._id.toString(),
+        compradorNombre,
+        compradorEmail,
+        evento.name || evento.title || "Evento",
+        precioFinal,
+        "Pendiente de Pago"
+      ]);
     }
 
     // 🔥 ACTUALIZACIÓN DE CUPOS EN LOTE AUTOMÁTICA
     await Event.findByIdAndUpdate(eventId, {
       $inc: { ticketsSold: cantidadAComprar }
     });
+
+    // 📊 ENVIAR A GOOGLE SHEETS EN SEGUNDO PLANO
+    if (filasParaSheets.length > 0) {
+      appendTicketsToSheet(filasParaSheets);
+    }
 
     console.log(`✅ [BACKEND] Creados con éxito ${cantidadAComprar} tickets para suscriptor=${esSuscriptorValido} con precio $${precioFinal} en lote: ${idLoteCompra}`);
 
@@ -101,7 +132,6 @@ router.get("/tickets", protect, async (req, res) => {
     }
 
     const tickets = await EventTicket.find()
-      // ✨ Agregados department y neighborhood para consistencia en paneles de admin
       .populate("event", "name title price altPrice date time department neighborhood") 
       .populate("user", "firstName lastName username email phone");
 
@@ -118,7 +148,6 @@ router.get("/tickets", protect, async (req, res) => {
 router.get("/my", protect, async (req, res) => {
   try {
     const tickets = await EventTicket.find({ user: req.user._id })
-      // 🔥 CORRECCIÓN CRUCIAL: Añadidos 'department' y 'neighborhood' al populate de event
       .populate("event", "name title price date time department neighborhood") 
       .populate("user", "firstName lastName username email");
 
