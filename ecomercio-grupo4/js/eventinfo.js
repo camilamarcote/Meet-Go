@@ -4,150 +4,37 @@ const params = new URLSearchParams(window.location.search);
 const eventId = params.get("id");
 const eventDetails = document.getElementById("eventDetails");
 
-// Variable global para recordar qué botón disparó la compra y los cupos máximos permitidos
-let activePayButton = null;
+// Variables globales de estado
 let maxAvailableQuantity = 10; // Límite por defecto
 let currentEventAltPrice = 0;   // Guarda el precio alternativo dinámicamente
 
 /* ========================================================
-    📦 INICIALIZAR MODAL DE COMPRA EN EL HTML (Solo para Invitados)
-======================================================== */
-function injectGuestModal() {
-    if (document.getElementById("guestModal")) return;
-
-    const modalHtml = `
-        <div class="modal fade" id="guestModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="guestModalLabel" aria-hidden="true">
-            <div class="modal-content modal-dialog modal-dialog-centered">
-                <div class="modal-content shadow-lg border-0 rounded-4">
-                    <div class="modal-header bg-light border-0 pt-4 px-4">
-                        <h5 class="modal-title fw-bold" id="guestModalLabel">Completa tus datos para el Ticket</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="closeGuestModalBtn"></button>
-                    </div>
-                    <form id="guestTicketForm">
-                        <div class="modal-body px-4 pb-4">
-                            <p class="text-muted small">Ingresa datos reales. Se utilizarán para validar tu acceso y enviarte los códigos QR de entrada.</p>
-                            
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold text-secondary small">Nombre Completo</label>
-                                <input type="text" id="guestFullName" class="form-control form-control-lg" placeholder="Ej: Juan Pérez" required>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold text-secondary small">Correo Electrónico</label>
-                                <input type="email" id="guestEmail" class="form-control form-control-lg" placeholder="nombre@ejemplo.com" required>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold text-secondary small">Número de Celular</label>
-                                <input type="tel" id="guestPhone" class="form-control form-control-lg" placeholder="Ej: 099123456" required>
-                            </div>
-
-                            <div class="mb-2 p-3 rounded-3 bg-light border border-dashed">
-                                <label class="form-label fw-bold text-dark small d-flex justify-content-between align-items-center">
-                                    <span>Cantidad de entradas:</span>
-                                    <span id="maxQtyNotice" class="badge bg-secondary font-monospace" style="font-size: 0.75rem;">Máx: 10</span>
-                                </label>
-                                <input type="number" id="ticketQuantity" class="form-control form-control-lg text-center fw-bold text-primary" value="1" min="1" max="10" required>
-                                <div class="form-text text-muted small mt-1">Todas las entradas adicionales se registrarán a tu nombre.</div>
-                            </div>
-                        </div>
-                        <div class="modal-footer bg-light border-0 d-grid gap-2 p-4">
-                            <button type="submit" id="submitModalBtn" class="btn btn-primary btn-lg fw-bold rounded-3">Confirmar y Continuar al Pago</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    const div = document.createElement("div");
-    div.innerHTML = modalHtml;
-    document.body.appendChild(div);
-
-    document.getElementById("guestTicketForm").addEventListener("submit", async (e) => {
-        e.preventDefault();
-        
-        const fullName = document.getElementById("guestFullName").value.trim();
-        const email = document.getElementById("guestEmail").value.trim();
-        const phone = document.getElementById("guestPhone").value.trim();
-        const quantity = parseInt(document.getElementById("ticketQuantity").value) || 1;
-
-        if (!fullName || !email || !phone) {
-            alert("Por favor, completa todos los campos requeridos.");
-            return;
-        }
-
-        if (!validateEmail(email)) {
-            alert("Por favor, ingresa un correo electrónico válido.");
-            return;
-        }
-
-        if (quantity < 1 || quantity > maxAvailableQuantity) {
-            alert(`Por favor, selecciona una cantidad válida entre 1 y ${maxAvailableQuantity} entradas.`);
-            return;
-        }
-
-        document.getElementById("submitModalBtn").blur();
-
-        const modalElement = document.getElementById("guestModal");
-        const modalInstance = bootstrap.Modal.getInstance(modalElement);
-        if (modalInstance) modalInstance.hide();
-
-        await processGuestPurchase(eventId, activePayButton, { fullName, email, phone, quantity });
-    });
-}
-
-/* ========================================================
-    💳 DISPARADOR DE COMPRA (Bypass Modal si hay Sesión)
+    💳 DISPARADOR DE COMPRA DIRECTO (Sin modal)
 ======================================================== */
 window.payEvent = async function(eventId, btnElement) {
-    activePayButton = btnElement;
     const savedUser = JSON.parse(localStorage.getItem("currentUser"));
 
-    // 🟢 SI EL USUARIO YA INICIÓ SESIÓN: Omitir Modal y procesar directo
-    if (savedUser && (savedUser.token || savedUser.email)) {
-        const fullName = `${savedUser.firstName || ''} ${savedUser.lastName || ''}`.trim() || savedUser.name || "Usuario Registrado";
-        const email = savedUser.email || "";
-        const phone = savedUser.phone || "";
-        
-        await processGuestPurchase(eventId, activePayButton, {
-            fullName,
-            email,
-            phone,
-            quantity: 1 // Por defecto 1 entrada rápida
-        });
+    // Guardrail de seguridad: Si por alguna razón no hay sesión, redirigir al login
+    if (!savedUser || (!savedUser.token && !savedUser.email)) {
+        window.location.href = `login.html?redirect=${encodeURIComponent(window.location.href)}`;
         return;
     }
 
-    // 🔴 SI NO HAY SESIÓN: Desplegar Modal para invitados
-    const modalElement = document.getElementById("guestModal");
-    const modal = new bootstrap.Modal(modalElement);
-    
-    document.getElementById("guestTicketForm").reset();
+    // Obtener la cantidad seleccionada desde el desplegable sobre el botón
+    const qtySelect = document.getElementById("ticketQuantitySelect");
+    const quantity = qtySelect ? (parseInt(qtySelect.value) || 1) : 1;
 
-    const inputQty = document.getElementById("ticketQuantity");
-    const noticeQty = document.getElementById("maxQtyNotice");
-    if (inputQty) {
-        inputQty.value = "1";
-        inputQty.max = maxAvailableQuantity;
-    }
-    if (noticeQty) {
-        noticeQty.textContent = `Máx: ${maxAvailableQuantity}`;
-    }
+    const fullName = `${savedUser.firstName || ''} ${savedUser.lastName || ''}`.trim() || savedUser.name || "Usuario Registrado";
+    const email = savedUser.email || "";
+    const phone = savedUser.phone || "";
 
-    const submitModalBtn = document.getElementById("submitModalBtn");
-    if (submitModalBtn) {
-        submitModalBtn.textContent = "Confirmar y Continuar al Pago";
-        submitModalBtn.className = "btn btn-primary btn-lg fw-bold rounded-3";
-    }
-    
-    modal.show();
+    await processPurchase(eventId, btnElement, { fullName, email, phone, quantity });
 }
 
 /* ========================================================
     🚀 PROCESAMIENTO REAL DEL TICKET (MongoDB / Mercado Pago)
 ======================================================== */
-async function processGuestPurchase(eventId, btnElement, guestData) {
+async function processPurchase(eventId, btnElement, userData) {
     try {
         if (btnElement) {
             btnElement.innerText = "Procesando...";
@@ -164,11 +51,11 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
         console.log(`📡 Registrando entrada en base de datos...`);
 
         const ticketPayload = {
-            guestEmail: guestData.email,
-            guestName: guestData.fullName,
-            guestPhone: guestData.phone,
-            isGuest: !token, 
-            quantity: guestData.quantity,
+            guestEmail: userData.email,
+            guestName: userData.fullName,
+            guestPhone: userData.phone,
+            isGuest: false, 
+            quantity: userData.quantity,
             isSubscriber: isSubscriber,
             chosenPriceType: isSubscriber ? "altPrice" : "price"
         };
@@ -190,6 +77,7 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
             throw new Error(ticketData.message || "Error al generar los tickets");
         }
 
+        // Si es suscriptor y el evento es costo 0 para suscriptores
         if (isSubscriber && currentEventAltPrice === 0) {
             if (btnElement) {
                 btnElement.innerText = "Cupos Reservados 🔒";
@@ -197,7 +85,7 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
                 btnElement.disabled = true;
             }
             
-            alert(`🎉 ¡Tus ${guestData.quantity} entrada(s) gratuita(s) han sido reservadas con éxito! Revisa tu correo electrónico.`);
+            alert(`🎉 ¡Tus ${userData.quantity} entrada(s) gratuita(s) han sido reservadas con éxito! Revisa tu correo electrónico.`);
             
             setTimeout(() => {
                 window.location.reload();
@@ -304,47 +192,60 @@ async function loadEventInfo() {
             }
         }
 
-        // 🔑 Banner de Inicio de Sesión si el usuario es Invitado
-        let loginBannerHtml = "";
-        if (!isLoggedIn && !isSoldOut) {
-            loginBannerHtml = `
-                <div class="alert alert-light border border-info-subtle shadow-sm rounded-3 text-center mb-3 p-2">
-                    <small class="text-muted">¿Tienes una cuenta? 
-                        <a href="login.html?redirect=eventDetails.html?id=${eventId}" class="fw-bold text-primary text-decoration-none">
-                            Inicia sesión aquí
-                        </a> para comprar más rápido.
-                    </small>
-                </div>
-            `;
-        }
-
-        let actionButtonHtml = "";
+        // 🔘 Generar controles de compra o invitación a Iniciar Sesión
+        let actionAreaHtml = "";
 
         if (isSoldOut) {
-            actionButtonHtml = `<button class="btn btn-secondary btn-lg w-100 py-3 fw-bold shadow-sm" disabled>Cupos Cerrados 🔒</button>`;
+            actionAreaHtml = `<button class="btn btn-secondary btn-lg w-100 py-3 fw-bold shadow-sm" disabled>Cupos Cerrados 🔒</button>`;
+        } else if (!isLoggedIn) {
+            // 🔴 CASO 1: USUARIO SIN SESIÓN INICIADA
+            actionAreaHtml = `
+                <div class="text-center p-3 bg-light border rounded-3 shadow-sm mb-2">
+                    <p class="text-muted small mb-2">Para adquirir entradas debes estar registrado e iniciar sesión con tu cuenta.</p>
+                    <a href="login.html?redirect=${encodeURIComponent(window.location.href)}" class="btn btn-outline-primary btn-lg w-100 fw-bold">
+                        Iniciar Sesión para Comprar
+                    </a>
+                </div>
+            `;
         } else {
+            // 🟢 CASO 2: USUARIO CON SESIÓN INICIADA
+            // A) Generar el selector desplegable de cantidad
+            let optionsHtml = "";
+            for (let i = 1; i <= maxAvailableQuantity; i++) {
+                optionsHtml += `<option value="${i}">${i} ${i === 1 ? 'entrada' : 'entradas'}</option>`;
+            }
+
+            const quantitySelectorHtml = `
+                <div class="mb-3 p-3 bg-light border rounded-3 d-flex align-items-center justify-content-between">
+                    <label for="ticketQuantitySelect" class="fw-bold text-secondary mb-0 me-2">Cantidad de entradas:</label>
+                    <select id="ticketQuantitySelect" class="form-select form-select-lg w-auto fw-bold text-primary">
+                        ${optionsHtml}
+                    </select>
+                </div>
+            `;
+
+            // B) Generar el botón según su rol de suscriptor/precio
+            let buttonText = "";
+            let buttonClass = "btn-success";
+
             if (isSubscriber) {
                 if (currentEventAltPrice === 0) {
-                    actionButtonHtml = `
-                        <button class="btn btn-success btn-lg w-100 py-3 fw-bold text-uppercase shadow-sm" onclick="payEvent('${event._id}', this)">
-                            Entrada Gratuita
-                        </button>
-                    `;
+                    buttonText = "Obtener Entrada Gratuita";
                 } else {
-                    actionButtonHtml = `
-                        <button class="btn btn-warning btn-lg w-100 py-3 fw-bold text-uppercase shadow-sm text-dark" onclick="payEvent('${event._id}', this)">
-                            Comprar Entrada - $${currentEventAltPrice}
-                        </button>
-                    `;
+                    buttonText = `Comprar Entrada - $${currentEventAltPrice}`;
+                    buttonClass = "btn-warning text-dark";
                 }
             } else {
                 const textPriceGral = basePrice === 0 ? 'Gratis' : `$${basePrice}`;
-                actionButtonHtml = `
-                    <button class="btn btn-success btn-lg w-100 py-3 fw-bold text-uppercase shadow-sm" onclick="payEvent('${event._id}', this)">
-                         Comprar Entrada General - ${textPriceGral}
-                    </button>
-                `;
+                buttonText = `Comprar Entrada General - ${textPriceGral}`;
             }
+
+            actionAreaHtml = `
+                ${quantitySelectorHtml}
+                <button class="btn ${buttonClass} btn-lg w-100 py-3 fw-bold text-uppercase shadow-sm" onclick="payEvent('${event._id}', this)">
+                    ${buttonText}
+                </button>
+            `;
         }
 
         const backendAgeValue = event.ageRange || event.age;
@@ -378,8 +279,7 @@ async function loadEventInfo() {
                         </ul>
                     </div>
                     <hr class="text-muted my-4">
-                    ${loginBannerHtml}
-                    <div class="d-grid gap-2">${actionButtonHtml}</div>
+                    <div class="d-grid gap-2">${actionAreaHtml}</div>
                 </div>
             </div>
         `;
@@ -396,11 +296,6 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-function validateEmail(email) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
 document.addEventListener("DOMContentLoaded", () => {
-    injectGuestModal();
     loadEventInfo();
 });
