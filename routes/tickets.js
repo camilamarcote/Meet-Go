@@ -4,7 +4,8 @@ import EventTicket from "../models/eventTicket.js";
 import User from "../models/User.js"; 
 import { protect } from "../middlewares/auth.js";
 import crypto from "crypto";
-import { appendTicketsToSheet } from "../services/googleSheetsService.js"; // 👈 IMPORTADO
+import { appendTicketsToSheet } from "../services/googleSheetsService.js";
+import { syncContactToHubSpot } from "../services/hubspotService.js"; // 👈 IMPORTADO DE HUBSPOT
 
 const router = express.Router();
 
@@ -47,6 +48,10 @@ router.post("/events/:eventId/tickets", protect, async (req, res) => {
     const ticketsCreados = [];
     const filasParaSheets = []; // 📊 Array acumulador para Google Sheets
 
+    let compradorNombre = "";
+    let compradorEmail = "";
+    let compradorTelefono = "";
+
     // 🔄 BUCLE: Creación de pases individuales con QRs distintos
     for (let i = 0; i < cantidadAComprar; i++) {
       
@@ -61,10 +66,6 @@ router.post("/events/:eventId/tickets", protect, async (req, res) => {
           amount: precioFinal 
         }
       };
-
-      let compradorNombre = "";
-      let compradorEmail = "";
-      let compradorTelefono = "";
 
       // Manejo de roles (Invitado vs Registrado)
       if (isGuest === true || isGuest === "true" || !req.user) {
@@ -107,9 +108,27 @@ router.post("/events/:eventId/tickets", protect, async (req, res) => {
       $inc: { ticketsSold: cantidadAComprar }
     });
 
-    // 📊 ENVIAR A GOOGLE SHEETS EN SEGUNDO PLANO
+    const nombreDelEvento = evento.name || evento.title || "Evento";
+
+    // 📊 ENVIAR A GOOGLE SHEETS EN SEGUNDO PLANO (Crea o busca la pestaña por evento)
     if (filasParaSheets.length > 0) {
-      appendTicketsToSheet(filasParaSheets);
+      appendTicketsToSheet(filasParaSheets, nombreDelEvento);
+    }
+
+    // 🎯 ENVIAR A HUBSPOT EN SEGUNDO PLANO
+    if (compradorEmail) {
+      const partesNombre = compradorNombre.trim().split(" ");
+      const primerNombre = partesNombre[0] || compradorNombre;
+      const apellido = partesNombre.slice(1).join(" ") || "";
+
+      syncContactToHubSpot({
+        email: compradorEmail,
+        firstName: primerNombre,
+        lastName: apellido,
+        phone: compradorTelefono,
+        lastEventBought: nombreDelEvento,
+        isSubscriber: esSuscriptorValido,
+      });
     }
 
     console.log(`✅ [BACKEND] Creados con éxito ${cantidadAComprar} tickets para suscriptor=${esSuscriptorValido} con precio $${precioFinal} en lote: ${idLoteCompra}`);

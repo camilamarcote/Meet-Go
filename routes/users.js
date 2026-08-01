@@ -10,6 +10,7 @@ import { generateToken } from "../utils/jwt.js";
 import { sendVerificationEmail } from "../utils/sendverificationemail.js";
 import { sendResetPasswordEmail } from "../utils/sendResetPasswordEmail.js";
 import cloudinary from "../config/cloudinary.js";
+import { syncContactToHubSpot } from "../services/hubspotService.js"; // 👈 IMPORTADO DE HUBSPOT
 
 const router = express.Router();
 
@@ -170,6 +171,18 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
 
     // Enviar email de verificación
     await sendVerificationEmail(user.email, token);
+
+    // 🎯 SINCRONIZAR NUEVO USUARIO CON HUBSPOT EN SEGUNDO PLANO
+    syncContactToHubSpot({
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      phone: user.phone,
+      age: user.age,
+      interests: user.interests,
+      department: user.department,
+      isSubscriber: false
+    });
 
     res.status(201).json({
       message: "Usuario creado exitosamente. Revisá tu email para verificar la cuenta",
@@ -413,6 +426,18 @@ router.put("/me", protect, upload.single("profileImage"), async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
+
+    // 🎯 ACTUALIZAR DATOS EN HUBSPOT EN SEGUNDO PLANO
+    syncContactToHubSpot({
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      phone: user.phone,
+      age: user.age,
+      interests: user.interests,
+      department: user.department,
+      isSubscriber: user.subscription?.isActive || user.isSubscriber
+    });
 
     res.json(user);
   } catch (error) {
