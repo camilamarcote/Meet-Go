@@ -10,7 +10,7 @@ let maxAvailableQuantity = 10; // Límite por defecto
 let currentEventAltPrice = 0;   // Guarda el precio alternativo dinámicamente
 
 /* ========================================================
-    📦 INICIALIZAR MODAL DE COMPRA EN EL HTML (Al cargar)
+    📦 INICIALIZAR MODAL DE COMPRA EN EL HTML (Solo para Invitados)
 ======================================================== */
 function injectGuestModal() {
     if (document.getElementById("guestModal")) return;
@@ -98,24 +98,32 @@ function injectGuestModal() {
 }
 
 /* ========================================================
-    💳 DISPARADOR DE COMPRA (Abre el Modal)
+    💳 DISPARADOR DE COMPRA (Bypass Modal si hay Sesión)
 ======================================================== */
-window.payEvent = function(eventId, btnElement) {
+window.payEvent = async function(eventId, btnElement) {
     activePayButton = btnElement;
-    
+    const savedUser = JSON.parse(localStorage.getItem("currentUser"));
+
+    // 🟢 SI EL USUARIO YA INICIÓ SESIÓN: Omitir Modal y procesar directo
+    if (savedUser && (savedUser.token || savedUser.email)) {
+        const fullName = `${savedUser.firstName || ''} ${savedUser.lastName || ''}`.trim() || savedUser.name || "Usuario Registrado";
+        const email = savedUser.email || "";
+        const phone = savedUser.phone || "";
+        
+        await processGuestPurchase(eventId, activePayButton, {
+            fullName,
+            email,
+            phone,
+            quantity: 1 // Por defecto 1 entrada rápida
+        });
+        return;
+    }
+
+    // 🔴 SI NO HAY SESIÓN: Desplegar Modal para invitados
     const modalElement = document.getElementById("guestModal");
     const modal = new bootstrap.Modal(modalElement);
     
     document.getElementById("guestTicketForm").reset();
-
-    const savedUser = JSON.parse(localStorage.getItem("currentUser"));
-    const isSubscriber = savedUser?.isSubscriber === true || savedUser?.roles?.includes("admin");
-
-    if (savedUser) {
-        if(document.getElementById("guestFullName")) document.getElementById("guestFullName").value = `${savedUser.firstName || ''} ${savedUser.lastName || ''}`.trim();
-        if(document.getElementById("guestEmail")) document.getElementById("guestEmail").value = savedUser.email || "";
-        if(document.getElementById("guestPhone")) document.getElementById("guestPhone").value = savedUser.phone || "";
-    }
 
     const inputQty = document.getElementById("ticketQuantity");
     const noticeQty = document.getElementById("maxQtyNotice");
@@ -129,13 +137,8 @@ window.payEvent = function(eventId, btnElement) {
 
     const submitModalBtn = document.getElementById("submitModalBtn");
     if (submitModalBtn) {
-        if (isSubscriber && currentEventAltPrice === 0) {
-            submitModalBtn.textContent = "Confirmar Entrada Gratuita";
-            submitModalBtn.className = "btn btn-success btn-lg fw-bold rounded-3";
-        } else {
-            submitModalBtn.textContent = "Confirmar y Continuar al Pago";
-            submitModalBtn.className = "btn btn-primary btn-lg fw-bold rounded-3";
-        }
+        submitModalBtn.textContent = "Confirmar y Continuar al Pago";
+        submitModalBtn.className = "btn btn-primary btn-lg fw-bold rounded-3";
     }
     
     modal.show();
@@ -170,7 +173,6 @@ async function processGuestPurchase(eventId, btnElement, guestData) {
             chosenPriceType: isSubscriber ? "altPrice" : "price"
         };
 
-        // 🎯 URL ADAPTADA AL BACKEND: Hacemos match perfecto con la ruta combinada de Express
         const resTicket = await fetch(`${API_URL}/api/tickets/events/${eventId}/tickets`, {
             method: "POST",
             headers: headers,
@@ -278,6 +280,7 @@ async function loadEventInfo() {
         currentEventAltPrice = (event.altPrice !== undefined && event.altPrice !== null) ? Number(event.altPrice) : 0; 
 
         const savedUser = JSON.parse(localStorage.getItem("currentUser"));
+        const isLoggedIn = Boolean(savedUser && (savedUser.token || savedUser.email));
         const isSubscriber = savedUser?.isSubscriber === true || savedUser?.roles?.includes("admin");
 
         const hasLimit = event.hasCapacityLimit === true || event.hasCapacityLimit === "true";
@@ -299,6 +302,20 @@ async function loadEventInfo() {
             } else {
                 capacityBadgeHtml = `<div class="alert alert-warning fw-bold text-center border-0 shadow-sm mb-3 text-dark">¡Quedan solo ${remainingCapacity} cupos!</div>`;
             }
+        }
+
+        // 🔑 Banner de Inicio de Sesión si el usuario es Invitado
+        let loginBannerHtml = "";
+        if (!isLoggedIn && !isSoldOut) {
+            loginBannerHtml = `
+                <div class="alert alert-light border border-info-subtle shadow-sm rounded-3 text-center mb-3 p-2">
+                    <small class="text-muted">¿Tienes una cuenta? 
+                        <a href="login.html?redirect=eventDetails.html?id=${eventId}" class="fw-bold text-primary text-decoration-none">
+                            Inicia sesión aquí
+                        </a> para comprar más rápido.
+                    </small>
+                </div>
+            `;
         }
 
         let actionButtonHtml = "";
@@ -361,6 +378,7 @@ async function loadEventInfo() {
                         </ul>
                     </div>
                     <hr class="text-muted my-4">
+                    ${loginBannerHtml}
                     <div class="d-grid gap-2">${actionButtonHtml}</div>
                 </div>
             </div>
