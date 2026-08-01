@@ -178,9 +178,9 @@ async function loadEventInfo() {
         const isSoldOut = hasLimit && remainingCapacity <= 0;
 
         if (hasLimit) {
-            maxAvailableQuantity = Math.min(10, remainingCapacity);
+            maxAvailableQuantity = Math.min(5, remainingCapacity);
         } else {
-            maxAvailableQuantity = 10;
+            maxAvailableQuantity = 5;
         }
 
         let capacityBadgeHtml = "";
