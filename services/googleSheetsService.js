@@ -1,45 +1,47 @@
-const { google } = require('googleapis');
-const path = require('path');
+import { google } from "googleapis";
 
-// Cargar credenciales desde el archivo JSON
-const KEYFILEPATH = path.join(__dirname, 'google-credentials.json');
+const SPREADSHEET_ID = "1svmNFKF4ZD33Ro6RFAXXS9rHQpz-VQs4qksrBSY4cQA";
+const SCOPES = ["https://www.googleapis.com/auth/spreadsheets"];
 
-// Definir los permisos requeridos (Lectura y Escritura en Sheets)
-const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
+// Cargar credenciales desde Variable de Entorno (ideal para Render) o desde archivo local
+function getAuthCredentials() {
+  if (process.env.GOOGLE_CREDENTIALS) {
+    try {
+      // Si la credencial viene como texto JSON en las variables de entorno
+      return JSON.parse(process.env.GOOGLE_CREDENTIALS);
+    } catch (e) {
+      console.error("❌ Error al parsear GOOGLE_CREDENTIALS desde env:", e.message);
+    }
+  }
+  return null;
+}
 
-// ID de tu hoja de cálculo (Reemplázalo por tu ID real copiado en el Paso 2)
-const SPREADSHEET_ID = 'TU_SPREADSHEET_ID_AQUI'; 
+const credentials = getAuthCredentials();
 
-// Inicializar la autenticación
 const auth = new google.auth.GoogleAuth({
-    keyFile: KEYFILEPATH,
-    scopes: SCOPES,
+  ...(credentials ? { credentials } : { keyFile: "./google-credentials.json" }),
+  scopes: SCOPES,
 });
 
 /**
- * Agrega una nueva fila al final de la hoja de cálculo
- * @param {Array} rowData - Arreglo con los valores de la fila, ej: ['2026-08-01', 'Juan', 'juan@email.com']
+ * Registra una lista de filas en Google Sheets
  */
-async function appendTicketToSheet(rowData) {
-    try {
-        const client = await auth.getClient();
-        const sheets = google.sheets({ version: 'v4', auth: client });
+export async function appendTicketsToSheet(rowsData) {
+  try {
+    const client = await auth.getClient();
+    const sheets = google.sheets({ version: "v4", auth: client });
 
-        const response = await sheets.spreadsheets.values.append({
-            spreadsheetId: SPREADSHEET_ID,
-            range: 'Hoja 1!A:G', // Ajusta 'Hoja 1' según el nombre exacto de la pestaña abajo en tu Excel
-            valueInputOption: 'USER_ENTERED', // Para que interprete fechas y números correctamente
-            resource: {
-                values: [rowData], // Recibe una lista de filas
-            },
-        });
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SPREADSHEET_ID,
+      range: "Hoja 1!A:G", // ⚠️ Verifica si en tu Excel abajo la pestaña se llama 'Hoja 1'
+      valueInputOption: "USER_ENTERED",
+      resource: {
+        values: rowsData,
+      },
+    });
 
-        console.log('✅ Venta agregada exitosamente a Google Sheets');
-        return response.data;
-    } catch (error) {
-        console.error('❌ Error guardando en Google Sheets:', error.message);
-        // Tip: No lanzamos el error para no romper la transacción del usuario si falla Sheets
-    }
+    console.log("📊 [SHEETS] Fila(s) enviada(s) con éxito a Google Sheets");
+  } catch (error) {
+    console.error("❌ [SHEETS ERROR] No se pudo guardar en Google Sheets:", error);
+  }
 }
-
-module.exports = { appendTicketToSheet };
