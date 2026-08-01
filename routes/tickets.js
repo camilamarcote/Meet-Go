@@ -1,7 +1,7 @@
 import express from "express";
 import Event from "../models/event.js";
 import EventTicket from "../models/eventTicket.js";
-import User from "../models/user.js"; 
+import User from "../models/User.js"; 
 import { protect } from "../middlewares/auth.js";
 import crypto from "crypto";
 import { appendTicketsToSheet } from "../services/googleSheetsService.js"; // 👈 IMPORTADO
