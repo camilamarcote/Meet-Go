@@ -4,28 +4,26 @@ const hubspotClient = new Client({
   accessToken: process.env.HUBSPOT_ACCESS_TOKEN,
 });
 
-/**
- * Sincroniza la información completa de un usuario con HubSpot
- */
 export async function syncContactToHubSpot(userData) {
   const { email, firstName, lastName, phone, age, interests, department, lastEventBought, isSubscriber } = userData;
 
   if (!email || !process.env.HUBSPOT_ACCESS_TOKEN) return;
 
   try {
-    // Convertir array de intereses a un string legible separado por comas
     const interestsString = Array.isArray(interests) ? interests.join("; ") : interests || "";
 
+    // Mapeo seguro a campos nativos y personalizados
     const properties = {
       email,
       ...(firstName && { firstname: firstName }),
       ...(lastName && { lastname: lastName }),
-      ...(phone && { phone: phone }),
-      ...(age && { age: age.toString() }), // Convertir edad a string
-      ...(interestsString && { intereses_usuario: interestsString }),
-      ...(department && { city: department }), // O departamento
+      ...(phone && { phone }),
+      ...(department && { city: department }), // Usa 'city' que es el estándar de HubSpot
     };
 
+    // Agregar solo si existen o si ya los creaste en HubSpot:
+    if (age) properties.age = age.toString();
+    if (interestsString) properties.intereses_usuario = interestsString;
     if (lastEventBought) properties.ultimo_evento_comprado = lastEventBought;
     if (typeof isSubscriber === "boolean") properties.es_suscriptor = isSubscriber ? "Sí" : "No";
 
@@ -39,7 +37,6 @@ export async function syncContactToHubSpot(userData) {
     return response;
 
   } catch (error) {
-    // Si el contacto ya existe (Error 409), buscar y actualizar sus datos
     if (error.code === 409 || error.status === 409) {
       try {
         const interestsString = Array.isArray(interests) ? interests.join("; ") : interests || "";
@@ -47,12 +44,12 @@ export async function syncContactToHubSpot(userData) {
         const propertiesToUpdate = {
           ...(firstName && { firstname: firstName }),
           ...(lastName && { lastname: lastName }),
-          ...(phone && { phone: phone }),
-          ...(age && { age: age.toString() }),
-          ...(interestsString && { intereses_usuario: interestsString }),
+          ...(phone && { phone }),
           ...(department && { city: department }),
         };
 
+        if (age) propertiesToUpdate.age = age.toString();
+        if (interestsString) propertiesToUpdate.intereses_usuario = interestsString;
         if (lastEventBought) propertiesToUpdate.ultimo_evento_comprado = lastEventBought;
 
         const searchResponse = await hubspotClient.crm.contacts.searchApi.doSearch({
@@ -62,7 +59,7 @@ export async function syncContactToHubSpot(userData) {
         if (searchResponse.results.length > 0) {
           const contactId = searchResponse.results[0].id;
           await hubspotClient.crm.contacts.basicApi.update(contactId, { properties: propertiesToUpdate });
-          console.log(`🎯 [HUBSPOT SUCCESS] Perfil de usuario actualizado en HubSpot (${email})`);
+          console.log(`🎯 [HUBSPOT SUCCESS] Perfil actualizado en HubSpot (${email})`);
         }
       } catch (updateError) {
         console.error("❌ [HUBSPOT ERROR] Fallo al actualizar usuario:", updateError.message || updateError);
