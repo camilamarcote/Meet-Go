@@ -5,7 +5,7 @@ const eventId = params.get("id");
 const eventDetails = document.getElementById("eventDetails");
 
 // Variables globales de estado
-let maxAvailableQuantity = 10; // Límite por defecto
+let maxAvailableQuantity = 2; // Límite por defecto
 let currentEventAltPrice = 0;   // Guarda el precio alternativo dinámicamente
 
 /* ========================================================
