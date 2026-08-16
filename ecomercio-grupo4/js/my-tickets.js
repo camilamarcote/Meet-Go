@@ -98,7 +98,14 @@ function renderMyTickets(tickets) {
     // ID del Pase formateado
     const ticketId = ticket._id ? ticket._id.substring(0, 10) : "N/A";
 
-    // 4. Renderizado HTML
+    // 4. RESOLUCIÓN DE LA IMAGEN DEL QR
+    // Si la entrada ya trae qrImage en Base64 la usa; de lo contrario genera la URL del QR
+    const verifyUrl = `https://meetandgouy.com/verify-ticket.html?tid=${ticket._id}`;
+    const finalQrSource = ticket.qrImage 
+      ? ticket.qrImage 
+      : `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(verifyUrl)}`;
+
+    // 5. Renderizado HTML
     container.innerHTML += `
       <div class="user-card border-start border-4 border-primary mb-3" style="background: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.05); padding: 20px; border-radius: 8px;">
         <div class="user-header d-flex justify-content-between align-items-start flex-wrap gap-2">
@@ -128,11 +135,7 @@ function renderMyTickets(tickets) {
           
           <div class="col-4 text-end">
             <div class="qr-container" style="display: inline-block; background: #f8f9fa; padding: 5px; border-radius: 4px;">
-              ${
-                ticket.qrImage 
-                  ? `<img src="${ticket.qrImage}" alt="QR" style="width: 75px; height: 75px; object-fit: contain;">`
-                  : `<div class="small text-muted text-center" style="width: 75px; font-size: 0.65rem; padding-top: 20px;">Presentar ID</div>`
-              }
+              <img src="${finalQrSource}" alt="Código QR del Ticket" style="width: 75px; height: 75px; object-fit: contain;">
             </div>
           </div>
         </div>

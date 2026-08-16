@@ -4,10 +4,10 @@ import EventTicket from "../models/eventTicket.js";
 import User from "../models/User.js"; 
 import { protect } from "../middlewares/auth.js";
 import crypto from "crypto";
-import QRCode from "qrcode"; // 👈 Importamos la librería de QRCode
+import { generateTicketQR } from "../utils/subscriptionQr.js"; // 👈 Importamos el generador modular de QR
 import { appendTicketsToSheet } from "../services/googleSheetsService.js";
 import { syncContactToHubSpot } from "../services/hubspotService.js";
-import { sendTicketMail } from "../utils/mailer.js"; // 👈 Importamos el mailer
+import { sendTicketMail } from "../utils/mailer.js"; 
 
 const router = express.Router();
 
@@ -91,12 +91,11 @@ router.post("/events/:eventId/tickets", protect, async (req, res) => {
       // 1. Instanciamos el documento para obtener su `_id` definitivo
       const nuevoTicket = new EventTicket(ticketData);
 
-      // 2. Generamos el DataURL del QR apuntando a la URL de verificación
-      const verifyUrl = `https://meetandgouy.com/verify-ticket.html?tid=${nuevoTicket._id}`;
-      const base64QR = await QRCode.toDataURL(verifyUrl);
+      // 2. Generamos el QR utilizando la función modular subscriptionQr.js
+      const { qrImage } = await generateTicketQR(nuevoTicket._id);
 
-      // 3. Asignamos la imagen en formato DataURL
-      nuevoTicket.qrImage = base64QR;
+      // 3. Asignamos la imagen DataURL resultante al ticket
+      nuevoTicket.qrImage = qrImage;
 
       // 4. Guardamos en la Base de Datos
       await nuevoTicket.save();
