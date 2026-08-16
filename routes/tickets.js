@@ -4,8 +4,10 @@ import EventTicket from "../models/eventTicket.js";
 import User from "../models/User.js"; 
 import { protect } from "../middlewares/auth.js";
 import crypto from "crypto";
+import QRCode from "qrcode"; // 👈 Importamos la librería de QRCode
 import { appendTicketsToSheet } from "../services/googleSheetsService.js";
 import { syncContactToHubSpot } from "../services/hubspotService.js";
+import { sendTicketMail } from "../utils/mailer.js"; // 👈 Importamos el mailer
 
 const router = express.Router();
 
@@ -46,7 +48,7 @@ router.post("/events/:eventId/tickets", protect, async (req, res) => {
     // 🛒 ID DE CARRITO ÚNICO
     const idLoteCompra = crypto.randomBytes(12).toString("hex");
     const ticketsCreados = [];
-    const filasParaSheets = []; // 📊 Array acumulador para Google Sheets
+    const filasParaSheets = []; 
 
     let compradorNombre = "";
     let compradorEmail = "";
@@ -86,7 +88,17 @@ router.post("/events/:eventId/tickets", protect, async (req, res) => {
         compradorTelefono = usuarioEnDb?.phone || "";
       }
 
+      // 1. Instanciamos el documento para obtener su `_id` definitivo
       const nuevoTicket = new EventTicket(ticketData);
+
+      // 2. Generamos el DataURL del QR apuntando a la URL de verificación
+      const verifyUrl = `https://meetandgouy.com/verify-ticket.html?tid=${nuevoTicket._id}`;
+      const base64QR = await QRCode.toDataURL(verifyUrl);
+
+      // 3. Asignamos la imagen en formato DataURL
+      nuevoTicket.qrImage = base64QR;
+
+      // 4. Guardamos en la Base de Datos
       await nuevoTicket.save();
       ticketsCreados.push(nuevoTicket);
 
@@ -100,6 +112,16 @@ router.post("/events/:eventId/tickets", protect, async (req, res) => {
         precioFinal,
         "Pendiente de Pago"
       ]);
+
+      // 📧 ENVIAR MAIL CON EL TICKET Y EL QR ADJUNTO (EN SEGUNDO PLANO)
+      if (compradorEmail) {
+        sendTicketMail({
+          to: compradorEmail,
+          userName: compradorNombre,
+          event: evento,
+          ticket: nuevoTicket
+        }).catch(err => console.error("❌ Error enviando mail de ticket:", err));
+      }
     }
 
     // 🔥 ACTUALIZACIÓN DE CUPOS EN LOTE AUTOMÁTICA
@@ -109,12 +131,12 @@ router.post("/events/:eventId/tickets", protect, async (req, res) => {
 
     const nombreDelEvento = evento.name || evento.title || "Evento";
 
-    // 📊 ENVIAR A GOOGLE SHEETS EN SEGUNDO PLANO
+    // 📊 ENVIAR A GOOGLE SHEETS
     if (filasParaSheets.length > 0) {
       appendTicketsToSheet(filasParaSheets, nombreDelEvento);
     }
 
-    // 🎯 ENVIAR A HUBSPOT EN SEGUNDO PLANO
+    // 🎯 ENVIAR A HUBSPOT
     if (compradorEmail) {
       const partesNombre = compradorNombre.trim().split(" ");
       const primerNombre = partesNombre[0] || compradorNombre;
@@ -169,7 +191,6 @@ router.get("/my", protect, async (req, res) => {
     const userId = req.user._id;
     const userEmail = req.user.email;
 
-    // 🔍 Búsqueda flexible: Trae tickets asociados por ID de usuario O por Email de invitado
     const query = {
       $or: [
         { user: userId }
