@@ -5,7 +5,7 @@ import User from "../models/User.js";
 import { protect } from "../middlewares/auth.js";
 import crypto from "crypto";
 import { appendTicketsToSheet } from "../services/googleSheetsService.js";
-import { syncContactToHubSpot } from "../services/hubspotService.js"; // 👈 IMPORTADO DE HUBSPOT
+import { syncContactToHubSpot } from "../services/hubspotService.js";
 
 const router = express.Router();
 
@@ -91,7 +91,6 @@ router.post("/events/:eventId/tickets", protect, async (req, res) => {
       ticketsCreados.push(nuevoTicket);
 
       // 🟢 Armar la fila correspondiente para Google Sheets
-      // Columnas: [Fecha, ID Ticket, Nombre, Email, Evento, Monto, Estado]
       filasParaSheets.push([
         new Date().toISOString().split("T")[0],
         nuevoTicket._id.toString(),
@@ -110,7 +109,7 @@ router.post("/events/:eventId/tickets", protect, async (req, res) => {
 
     const nombreDelEvento = evento.name || evento.title || "Evento";
 
-    // 📊 ENVIAR A GOOGLE SHEETS EN SEGUNDO PLANO (Crea o busca la pestaña por evento)
+    // 📊 ENVIAR A GOOGLE SHEETS EN SEGUNDO PLANO
     if (filasParaSheets.length > 0) {
       appendTicketsToSheet(filasParaSheets, nombreDelEvento);
     }
@@ -151,8 +150,9 @@ router.get("/tickets", protect, async (req, res) => {
     }
 
     const tickets = await EventTicket.find()
-      .populate("event", "name title price altPrice date time department neighborhood") 
-      .populate("user", "firstName lastName username email phone");
+      .populate("event") 
+      .populate("user", "firstName lastName username email phone")
+      .sort({ createdAt: -1 });
 
     return res.json(tickets);
   } catch (error) {
@@ -166,9 +166,24 @@ router.get("/tickets", protect, async (req, res) => {
 // ========================================================
 router.get("/my", protect, async (req, res) => {
   try {
-    const tickets = await EventTicket.find({ user: req.user._id })
-      .populate("event", "name title price date time department neighborhood") 
-      .populate("user", "firstName lastName username email");
+    const userId = req.user._id;
+    const userEmail = req.user.email;
+
+    // 🔍 Búsqueda flexible: Trae tickets asociados por ID de usuario O por Email de invitado
+    const query = {
+      $or: [
+        { user: userId }
+      ]
+    };
+
+    if (userEmail) {
+      query.$or.push({ guestEmail: userEmail });
+    }
+
+    const tickets = await EventTicket.find(query)
+      .populate("event") 
+      .populate("user", "firstName lastName username email")
+      .sort({ createdAt: -1 });
 
     return res.json(tickets);
   } catch (error) {

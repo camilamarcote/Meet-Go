@@ -14,11 +14,10 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* ========================================================
-    📥 CARGAR TICKETS DEL USUARIO AUTENTICADO
+   📥 CARGAR TICKETS DEL USUARIO AUTENTICADO
    ======================================================== */
 async function loadMyTickets(token) {
   try {
-    // Apuntamos al endpoint que extrae los tickets del 'User' mediante el Token
     const res = await fetch(`${API_URL}/api/tickets/my`, {
       headers: {
         Authorization: `Bearer ${token}`
@@ -36,7 +35,7 @@ async function loadMyTickets(token) {
     if (container) {
       container.innerHTML = `
         <div class="alert alert-danger" style="padding: 15px; border-radius: 6px; text-align: center;">
-          <strong>⚠️ Error:</strong> No pudimos conectar con tus entradas de MongoDB. Reintenta en unos minutos.
+          <strong>⚠️ Error:</strong> No pudimos conectar con tus entradas. Reintenta en unos minutos.
         </div>
       `;
     }
@@ -44,7 +43,7 @@ async function loadMyTickets(token) {
 }
 
 /* ========================================================
-    🧩 RENDERIZAR ENTRADAS (Sin estados de pago)
+   🧩 RENDERIZAR ENTRADAS
    ======================================================== */
 function renderMyTickets(tickets) {
   const container = document.getElementById("ticketsContainer");
@@ -64,32 +63,42 @@ function renderMyTickets(tickets) {
   }
 
   tickets.forEach(ticket => {
-    // 1. Obtener los datos del evento poblados desde MongoDB
-    const eventName = ticket.event?.name || ticket.event?.title || "Evento de Meet & Go";
-    
-    // Formatear fecha del evento de forma amigable
-    const eventDate = ticket.event?.date ? new Date(ticket.event.date).toLocaleDateString(undefined, { day: 'numeric', month: 'long' }) : "";
-    const eventTime = ticket.event?.time || "";
+    // 1. Resolver el objeto del evento (soporta si viene en `ticket.event` o `ticket.eventId`)
+    const eventObj = (typeof ticket.event === "object" && ticket.event !== null)
+      ? ticket.event
+      : (typeof ticket.eventId === "object" && ticket.eventId !== null)
+        ? ticket.eventId
+        : {};
 
-    // Construcción del lugar combinando barrio y departamento
-    const neighborhood = ticket.event?.neighborhood || "";
-    const department = ticket.event?.department || "";
+    // 2. Extraer el nombre según la propiedad 'name' del EventSchema
+    const eventName = eventObj.name || eventObj.title || "Evento de Meet & Go";
+    
+    // Formatear fecha y hora del evento
+    const eventDate = eventObj.date ? new Date(eventObj.date).toLocaleDateString(undefined, { day: 'numeric', month: 'long' }) : "";
+    const eventTime = eventObj.time || "";
+
+    // Construcción de ubicación (barrio, departamento)
+    const neighborhood = eventObj.neighborhood || "";
+    const department = eventObj.department || "";
     let eventLocation = [neighborhood, department].filter(Boolean).join(", ");
     if (!eventLocation) eventLocation = "Uruguay";
 
-    // 2. Comprobar nombre en el pase (Por si compró para un invitado externo)
+    // 3. Comprobar beneficiario
     let holderName = "Titular de la cuenta";
     if (ticket.guestName) {
       holderName = ticket.guestName;
-    } else if (ticket.user) {
+    } else if (ticket.user && typeof ticket.user === "object") {
       holderName = `${ticket.user.firstName || ""} ${ticket.user.lastName || ""}`.trim();
     }
     
-    // Identificar si es un pase propio o para un amigo
+    // Badges de identificación
     const labelBadge = ticket.isGuest ? "badge bg-warning text-dark" : "badge bg-primary";
     const labelText = ticket.isGuest ? "Para Invitado" : "Pase Personal";
 
-    // 4. Inyección del diseño HTML estructurado de forma limpia sin estados de pago
+    // ID del Pase formateado
+    const ticketId = ticket._id ? ticket._id.substring(0, 10) : "N/A";
+
+    // 4. Renderizado HTML
     container.innerHTML += `
       <div class="user-card border-start border-4 border-primary mb-3" style="background: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.05); padding: 20px; border-radius: 8px;">
         <div class="user-header d-flex justify-content-between align-items-start flex-wrap gap-2">
@@ -103,7 +112,7 @@ function renderMyTickets(tickets) {
               <span><i class="bi bi-geo-alt"></i> ${eventLocation}</span>
             </div>
           </div>
-          <div class="badges">
+          <div class="badges"> 
             <span class="${labelBadge}">${labelText}</span>
           </div>
         </div>
@@ -114,7 +123,7 @@ function renderMyTickets(tickets) {
           <div class="col-8">
             <p class="mb-1"><strong>Beneficiario:</strong> ${holderName}</p>
             <p class="mb-1"><strong>Tipo de Entrada:</strong> <span class="text-capitalize">${ticket.accessType || "Pase General"}</span></p>
-            <p class="mb-0 text-muted small"><strong>ID Pase:</strong> ${ticket._id.substring(0, 10)}...</p>
+            <p class="mb-0 text-muted small"><strong>ID Pase:</strong> ${ticketId}...</p>
           </div>
           
           <div class="col-4 text-end">
