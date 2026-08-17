@@ -268,38 +268,43 @@ function renderGuests(guests) {
   container.innerHTML = "";
 
   if (guests.length === 0) {
-    container.innerHTML = `<p class="text-muted p-3">No hay pases individuales ni invitados registrados para los eventos actuales.</p>`;
+    container.innerHTML = `<p class="text-muted p-3">No hay pases registrados.</p>`;
     return;
   }
 
   guests.forEach(guest => {
-    // 1. Resolver el objeto del evento (soporta guest.event o guest.eventId)
+    // 1. Extraer nombre del evento con fallbacks (Objeto populate -> String directo -> Nombre por defecto)
     const eventObj = (typeof guest.event === "object" && guest.event !== null)
       ? guest.event
       : (typeof guest.eventId === "object" && guest.eventId !== null)
         ? guest.eventId
         : {};
 
-    // 2. Extraer el nombre del evento
-    const eventName = eventObj.name || eventObj.title || "Evento No Especificado";
+    const eventName = eventObj.name || eventObj.title || guest.eventName || "Evento No Especificado";
 
-    // 3. Resolver el nombre del asistente
+    // 2. Extraer nombre del comprador / invitado
     let guestName = "Invitado anónimo";
-    if (guest.guestName) {
+    if (guest.guestName && guest.guestName.trim() !== "") {
       guestName = guest.guestName;
     } else if (guest.user && typeof guest.user === "object") {
-      guestName = `${guest.user.firstName || ""} ${guest.user.lastName || ""}`.trim() || guest.user.username;
+      const fullName = `${guest.user.firstName || ""} ${guest.user.lastName || ""}`.trim();
+      guestName = fullName || guest.user.username || "Usuario Registrado";
+    } else if (guest.userName) {
+      guestName = guest.userName;
     }
 
-    const guestEmail = guest.guestEmail || guest.user?.email || "—";
-    const guestPhone = guest.guestPhone || guest.user?.phone || "—";
+    // 3. Extraer contacto con fallbacks
+    const guestEmail = guest.guestEmail || guest.user?.email || guest.email || "—";
+    const guestPhone = guest.guestPhone || guest.user?.phone || guest.phone || "—";
     
+    // Estado del ticket
     const ticketStatus = (guest.payment?.status === "paid" || guest.payment?.status === "approved" || guest.payment?.status === "free") 
       ? "✅ Pagado" 
       : "⏳ Pendiente";
       
     const badgeType = guest.isGuest ? "bg-warning text-dark" : "bg-info text-dark";
     const userLabel = guest.isGuest ? "Invitado Externo" : "Pase Individual";
+    const ticketIdDisplay = guest._id ? guest._id.toString() : (guest.qrCode || "—");
 
     container.innerHTML += `
       <div class="user-card border-start border-4 border-info mb-3">
@@ -311,55 +316,13 @@ function renderGuests(guests) {
           </div>
         </div>
         
-        <p class="mb-2 mt-2"><strong>🎉 Evento:</strong> <span class="text-primary fw-bold">${eventName}</span></p>
+        <p class="mb-2 mt-2"><strong>🎉 Evento de Destino:</strong> <span class="text-primary fw-bold">${eventName}</span></p>
         <p class="mb-1"><strong>📧 Email:</strong> ${guestEmail}</p>
         <p class="mb-1"><strong>📱 Celular:</strong> ${guestPhone}</p>
-        <p class="mb-0 text-muted small"><strong>🆔 Código Pase:</strong> ${guest._id ? guest._id.substring(0, 10) : "—"}...</p>
+        <p class="mb-0 text-muted small"><strong>🆔 Código Pase:</strong> ${ticketIdDisplay.substring(0, 23)}...</p>
       </div>
     `;
   });
-}
-
-/* ===============================
-    ⭐ ACTIVAR SUSCRIPCIÓN
-=============================== */
-async function activateSubscription(userId) {
-  if (!confirm("¿Marcar este usuario como suscripta?")) return;
-  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
-  try {
-    const res = await fetch(`${API_URL}/api/admin/activate-subscription/${userId}`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${currentUser.token}` }
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || "Error activando suscripción");
-    alert("✅ Suscripción activada");
-    loadUsers(currentUser.token);
-  } catch (err) {
-    console.error("❌ Error:", err);
-    alert("Error activando suscripción");
-  }
-}
-
-/* ===============================
-    🚫 DESACTIVAR SUSCRIPCIÓN
-=============================== */
-async function deactivateSubscription(userId) {
-  if (!confirm("¿Dar de baja la suscripción de este usuario?")) return;
-  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
-  try {
-    const res = await fetch(`${API_URL}/api/admin/deactivate-subscription/${userId}`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${currentUser.token}` }
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || "Error dando de baja suscripción");
-    alert("🚫 Suscripción dada de baja");
-    loadUsers(currentUser.token);
-  } catch (err) {
-    console.error("❌ Error:", err);
-    alert("Error al dar de baja la suscripción");
-  }
 }
 
 /* ===============================
