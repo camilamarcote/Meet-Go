@@ -2,7 +2,7 @@ const API_URL = "https://api.meetandgouy.com";
 
 // Variables globales para la búsqueda
 let allUsers = [];
-let allGuests = []; // 👥 Almacén para los pases individuales e invitados
+let allTickets = []; // 🎟️ Almacén para los tickets vendidos
 let currentFilter = "all";
 
 /* ===============================
@@ -21,9 +21,9 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  // Carga ambas listas en paralelo desde la base de datos real
+  // Carga ambas listas en paralelo desde la base de datos
   loadUsers(currentUser.token);
-  loadGuests(currentUser.token);
+  loadSoldTickets(currentUser.token);
   
   // Inicializar eventos de búsqueda
   initSearchEvents();
@@ -89,12 +89,10 @@ async function loadUsers(token) {
 }
 
 /* ===============================
-    👥 CARGAR USUARIOS INVITADOS REALES
+    🎟️ CARGAR TICKETS VENDIDOS
 =============================== */
-async function loadGuests(token) {
+async function loadSoldTickets(token) {
   try {
-    // 🎯 URL CORREGIDA: Apunta al endpoint combinado de Express (/api/tickets/tickets)
-    // Esto hace match exacto con el prefijo de tu server.js y el enrutador de tickets.js
     const res = await fetch(`${API_URL}/api/tickets/tickets`, {
       headers: { 
         Authorization: `Bearer ${token}`,
@@ -103,19 +101,19 @@ async function loadGuests(token) {
     });
 
     if (!res.ok) {
-      throw new Error("No se pudo obtener la respuesta correcta del servidor de tickets.");
+      throw new Error("No se pudo obtener la respuesta del servidor de tickets.");
     }
 
     const tickets = await res.json();
-    procesarYRenderizarInvitados(tickets);
+    procesarYRenderizarTickets(tickets);
 
   } catch (error) {
-    console.error("❌ Error cargando invitados reales:", error);
+    console.error("❌ Error cargando tickets vendidos:", error);
     const guestContainer = document.getElementById("guestsContainer");
     if (guestContainer) {
       guestContainer.innerHTML = `
         <div class="alert alert-danger" style="padding: 15px; background-color: #f8d7da; color: #721c24; border-radius: 6px; font-weight: 500;">
-          <strong>⚠️ Error de conexión backend:</strong> No se pudieron traer los invitados reales de MongoDB.<br>
+          <strong>⚠️ Error de conexión backend:</strong> No se pudieron obtener los tickets vendidos desde MongoDB.<br>
           <span style="font-size: 0.9rem; font-weight: normal; opacity: 0.8;">
             Verifica que la API responda correctamente en /api/tickets/tickets.
           </span>
@@ -125,17 +123,11 @@ async function loadGuests(token) {
   }
 }
 
-// Función auxiliar para filtrar y mandar a pintar
-function procesarYRenderizarInvitados(tickets) {
+// Función auxiliar para guardar y mandar a pintar
+function procesarYRenderizarTickets(tickets) {
   if (!Array.isArray(tickets)) return;
-  
-  // Filtramos pases de invitados externos, pases individuales sueltos o marcados explícitamente como guest
-  allGuests = tickets.filter(ticket => 
-    ticket.guestEmail || 
-    ticket.isGuest === true || 
-    ticket.accessType === "single-event"
-  );
-  renderGuests(allGuests);
+  allTickets = tickets;
+  renderSoldTickets(allTickets);
 }
 
 /* ===============================
@@ -256,73 +248,109 @@ function renderUsers(users) {
 }
 
 /* ===============================
-    🧩 RENDER USUARIOS INVITADOS HÍBRIDO 
+    🎟️ RENDER TICKETS VENDIDOS
 =============================== */
-/* ===============================
-    🧩 RENDER TICKETS VENDIDOS (GUESTS)
-=============================== */
-function renderGuests(guests) {
+function renderSoldTickets(tickets) {
   const container = document.getElementById("guestsContainer");
   if (!container) return;
 
   container.innerHTML = "";
 
-  if (guests.length === 0) {
-    container.innerHTML = `<p class="text-muted p-3">No hay pases registrados.</p>`;
+  if (tickets.length === 0) {
+    container.innerHTML = `<p class="text-muted p-3">No hay tickets ni pases vendidos registrados hasta el momento.</p>`;
     return;
   }
 
-  guests.forEach(guest => {
-    // 1. Extraer nombre del evento con fallbacks (Objeto populate -> String directo -> Nombre por defecto)
-    const eventObj = (typeof guest.event === "object" && guest.event !== null)
-      ? guest.event
-      : (typeof guest.eventId === "object" && guest.eventId !== null)
-        ? guest.eventId
+  tickets.forEach(ticket => {
+    // 1. Resolver el objeto del evento
+    const eventObj = (typeof ticket.event === "object" && ticket.event !== null)
+      ? ticket.event
+      : (typeof ticket.eventId === "object" && ticket.eventId !== null)
+        ? ticket.eventId
         : {};
 
-    const eventName = eventObj.name || eventObj.title || guest.eventName || "Evento No Especificado";
+    // 2. Extraer el nombre del evento con fallbacks seguros
+    const eventName = eventObj.name || eventObj.title || ticket.eventName || "Evento Meet & Go";
 
-    // 2. Extraer nombre del comprador / invitado
-    let guestName = "Invitado anónimo";
-    if (guest.guestName && guest.guestName.trim() !== "") {
-      guestName = guest.guestName;
-    } else if (guest.user && typeof guest.user === "object") {
-      const fullName = `${guest.user.firstName || ""} ${guest.user.lastName || ""}`.trim();
-      guestName = fullName || guest.user.username || "Usuario Registrado";
-    } else if (guest.userName) {
-      guestName = guest.userName;
+    // 3. Resolver el nombre del comprador/asistente
+    let holderName = "Invitado Anónimo";
+    if (ticket.guestName && ticket.guestName.trim() !== "") {
+      holderName = ticket.guestName;
+    } else if (ticket.user && typeof ticket.user === "object") {
+      const full = `${ticket.user.firstName || ""} ${ticket.user.lastName || ""}`.trim();
+      holderName = full || ticket.user.username || "Usuario Registrado";
     }
 
-    // 3. Extraer contacto con fallbacks
-    const guestEmail = guest.guestEmail || guest.user?.email || guest.email || "—";
-    const guestPhone = guest.guestPhone || guest.user?.phone || guest.phone || "—";
+    const holderEmail = ticket.guestEmail || ticket.user?.email || "—";
+    const holderPhone = ticket.guestPhone || ticket.user?.phone || "—";
     
-    // Estado del ticket
-    const ticketStatus = (guest.payment?.status === "paid" || guest.payment?.status === "approved" || guest.payment?.status === "free") 
-      ? "✅ Pagado" 
-      : "⏳ Pendiente";
-      
-    const badgeType = guest.isGuest ? "bg-warning text-dark" : "bg-info text-dark";
-    const userLabel = guest.isGuest ? "Invitado Externo" : "Pase Individual";
-    const ticketIdDisplay = guest._id ? guest._id.toString() : (guest.qrCode || "—");
+    // 4. Determinar estado de pago y etiquetas
+    const isPaid = ticket.payment?.status === "paid" || ticket.payment?.status === "approved" || ticket.payment?.status === "free";
+    const ticketStatus = isPaid ? "✅ Pagado" : "⏳ Pendiente";
+    
+    const isGuest = ticket.isGuest === true;
+    const badgeType = isGuest ? "bg-warning text-dark" : "bg-info text-dark";
+    const userLabel = isGuest ? "Invitado Externo" : "Usuario Registrado";
 
     container.innerHTML += `
-      <div class="user-card border-start border-4 border-info mb-3">
+      <div class="user-card border-start border-4 ${isGuest ? 'border-warning' : 'border-info'} mb-3">
         <div class="user-header d-flex justify-content-between align-items-center">
-          <h3 class="m-0 fs-5">${guestName} <span class="fs-6 text-muted">(${userLabel})</span></h3>
+          <h3 class="m-0 fs-5">${holderName} <span class="fs-6 text-muted">(${userLabel})</span></h3>
           <div class="badges">
-            <span class="badge ${badgeType}">🎟️ ${guest.accessType || "Pase"}</span>
-            <span class="badge bg-secondary text-white">${ticketStatus}</span>
+            <span class="badge ${badgeType}">🎟️ ${ticket.accessType || "Pase"}</span>
+            <span class="badge ${isPaid ? 'bg-success' : 'bg-secondary'} text-white">${ticketStatus}</span>
           </div>
         </div>
         
-        <p class="mb-2 mt-2"><strong>🎉 Evento de Destino:</strong> <span class="text-primary fw-bold">${eventName}</span></p>
-        <p class="mb-1"><strong>📧 Email:</strong> ${guestEmail}</p>
-        <p class="mb-1"><strong>📱 Celular:</strong> ${guestPhone}</p>
-        <p class="mb-0 text-muted small"><strong>🆔 Código Pase:</strong> ${ticketIdDisplay.substring(0, 23)}...</p>
+        <p class="mb-2 mt-2"><strong>🎉 Evento:</strong> <span class="text-primary fw-bold">${eventName}</span></p>
+        <p class="mb-1"><strong>📧 Email:</strong> ${holderEmail}</p>
+        <p class="mb-1"><strong>📱 Celular:</strong> ${holderPhone}</p>
+        <p class="mb-0 text-muted small"><strong>🆔 Código Ticket:</strong> ${ticket._id ? ticket._id.substring(0, 10) : "—"}...</p>
       </div>
     `;
   });
+}
+
+/* ===============================
+    ⭐ ACTIVAR SUSCRIPCIÓN
+=============================== */
+async function activateSubscription(userId) {
+  if (!confirm("¿Marcar este usuario como suscripta?")) return;
+  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+  try {
+    const res = await fetch(`${API_URL}/api/admin/activate-subscription/${userId}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${currentUser.token}` }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Error activando suscripción");
+    alert("✅ Suscripción activada");
+    loadUsers(currentUser.token);
+  } catch (err) {
+    console.error("❌ Error:", err);
+    alert("Error activando suscripción");
+  }
+}
+
+/* ===============================
+    🚫 DESACTIVAR SUSCRIPCIÓN
+=============================== */
+async function deactivateSubscription(userId) {
+  if (!confirm("¿Dar de baja la suscripción de este usuario?")) return;
+  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+  try {
+    const res = await fetch(`${API_URL}/api/admin/deactivate-subscription/${userId}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${currentUser.token}` }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Error dando de baja suscripción");
+    alert("🚫 Suscripción dada de baja");
+    loadUsers(currentUser.token);
+  } catch (err) {
+    console.error("❌ Error:", err);
+    alert("Error al dar de baja la suscripción");
+  }
 }
 
 /* ===============================

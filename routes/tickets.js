@@ -11,14 +11,21 @@ import { sendTicketMail } from "../utils/mailer.js";
 
 const router = express.Router();
 
+// Middleware opcional para permitir compras tanto de registrados como de invitados
+const protectOptional = (req, res, next) => {
+  if (req.headers.authorization) {
+    return protect(req, res, next);
+  }
+  next();
+};
+
 // ========================================================
 // 🔍 VERIFICACIÓN PÚBLICA DE ESTADO DEL TICKET (PARA EL QR)
 // ========================================================
-// 🔍 Verificación pública del ticket por ID
 router.get("/status/:ticketId", async (req, res) => {
   try {
     const ticket = await EventTicket.findById(req.params.ticketId)
-      .populate("event")
+      .populate("event", "name title date")
       .populate("user", "firstName lastName username");
 
     if (!ticket) {
@@ -27,7 +34,7 @@ router.get("/status/:ticketId", async (req, res) => {
 
     // 1. Resolver el objeto del evento
     const eventObj = ticket.event || {};
-    const eventName = eventObj.name || eventObj.title || "Evento Meet & Go";
+    const eventName = eventObj.name || eventObj.title || ticket.eventName || "Evento Meet & Go";
     
     // Formatear la fecha
     const eventDate = eventObj.date 
@@ -36,7 +43,7 @@ router.get("/status/:ticketId", async (req, res) => {
 
     // 2. Comprobar beneficiario
     let holderName = "Titular de la cuenta";
-    if (ticket.guestName) {
+    if (ticket.guestName && ticket.guestName.trim() !== "") {
       holderName = ticket.guestName;
     } else if (ticket.user && typeof ticket.user === "object") {
       const full = `${ticket.user.firstName || ""} ${ticket.user.lastName || ""}`.trim();
@@ -53,10 +60,11 @@ router.get("/status/:ticketId", async (req, res) => {
     return res.status(500).json({ error: "Error al leer el ticket" });
   }
 });
+
 // ========================================================
 // 🟣 CREAR TICKETS EN LOTE (SOPORTA CANTIDADES MÚLTIPLES)
 // ========================================================
-router.post("/events/:eventId/tickets", protect, async (req, res) => {
+router.post("/events/:eventId/tickets", protectOptional, async (req, res) => {
   try {
     const { eventId } = req.params;
     const { guestEmail, guestName, guestPhone, isGuest, quantity } = req.body;
@@ -79,9 +87,9 @@ router.post("/events/:eventId/tickets", protect, async (req, res) => {
     // 🕵️‍♂️ RECOGER EL ESTADO ACTUALIZADO DEL USUARIO DESDE MONGO
     let esSuscriptorValido = false;
     let usuarioEnDb = null;
-    if (req.user) {
+    if (req.user && req.user._id) {
       usuarioEnDb = await User.findById(req.user._id);
-      esSuscriptorValido = usuarioEnDb && (usuarioEnDb.isSubscriber === true || usuarioEnDb.roles?.includes("admin"));
+      esSuscriptorValido = usuarioEnDb && (usuarioEnDb.isSubscriber === true || usuarioEnDb.subscription?.isActive === true || usuarioEnDb.roles?.includes("admin"));
     }
 
     // 🎯 ASIGNACIÓN DEFINITIVA DEL PRECIO
@@ -96,6 +104,8 @@ router.post("/events/:eventId/tickets", protect, async (req, res) => {
     let compradorEmail = "";
     let compradorTelefono = "";
 
+    const nombreDelEvento = evento.name || evento.title || "Evento Meet & Go";
+
     // 🔄 BUCLE: Creación de pases individuales con QRs distintos
     for (let i = 0; i < cantidadAComprar; i++) {
       
@@ -103,6 +113,7 @@ router.post("/events/:eventId/tickets", protect, async (req, res) => {
 
       const ticketData = {
         event: eventId,
+        eventName: nombreDelEvento,
         qrCode: qrUnicoIndividual,  
         cartId: idLoteCompra,        
         payment: {
@@ -149,7 +160,7 @@ router.post("/events/:eventId/tickets", protect, async (req, res) => {
         nuevoTicket._id.toString(),
         compradorNombre,
         compradorEmail,
-        evento.name || evento.title || "Evento",
+        nombreDelEvento,
         precioFinal,
         "Pendiente de Pago"
       ]);
@@ -169,8 +180,6 @@ router.post("/events/:eventId/tickets", protect, async (req, res) => {
     await Event.findByIdAndUpdate(eventId, {
       $inc: { ticketsSold: cantidadAComprar }
     });
-
-    const nombreDelEvento = evento.name || evento.title || "Evento";
 
     // 📊 ENVIAR A GOOGLE SHEETS
     if (filasParaSheets.length > 0) {
@@ -213,7 +222,7 @@ router.get("/tickets", protect, async (req, res) => {
     }
 
     const tickets = await EventTicket.find()
-      .populate("event") 
+      .populate("event", "name title date location price") 
       .populate("user", "firstName lastName username email phone")
       .sort({ createdAt: -1 });
 
@@ -243,7 +252,7 @@ router.get("/my", protect, async (req, res) => {
     }
 
     const tickets = await EventTicket.find(query)
-      .populate("event") 
+      .populate("event", "name title date location price image") 
       .populate("user", "firstName lastName username email")
       .sort({ createdAt: -1 });
 
