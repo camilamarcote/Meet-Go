@@ -14,37 +14,39 @@ const router = express.Router();
 // ========================================================
 // 🔍 VERIFICACIÓN PÚBLICA DE ESTADO DEL TICKET (PARA EL QR)
 // ========================================================
-// Nota: Si en server.js usas app.use("/api/public", ticketsRoutes), cambia el endpoint a "/ticket-status/:ticketId"
-router.get("/public/ticket-status/:ticketId", async (req, res) => {
+// 🔍 Verificación pública del ticket por ID
+router.get("/status/:ticketId", async (req, res) => {
   try {
-    const { ticketId } = req.params;
-    const ticket = await EventTicket.findById(ticketId)
-      .populate("event")
-      .populate("user");
+    const ticket = await EventTicket.findById(req.params.ticketId)
+      .populate("event", "name title date")
+      .populate("user", "firstName lastName username");
 
     if (!ticket) {
-      return res.status(404).json({ isValid: false, message: "Ticket no encontrado en el sistema" });
+      return res.status(404).json({ error: "Ticket no encontrado" });
     }
 
-    // Determinar nombre del asistente (Invitado vs Registrado)
-    let nombreAsistente = ticket.isGuest 
+    // Nombre del asistente (Registrado o Invitado)
+    const nombre = ticket.isGuest 
       ? ticket.guestName 
-      : `${ticket.user?.firstName || ''} ${ticket.user?.lastName || ''}`.trim() || ticket.user?.username;
+      : `${ticket.user?.firstName || ''} ${ticket.user?.lastName || ''}`.trim() || ticket.user?.username || "Asistente";
 
-    return res.json({
-      isValid: ticket.payment?.status === "approved" || ticket.payment?.status === "pending",
-      paymentStatus: ticket.payment?.status || "pending",
-      attendeeName: nombreAsistente || "Invitado",
-      eventName: ticket.event?.name || ticket.event?.title || "Evento Meet&Go",
-      isGuest: ticket.isGuest,
-      ticketId: ticket._id
-    });
+    // Nombre del evento
+    const evento = ticket.event?.name || ticket.event?.title || "Evento Meet&Go";
+
+    // Fecha del evento
+    const fecha = ticket.event?.date 
+      ? new Date(ticket.event.date).toLocaleDateString("es-UY", {
+          day: "numeric",
+          month: "long",
+          year: "numeric"
+        })
+      : "Sin fecha definida";
+
+    return res.json({ nombre, evento, fecha });
   } catch (error) {
-    console.error("❌ Error en verificación de ticket:", error);
-    return res.status(500).json({ isValid: false, message: "Error interno procesando el ticket" });
+    return res.status(500).json({ error: "Error al leer el ticket" });
   }
 });
-
 // ========================================================
 // 🟣 CREAR TICKETS EN LOTE (SOPORTA CANTIDADES MÚLTIPLES)
 // ========================================================
