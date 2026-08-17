@@ -258,6 +258,9 @@ function renderUsers(users) {
 /* ===============================
     🧩 RENDER USUARIOS INVITADOS HÍBRIDO 
 =============================== */
+/* ===============================
+    🧩 RENDER TICKETS VENDIDOS (GUESTS)
+=============================== */
 function renderGuests(guests) {
   const container = document.getElementById("guestsContainer");
   if (!container) return;
@@ -270,36 +273,48 @@ function renderGuests(guests) {
   }
 
   guests.forEach(guest => {
-    const eventName = guest.event?.name || guest.event?.title || "Evento No Especificado";
-    
+    // 1. Resolver el objeto del evento (soporta guest.event o guest.eventId)
+    const eventObj = (typeof guest.event === "object" && guest.event !== null)
+      ? guest.event
+      : (typeof guest.eventId === "object" && guest.eventId !== null)
+        ? guest.eventId
+        : {};
+
+    // 2. Extraer el nombre del evento
+    const eventName = eventObj.name || eventObj.title || "Evento No Especificado";
+
+    // 3. Resolver el nombre del asistente
     let guestName = "Invitado anónimo";
     if (guest.guestName) {
       guestName = guest.guestName;
-    } else if (guest.user) {
+    } else if (guest.user && typeof guest.user === "object") {
       guestName = `${guest.user.firstName || ""} ${guest.user.lastName || ""}`.trim() || guest.user.username;
     }
 
     const guestEmail = guest.guestEmail || guest.user?.email || "—";
     const guestPhone = guest.guestPhone || guest.user?.phone || "—";
     
-    const ticketStatus = guest.payment?.status === "paid" || guest.payment?.status === "free" ? "✅ Pagado/Liberado" : "⏳ Pendiente";
+    const ticketStatus = (guest.payment?.status === "paid" || guest.payment?.status === "approved" || guest.payment?.status === "free") 
+      ? "✅ Pagado" 
+      : "⏳ Pendiente";
+      
     const badgeType = guest.isGuest ? "bg-warning text-dark" : "bg-info text-dark";
     const userLabel = guest.isGuest ? "Invitado Externo" : "Pase Individual";
 
     container.innerHTML += `
-      <div class="user-card border-start border-4 border-info">
-        <div class="user-header">
-          <h3>${guestName} <span class="fs-6 text-muted">(${userLabel})</span></h3>
+      <div class="user-card border-start border-4 border-info mb-3">
+        <div class="user-header d-flex justify-content-between align-items-center">
+          <h3 class="m-0 fs-5">${guestName} <span class="fs-6 text-muted">(${userLabel})</span></h3>
           <div class="badges">
             <span class="badge ${badgeType}">🎟️ ${guest.accessType || "Pase"}</span>
             <span class="badge bg-secondary text-white">${ticketStatus}</span>
           </div>
         </div>
         
-        <p class="mb-2"><strong>🎉 Evento de Destino:</strong> <span class="text-primary fw-bold">${eventName}</span></p>
+        <p class="mb-2 mt-2"><strong>🎉 Evento:</strong> <span class="text-primary fw-bold">${eventName}</span></p>
         <p class="mb-1"><strong>📧 Email:</strong> ${guestEmail}</p>
         <p class="mb-1"><strong>📱 Celular:</strong> ${guestPhone}</p>
-        <p class="mb-0 text-muted small"><strong>🆔 Código Pase:</strong> ${guest.qrCode ? guest.qrCode.substring(0, 23) : "—"}...</p>
+        <p class="mb-0 text-muted small"><strong>🆔 Código Pase:</strong> ${guest._id ? guest._id.substring(0, 10) : "—"}...</p>
       </div>
     `;
   });
