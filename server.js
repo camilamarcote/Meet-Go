@@ -29,18 +29,19 @@ const allowedOrigins = [
   "https://meetandgo-frontend.onrender.com"
 ];
 
+// 🟢 CORS CORREGIDO Y SEGURO
 app.use(cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) !== -1) {
-        callback(null, true);
-      } else {
-        callback(null, true); 
-      }
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true); // Permite Postman, cURL y apps nativas
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error("Acceso denegado por políticas de CORS"));
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 app.use(express.urlencoded({ extended: true }));
@@ -54,10 +55,6 @@ app.use("/api/users", usersRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/public", publicRoutes);
-
-// 🎯 CORRECCIÓN CLAVE ENRUTADOR DE TICKETS: 
-// Se asocia directamente al prefijo explícito /api/tickets.
-// Esto permite que el backend entienda perfectamente tanto /api/tickets como /api/tickets/my.
 app.use("/api/tickets", ticketRoutes); 
 app.use("/api", paymentsRoutes);
 
@@ -71,7 +68,7 @@ mongoose
   .then(async () => { 
     console.log("✅ MongoDB conectado exitosamente");
     
-    // 🔥 CÓDIGO TEMPORAL PARA BORRAR EL ÍNDICE BLOQUEANTE DE USUARIOS REPETIDOS
+    // 🔥 LIMPIEZA TEMPORAL DE ÍNDICES BLOQUEANTES
     try {
       await mongoose.connection.collection('eventtickets').dropIndex('user_1_event_1');
       console.log("🚀 [LIMPIEZA] Índice 'user_1_event_1' borrado con éxito.");
@@ -79,7 +76,6 @@ mongoose
       console.log("ℹ️ [LIMPIEZA] El índice 'user_1_event_1' no existía o ya fue procesado.");
     }
 
-    // 🔥 NUEVO CÓDIGO TEMPORAL PARA BORRAR EL ÍNDICE DE MAILS DE INVITADOS DUPLICADOS
     try {
       await mongoose.connection.collection('eventtickets').dropIndex('guestEmail_1_event_1');
       console.log("🚀 [LIMPIEZA] Índice 'guestEmail_1_event_1' removido de la DB con éxito.");

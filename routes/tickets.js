@@ -4,12 +4,46 @@ import EventTicket from "../models/eventTicket.js";
 import User from "../models/User.js"; 
 import { protect } from "../middlewares/auth.js";
 import crypto from "crypto";
-import { generateTicketQR } from "../utils/subscriptionQr.js"; // 👈 Importamos el generador modular de QR
+import { generateTicketQR } from "../utils/subscriptionQr.js"; 
 import { appendTicketsToSheet } from "../services/googleSheetsService.js";
 import { syncContactToHubSpot } from "../services/hubspotService.js";
 import { sendTicketMail } from "../utils/mailer.js"; 
 
 const router = express.Router();
+
+// ========================================================
+// 🔍 VERIFICACIÓN PÚBLICA DE ESTADO DEL TICKET (PARA EL QR)
+// ========================================================
+// Nota: Si en server.js usas app.use("/api/public", ticketsRoutes), cambia el endpoint a "/ticket-status/:ticketId"
+router.get("/public/ticket-status/:ticketId", async (req, res) => {
+  try {
+    const { ticketId } = req.params;
+    const ticket = await EventTicket.findById(ticketId)
+      .populate("event")
+      .populate("user");
+
+    if (!ticket) {
+      return res.status(404).json({ isValid: false, message: "Ticket no encontrado en el sistema" });
+    }
+
+    // Determinar nombre del asistente (Invitado vs Registrado)
+    let nombreAsistente = ticket.isGuest 
+      ? ticket.guestName 
+      : `${ticket.user?.firstName || ''} ${ticket.user?.lastName || ''}`.trim() || ticket.user?.username;
+
+    return res.json({
+      isValid: ticket.payment?.status === "approved" || ticket.payment?.status === "pending",
+      paymentStatus: ticket.payment?.status || "pending",
+      attendeeName: nombreAsistente || "Invitado",
+      eventName: ticket.event?.name || ticket.event?.title || "Evento Meet&Go",
+      isGuest: ticket.isGuest,
+      ticketId: ticket._id
+    });
+  } catch (error) {
+    console.error("❌ Error en verificación de ticket:", error);
+    return res.status(500).json({ isValid: false, message: "Error interno procesando el ticket" });
+  }
+});
 
 // ========================================================
 // 🟣 CREAR TICKETS EN LOTE (SOPORTA CANTIDADES MÚLTIPLES)
