@@ -1,14 +1,16 @@
 import QRCode from "qrcode";
 
-export async function generateTicketQR(ticketId) {
-  // URL pública de verificación del ticket en tu web
-  const publicUrl = `https://meetandgouy.com/verify-ticket.html?tid=${ticketId}`;
-
-  // Genera el código QR en formato base64 DataURL
-  const qrImage = await QRCode.toDataURL(publicUrl);
-
-  return {
-    qrImage,
-    url: publicUrl
-  };
-}
+export const generateTicketQR = async (ticketId) => {
+  try {
+    // 🔗 La URL exacta que debe abrir la cámara del celular
+    const verifyUrl = `https://meetandgouy.com/verify-ticket.html?tid=${ticketId}`;
+    
+    // Generar la imagen Base64 a partir de la URL de verificación
+    const qrImage = await QRCode.toDataURL(verifyUrl);
+    
+    return { qrImage, verifyUrl };
+  } catch (error) {
+    console.error("Error generando QR:", error);
+    throw error;
+  }
+};

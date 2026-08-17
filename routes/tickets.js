@@ -18,32 +18,38 @@ const router = express.Router();
 router.get("/status/:ticketId", async (req, res) => {
   try {
     const ticket = await EventTicket.findById(req.params.ticketId)
-      .populate("event", "name title date")
+      .populate("event")
       .populate("user", "firstName lastName username");
 
     if (!ticket) {
       return res.status(404).json({ error: "Ticket no encontrado" });
     }
 
-    // Nombre del asistente (Registrado o Invitado)
-    const nombre = ticket.isGuest 
-      ? ticket.guestName 
-      : `${ticket.user?.firstName || ''} ${ticket.user?.lastName || ''}`.trim() || ticket.user?.username || "Asistente";
+    // 1. Resolver el objeto del evento
+    const eventObj = ticket.event || {};
+    const eventName = eventObj.name || eventObj.title || "Evento Meet & Go";
+    
+    // Formatear la fecha
+    const eventDate = eventObj.date 
+      ? new Date(eventObj.date).toLocaleDateString("es-UY", { day: 'numeric', month: 'long', year: 'numeric' })
+      : "Fecha no especificada";
 
-    // Nombre del evento
-    const evento = ticket.event?.name || ticket.event?.title || "Evento Meet&Go";
+    // 2. Comprobar beneficiario
+    let holderName = "Titular de la cuenta";
+    if (ticket.guestName) {
+      holderName = ticket.guestName;
+    } else if (ticket.user && typeof ticket.user === "object") {
+      const full = `${ticket.user.firstName || ""} ${ticket.user.lastName || ""}`.trim();
+      holderName = full || ticket.user.username || "Usuario Registrado";
+    }
 
-    // Fecha del evento
-    const fecha = ticket.event?.date 
-      ? new Date(ticket.event.date).toLocaleDateString("es-UY", {
-          day: "numeric",
-          month: "long",
-          year: "numeric"
-        })
-      : "Sin fecha definida";
-
-    return res.json({ nombre, evento, fecha });
+    return res.json({
+      nombre: holderName,
+      evento: eventName,
+      fecha: eventDate
+    });
   } catch (error) {
+    console.error("❌ Error verificando ticket:", error);
     return res.status(500).json({ error: "Error al leer el ticket" });
   }
 });
