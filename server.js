@@ -3,7 +3,6 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import http from "http";
-import { Server } from "socket.io";
 
 // Imports de rutas
 import eventsRouter from "./routes/events.js";
@@ -17,27 +16,37 @@ import publicRoutes from "./routes/public.js";
 const app = express();
 const server = http.createServer(app);
 
-// Middlewares - Lista de Orígenes Permitidos
+// 🟢 Lista Unificada de Orígenes Permitidos (Web + Expo Móvil + Local)
 const allowedOrigins = [
   "https://meetandgouy.com",
   "https://www.meetandgouy.com",
   "http://meetandgouy.com",
   "http://www.meetandgouy.com",
   "https://meetandgof.netlify.app",
+  "https://meetandgo-frontend.onrender.com",
+  "http://localhost:8081",
+  "http://localhost:19006",
   "http://localhost:5500",
   "http://127.0.0.1:5500",
-  "https://meetandgo-frontend.onrender.com"
+  "http://localhost:3000",
+  "https://auth.expo.io"
 ];
 
-// 🟢 CORS CORREGIDO Y SEGURO
+// 🟢 Configuración Única y Segura de CORS
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true); // Permite Postman, cURL y apps nativas
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error("Acceso denegado por políticas de CORS"));
+    // Si no hay origin (petición desde app móvil nativa, Postman, cURL) o está en la lista permitida:
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      return callback(null, true);
     }
+    
+    // Si viene de un subdominio o preview de Expo/IP local de desarrollo, permitirlo
+    if (origin.includes("localhost") || origin.includes("expo.io") || origin.includes("192.168.")) {
+      return callback(null, true);
+    }
+
+    console.warn(`⚠️ Origen bloqueado por CORS: ${origin}`);
+    return callback(new Error("Acceso denegado por políticas de CORS"));
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -48,7 +57,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ limit: "10mb" }));
 
 /* ========================================================
-   🛣️ REGISTRO DE RUTAS 
+   Roadmap de Rutas
    ======================================================== */
 app.use("/api/events", eventsRouter);
 app.use("/api/users", usersRoutes);
@@ -59,7 +68,7 @@ app.use("/api/tickets", ticketRoutes);
 app.use("/api", paymentsRoutes);
 
 /* ========================================================
-   🗄️ CONEXIÓN BASE DE DATOS MONGOOSE
+   Conexión MongoDB
    ======================================================== */
 const PORT = process.env.PORT || 5000;
 
@@ -68,49 +77,26 @@ mongoose
   .then(async () => { 
     console.log("✅ MongoDB conectado exitosamente");
     
-    // 🔥 LIMPIEZA TEMPORAL DE ÍNDICES BLOQUEANTES
     try {
       await mongoose.connection.collection('eventtickets').dropIndex('user_1_event_1');
       console.log("🚀 [LIMPIEZA] Índice 'user_1_event_1' borrado con éxito.");
     } catch (err) {
-      console.log("ℹ️ [LIMPIEZA] El índice 'user_1_event_1' no existía o ya fue procesado.");
+      // Índice inexistente o procesado
     }
 
     try {
       await mongoose.connection.collection('eventtickets').dropIndex('guestEmail_1_event_1');
       console.log("🚀 [LIMPIEZA] Índice 'guestEmail_1_event_1' removido de la DB con éxito.");
     } catch (err) {
-      console.log("ℹ️ [LIMPIEZA] El índice 'guestEmail_1_event_1' ya fue eliminado de MongoDB.");
+      // Índice inexistente o procesado
     }
 
   })
   .catch((err) => console.error("❌ Error crítico en MongoDB:", err));
 
 /* ========================================================
-   🚀 INICIALIZACIÓN GLOBAL DEL SERVIDOR
+   Servidor
    ======================================================== */
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Servidor corriendo de forma global en el puerto ${PORT}`);
 });
-
-import cors from 'cors';
-
-const allowedOrigins = [
-  'https://meetandgouy.com',
-  'https://www.meetandgouy.com',
-  'http://localhost:8081',
-  'http://localhost:19006',
-  'http://localhost:3000',
-  'https://auth.expo.io'
-];
-
-app.use(cors({
-  origin: function (origin, callback) {
-    // Permitir peticiones sin origen (como apps móviles nativas, Postman, etc.)
-    if (!origin || allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    return callback(null, true); // O ajusta según tu política de seguridad
-  },
-  credentials: true
-}));
