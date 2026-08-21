@@ -92,3 +92,25 @@ mongoose
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Servidor corriendo de forma global en el puerto ${PORT}`);
 });
+
+import cors from 'cors';
+
+const allowedOrigins = [
+  'https://meetandgouy.com',
+  'https://www.meetandgouy.com',
+  'http://localhost:8081',
+  'http://localhost:19006',
+  'http://localhost:3000',
+  'https://auth.expo.io'
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Permitir peticiones sin origen (como apps móviles nativas, Postman, etc.)
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(null, true); // O ajusta según tu política de seguridad
+  },
+  credentials: true
+}));
