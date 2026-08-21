@@ -472,5 +472,73 @@ router.put("/me/experience", protect, async (req, res) => {
     res.status(500).json({ message: "Error al guardar perfil de experiencia" });
   }
 });
+/* =============================
+   🌐 OAUTH GOOGLE LOGIN / REGISTER
+============================= */
+router.post("/oauth/google", async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ message: "Token de Google no proporcionado" });
+    }
+
+    // Consultar datos del usuario a los servidores de Google
+    const googleRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    if (!googleRes.ok) {
+      return res.status(401).json({ message: "Token de Google inválido o expirado" });
+    }
+
+    const googleUser = await googleRes.json();
+    const { email, given_name, family_name, picture } = googleUser;
+
+    if (!email) {
+      return res.status(400).json({ message: "No se pudo obtener el email de Google" });
+    }
+
+    // Buscar si el usuario ya existe en MongoDB
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      // Crear nuevo usuario si entra por primera vez con Google
+      user = await User.create({
+        firstName: given_name || "Usuario",
+        lastName: family_name || "Google",
+        username: email.split("@")[0] + "_" + Math.floor(Math.random() * 1000),
+        email: email,
+        password: await bcrypt.hash(crypto.randomBytes(16).toString("hex"), 10),
+        age: 18,
+        isVerified: true, // Usuarios de Google nacen verificados
+        profileImage: picture || "",
+        interests: ["Social"],
+        subscription: { isActive: false }
+      });
+    }
+
+    // Generar JWT para la app
+    const appToken = generateToken(user);
+
+    return res.json({
+      token: appToken,
+      user: {
+        _id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        username: user.username,
+        email: user.email,
+        profileImage: user.profileImage,
+        isVerified: user.isVerified,
+        subscription: user.subscription
+      }
+    });
+
+  } catch (error) {
+    console.error("❌ Error en OAuth Google:", error);
+    return res.status(500).json({ message: "Error interno al autenticar con Google" });
+  }
+});
 
 export default router;
