@@ -10,7 +10,7 @@ import { generateToken } from "../utils/jwt.js";
 import { sendVerificationEmail } from "../utils/sendverificationemail.js";
 import { sendResetPasswordEmail } from "../utils/sendResetPasswordEmail.js";
 import cloudinary from "../config/cloudinary.js";
-import { syncContactToHubSpot } from "../services/hubspotService.js"; // 👈 IMPORTADO DE HUBSPOT
+import { syncContactToHubSpot } from "../services/hubspotService.js";
 
 const router = express.Router();
 
@@ -58,7 +58,7 @@ router.get("/me", protect, async (req, res) => {
 });
 
 /* =============================
-   📝 REGISTER (VERSIÓN SIMPLIFICADA)
+   📝 REGISTER
 ============================= */
 router.post("/register", upload.single("profileImage"), async (req, res) => {
   try {
@@ -73,32 +73,26 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       interests
     } = req.body;
 
-    // Validaciones básicas
     if (!firstName || !lastName || !email || !password || !age) {
       return res.status(400).json({ message: "Todos los campos obligatorios deben estar completos" });
     }
 
-    // Validar contraseña
-    const passwordRegex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 
     if (!passwordRegex.test(password)) {
       return res.status(400).json({
-        message:
-          "La contraseña debe tener mínimo 8 caracteres, mayúscula, minúscula, número y carácter especial"
+        message: "La contraseña debe tener mínimo 8 caracteres, mayúscula, minúscula, número y carácter especial"
       });
     }
 
-    // Verificar si el usuario ya existe
     const exists = await User.findOne({
       $or: [{ email }, { username: username || email }]
     });
 
     if (exists) {
-      return res.status(400).json({ message: "El email ya está registrado" });
+      return res.status(400).json({ message: "El email o usuario ya está registrado" });
     }
 
-    // Parsear intereses si vienen como string JSON
     let parsedInterests = [];
     if (interests) {
       try {
@@ -108,7 +102,6 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       }
     }
 
-    // Subir imagen de perfil si existe
     let profileImageUrl = "";
     if (req.file) {
       const uploadResult = await cloudinary.uploader.upload(
@@ -121,10 +114,8 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       profileImageUrl = uploadResult.secure_url;
     }
 
-    // Hashear contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Crear usuario con valores por defecto para campos obligatorios
     const user = await User.create({
       firstName,
       lastName,
@@ -146,33 +137,19 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       subscription: { isActive: false },
       experienceProfile: {
         completed: false,
-        icebreakers: {
-          favoriteMovie: "",
-          favoriteSong: "",
-          favoriteFood: "",
-          dreamTrip: ""
-        },
-        socialStyle: {
-          groupPreference: "",
-          conversationStyle: "",
-          initiatesConversation: ""
-        },
-        expectations: {
-          lookingFor: [],
-          discomforts: []
-        }
+        icebreakers: { favoriteMovie: "", favoriteSong: "", favoriteFood: "", dreamTrip: "" },
+        socialStyle: { groupPreference: "", conversationStyle: "", initiatesConversation: "" },
+        expectations: { lookingFor: [], discomforts: [] }
       }
     });
 
-    // Generar token de verificación
     const token = generateToken(user);
     user.verificationToken = token;
     await user.save();
 
-    // Enviar email de verificación
     await sendVerificationEmail(user.email, token);
 
-    // 🎯 SINCRONIZAR NUEVO USUARIO CON HUBSPOT EN SEGUNDO PLANO
+    // Sync HubSpot atrapando posibles errores
     syncContactToHubSpot({
       email: user.email,
       firstName: user.firstName,
@@ -182,7 +159,7 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       interests: user.interests,
       department: user.department,
       isSubscriber: false
-    });
+    }).catch(err => console.error("❌ Error syncing to HubSpot (Register):", err));
 
     res.status(201).json({
       message: "Usuario creado exitosamente. Revisá tu email para verificar la cuenta",
@@ -250,46 +227,32 @@ router.post("/login", async (req, res) => {
    ✅ VERIFY ACCOUNT
 ============================= */
 router.get("/verify", async (req, res) => {
-  console.log("🔍 Verify endpoint called");
-  console.log("📝 Token recibido:", req.query.token);
+  const frontendUrl = process.env.FRONT_URL || "https://meetandgof.netlify.app";
   
   try {
     const { token } = req.query;
 
     if (!token) {
-      console.log("❌ No token provided");
       return res.status(400).json({ message: "Token faltante" });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log("🔓 Token decodificado:", decoded);
-
     const user = await User.findById(decoded.id);
-    console.log("👤 Usuario encontrado:", user ? user.email : "No encontrado");
 
     if (!user) {
-      console.log("❌ User not found");
       return res.status(400).json({ message: "Usuario no encontrado" });
     }
 
     if (!user.isVerified) {
-      console.log("✅ Verificando usuario...");
       user.isVerified = true;
       user.verificationToken = null;
       await user.save();
-      console.log("✅ Usuario verificado exitosamente");
-    } else {
-      console.log("ℹ️ Usuario ya estaba verificado");
     }
-
-    const frontendUrl = process.env.FRONT_URL || "https://meetandgof.netlify.app";
-    console.log("🔄 Redirigiendo a:", `${frontendUrl}/login.html?verified=true`);
     
     return res.redirect(`${frontendUrl}/login.html?verified=true`);
     
   } catch (error) {
     console.error("❌ Verify error details:", error);
-    const frontendUrl = process.env.FRONT_URL || "https://meetandgof.netlify.app";
     return res.redirect(`${frontendUrl}/login.html?verified=false`);
   }
 });
@@ -337,8 +300,7 @@ router.post("/reset-password", async (req, res) => {
       return res.status(400).json({ message: "Datos incompletos" });
     }
 
-    const passwordRegex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 
     if (!passwordRegex.test(password)) {
       return res.status(400).json({
@@ -385,7 +347,6 @@ router.put("/me", protect, upload.single("profileImage"), async (req, res) => {
       bio: req.body.bio
     };
 
-    // Parsear idiomas correctamente dentro de la ruta
     if (req.body.languages) {
       try {
         updates.languages = typeof req.body.languages === 'string' 
@@ -396,7 +357,6 @@ router.put("/me", protect, upload.single("profileImage"), async (req, res) => {
       }
     }
 
-    // Parsear intereses correctamente dentro de la ruta
     if (req.body.interests) {
       try {
         updates.interests = typeof req.body.interests === 'string' 
@@ -407,7 +367,6 @@ router.put("/me", protect, upload.single("profileImage"), async (req, res) => {
       }
     }
 
-    // Manejar subida de foto de perfil con Cloudinary
     if (req.file) {
       const uploadResult = await cloudinary.uploader.upload(
         `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`,
@@ -427,7 +386,6 @@ router.put("/me", protect, upload.single("profileImage"), async (req, res) => {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
 
-    // 🎯 ACTUALIZAR DATOS EN HUBSPOT EN SEGUNDO PLANO
     syncContactToHubSpot({
       email: user.email,
       firstName: user.firstName,
@@ -437,7 +395,7 @@ router.put("/me", protect, upload.single("profileImage"), async (req, res) => {
       interests: user.interests,
       department: user.department,
       isSubscriber: user.subscription?.isActive || user.isSubscriber
-    });
+    }).catch(err => console.error("❌ Error syncing to HubSpot (Update):", err));
 
     res.json(user);
   } catch (error) {
@@ -472,6 +430,7 @@ router.put("/me/experience", protect, async (req, res) => {
     res.status(500).json({ message: "Error al guardar perfil de experiencia" });
   }
 });
+
 /* =============================
    🌐 OAUTH GOOGLE LOGIN / REGISTER
 ============================= */
@@ -483,7 +442,6 @@ router.post("/oauth/google", async (req, res) => {
       return res.status(400).json({ message: "Token de Google no proporcionado" });
     }
 
-    // Consultar datos del usuario a los servidores de Google
     const googleRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -499,26 +457,27 @@ router.post("/oauth/google", async (req, res) => {
       return res.status(400).json({ message: "No se pudo obtener el email de Google" });
     }
 
-    // Buscar si el usuario ya existe en MongoDB
     let user = await User.findOne({ email });
 
     if (!user) {
-      // Crear nuevo usuario si entra por primera vez con Google
+      const randomSuffix = crypto.randomBytes(3).toString("hex");
       user = await User.create({
         firstName: given_name || "Usuario",
         lastName: family_name || "Google",
-        username: email.split("@")[0] + "_" + Math.floor(Math.random() * 1000),
+        username: `${email.split("@")[0]}_${randomSuffix}`,
         email: email,
         password: await bcrypt.hash(crypto.randomBytes(16).toString("hex"), 10),
         age: 18,
-        isVerified: true, // Usuarios de Google nacen verificados
+        isVerified: true,
         profileImage: picture || "",
         interests: ["Social"],
         subscription: { isActive: false }
       });
+    } else if (!user.isVerified) {
+      user.isVerified = true;
+      await user.save();
     }
 
-    // Generar JWT para la app
     const appToken = generateToken(user);
 
     return res.json({
