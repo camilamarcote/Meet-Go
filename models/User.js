@@ -34,6 +34,7 @@ const UserSchema = new mongoose.Schema(
     nationality: { type: String, trim: true, default: "Uruguay" },
 
     phone: { type: String, trim: true, default: "" },
+    isPhoneVerified: { type: Boolean, default: false },
 
     languages: { type: [String], default: [] },
     interests: { type: [String], default: [] },

@@ -10,7 +10,7 @@ import { generateToken } from "../utils/jwt.js";
 import { sendVerificationEmail } from "../utils/sendverificationemail.js";
 import { sendResetPasswordEmail } from "../utils/sendResetPasswordEmail.js";
 import cloudinary from "../config/cloudinary.js";
-import { syncContactToHubSpot } from "../services/hubspotService.js";
+import { sendPhoneOTP, verifyPhoneOTP } from "../services/twilioService.js";
 
 const router = express.Router();
 
@@ -96,7 +96,7 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
     let parsedInterests = [];
     if (interests) {
       try {
-        parsedInterests = typeof interests === 'string' ? JSON.parse(interests) : interests;
+        parsedInterests = typeof interests === "string" ? JSON.parse(interests) : interests;
       } catch (e) {
         parsedInterests = [];
       }
@@ -119,15 +119,16 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
     const user = await User.create({
       firstName,
       lastName,
-      username: username || email, 
+      username: username || email,
       email,
       phone: phone || "",
+      isPhoneVerified: false,
       password: hashedPassword,
       age: parseInt(age),
-      nationality: "Uruguay", 
-      department: "", 
+      nationality: "Uruguay",
+      department: "",
       interests: parsedInterests,
-      languages: [], 
+      languages: [],
       personality: "",
       style: "",
       bio: "",
@@ -149,26 +150,61 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
 
     await sendVerificationEmail(user.email, token);
 
-    // Sync HubSpot atrapando posibles errores
-    syncContactToHubSpot({
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      phone: user.phone,
-      age: user.age,
-      interests: user.interests,
-      department: user.department,
-      isSubscriber: false
-    }).catch(err => console.error("❌ Error syncing to HubSpot (Register):", err));
-
     res.status(201).json({
       message: "Usuario creado exitosamente. Revisá tu email para verificar la cuenta",
       userId: user._id
     });
-
   } catch (error) {
     console.error("❌ Register error:", error);
     res.status(500).json({ message: "Error en registro: " + error.message });
+  }
+});
+
+/* =============================
+   📱 SMS / WHATSAPP OTP
+============================= */
+
+// Solicitar código OTP por SMS o WhatsApp
+router.post("/send-otp", protect, async (req, res) => {
+  try {
+    const { channel } = req.body; // 'sms' o 'whatsapp'
+    const user = await User.findById(req.user.id);
+
+    if (!user || !user.phone) {
+      return res.status(400).json({ message: "El usuario no tiene un teléfono registrado" });
+    }
+
+    await sendPhoneOTP(user.phone, channel || "sms");
+    res.json({ message: `Código enviado exitosamente vía ${channel || "sms"}` });
+  } catch (error) {
+    console.error("❌ Error enviando OTP:", error);
+    res.status(500).json({ message: "No se pudo enviar el código de verificación" });
+  }
+});
+
+// Verificar el código OTP recibido
+router.post("/verify-otp", protect, async (req, res) => {
+  try {
+    const { code } = req.body;
+    const user = await User.findById(req.user.id);
+
+    if (!user || !user.phone) {
+      return res.status(400).json({ message: "Teléfono no registrado" });
+    }
+
+    const isApproved = await verifyPhoneOTP(user.phone, code);
+
+    if (!isApproved) {
+      return res.status(400).json({ message: "Código inválido o expirado" });
+    }
+
+    user.isPhoneVerified = true;
+    await user.save();
+
+    res.json({ message: "Teléfono verificado correctamente", isPhoneVerified: true });
+  } catch (error) {
+    console.error("❌ Error verificando OTP:", error);
+    res.status(500).json({ message: "Error al validar el código OTP" });
   }
 });
 
@@ -211,6 +247,7 @@ router.post("/login", async (req, res) => {
         username: foundUser.username,
         email: foundUser.email,
         phone: foundUser.phone,
+        isPhoneVerified: foundUser.isPhoneVerified,
         profileImage: foundUser.profileImage,
         isOrganizer: foundUser.isOrganizer,
         roles: foundUser.roles,
@@ -224,11 +261,11 @@ router.post("/login", async (req, res) => {
 });
 
 /* =============================
-   ✅ VERIFY ACCOUNT
+   ✅ VERIFY ACCOUNT (EMAIL)
 ============================= */
 router.get("/verify", async (req, res) => {
   const frontendUrl = process.env.FRONT_URL || "https://meetandgof.netlify.app";
-  
+
   try {
     const { token } = req.query;
 
@@ -248,9 +285,8 @@ router.get("/verify", async (req, res) => {
       user.verificationToken = null;
       await user.save();
     }
-    
+
     return res.redirect(`${frontendUrl}/login.html?verified=true`);
-    
   } catch (error) {
     console.error("❌ Verify error details:", error);
     return res.redirect(`${frontendUrl}/login.html?verified=false`);
@@ -277,7 +313,7 @@ router.post("/forgot-password", async (req, res) => {
     const token = crypto.randomBytes(32).toString("hex");
 
     user.resetPasswordToken = token;
-    user.resetPasswordExpires = Date.now() + 1000 * 60 * 60; // 1 hora
+    user.resetPasswordExpires = Date.now() + 1000 * 60 * 60;
     await user.save();
 
     await sendResetPasswordEmail(user.email, token);
@@ -349,9 +385,10 @@ router.put("/me", protect, upload.single("profileImage"), async (req, res) => {
 
     if (req.body.languages) {
       try {
-        updates.languages = typeof req.body.languages === 'string' 
-          ? JSON.parse(req.body.languages) 
-          : req.body.languages;
+        updates.languages =
+          typeof req.body.languages === "string"
+            ? JSON.parse(req.body.languages)
+            : req.body.languages;
       } catch (e) {
         updates.languages = [];
       }
@@ -359,9 +396,10 @@ router.put("/me", protect, upload.single("profileImage"), async (req, res) => {
 
     if (req.body.interests) {
       try {
-        updates.interests = typeof req.body.interests === 'string' 
-          ? JSON.parse(req.body.interests) 
-          : req.body.interests;
+        updates.interests =
+          typeof req.body.interests === "string"
+            ? JSON.parse(req.body.interests)
+            : req.body.interests;
       } catch (e) {
         updates.interests = [];
       }
@@ -386,17 +424,6 @@ router.put("/me", protect, upload.single("profileImage"), async (req, res) => {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
 
-    syncContactToHubSpot({
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      phone: user.phone,
-      age: user.age,
-      interests: user.interests,
-      department: user.department,
-      isSubscriber: user.subscription?.isActive || user.isSubscriber
-    }).catch(err => console.error("❌ Error syncing to HubSpot (Update):", err));
-
     res.json(user);
   } catch (error) {
     console.error("❌ Update profile error:", error);
@@ -418,11 +445,9 @@ router.put("/me/experience", protect, async (req, res) => {
       }
     };
 
-    const user = await User.findByIdAndUpdate(
-      req.user.id,
-      updates,
-      { new: true }
-    ).select("-password");
+    const user = await User.findByIdAndUpdate(req.user.id, updates, {
+      new: true
+    }).select("-password");
 
     res.json(user);
   } catch (error) {
@@ -493,7 +518,6 @@ router.post("/oauth/google", async (req, res) => {
         subscription: user.subscription
       }
     });
-
   } catch (error) {
     console.error("❌ Error en OAuth Google:", error);
     return res.status(500).json({ message: "Error interno al autenticar con Google" });
