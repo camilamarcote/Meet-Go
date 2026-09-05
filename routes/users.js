@@ -10,7 +10,7 @@ import { generateToken } from "../utils/jwt.js";
 import { sendVerificationEmail } from "../utils/sendverificationemail.js";
 import { sendResetPasswordEmail } from "../utils/sendResetPasswordEmail.js";
 import cloudinary from "../config/cloudinary.js";
-import { sendPhoneOTP, verifyPhoneOTP } from "../services/twilioService.js";
+import { verifyFirebaseToken } from "../services/firebaseService.js";
 
 const router = express.Router();
 
@@ -161,50 +161,38 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
 });
 
 /* =============================
-   📱 SMS / WHATSAPP OTP
+   🔥 VERIFICACIÓN DE TELÉFONO (FIREBASE)
 ============================= */
-
-// Solicitar código OTP por SMS o WhatsApp
-router.post("/send-otp", protect, async (req, res) => {
+router.post("/verify-phone-firebase", protect, async (req, res) => {
   try {
-    const { channel } = req.body; // 'sms' o 'whatsapp'
+    const { idToken } = req.body;
+
+    if (!idToken) {
+      return res.status(400).json({ message: "Token de Firebase no proporcionado" });
+    }
+
+    // Valida el idToken enviado desde el Frontend con Firebase Admin
+    const decodedToken = await verifyFirebaseToken(idToken);
+    const phoneNumber = decodedToken.phone_number;
+
     const user = await User.findById(req.user.id);
-
-    if (!user || !user.phone) {
-      return res.status(400).json({ message: "El usuario no tiene un teléfono registrado" });
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
     }
 
-    await sendPhoneOTP(user.phone, channel || "sms");
-    res.json({ message: `Código enviado exitosamente vía ${channel || "sms"}` });
-  } catch (error) {
-    console.error("❌ Error enviando OTP:", error);
-    res.status(500).json({ message: "No se pudo enviar el código de verificación" });
-  }
-});
-
-// Verificar el código OTP recibido
-router.post("/verify-otp", protect, async (req, res) => {
-  try {
-    const { code } = req.body;
-    const user = await User.findById(req.user.id);
-
-    if (!user || !user.phone) {
-      return res.status(400).json({ message: "Teléfono no registrado" });
-    }
-
-    const isApproved = await verifyPhoneOTP(user.phone, code);
-
-    if (!isApproved) {
-      return res.status(400).json({ message: "Código inválido o expirado" });
-    }
-
+    // Actualiza el número y lo marca como verificado
+    user.phone = phoneNumber;
     user.isPhoneVerified = true;
     await user.save();
 
-    res.json({ message: "Teléfono verificado correctamente", isPhoneVerified: true });
+    res.json({
+      message: "Teléfono verificado correctamente con Firebase",
+      phone: phoneNumber,
+      isPhoneVerified: true
+    });
   } catch (error) {
-    console.error("❌ Error verificando OTP:", error);
-    res.status(500).json({ message: "Error al validar el código OTP" });
+    console.error("❌ Error en verificación de Firebase:", error);
+    res.status(401).json({ message: "Token inválido o expirado" });
   }
 });
 

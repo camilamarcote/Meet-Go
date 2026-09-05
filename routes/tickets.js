@@ -7,6 +7,7 @@ import crypto from "crypto";
 import { generateTicketQR } from "../utils/subscriptionQr.js"; 
 import { appendTicketsToSheet } from "../services/googleSheetsService.js";
 import { syncContactToHubSpot } from "../services/hubspotService.js";
+// 💡 Nota: Puedes conservar o quitar la importación de sendTicketMail si no la usas en este archivo.
 import { sendTicketMail } from "../utils/mailer.js"; 
 
 const router = express.Router();
@@ -165,15 +166,8 @@ router.post("/events/:eventId/tickets", protectOptional, async (req, res) => {
         "Pendiente de Pago"
       ]);
 
-      // 📧 ENVIAR MAIL CON EL TICKET Y EL QR ADJUNTO (EN SEGUNDO PLANO)
-      if (compradorEmail) {
-        sendTicketMail({
-          to: compradorEmail,
-          userName: compradorNombre,
-          event: evento,
-          ticket: nuevoTicket
-        }).catch(err => console.error("❌ Error enviando mail de ticket:", err));
-      }
+      // 🚫 SE REMOVIÓ EL ENVÍO DE EMAIL DESDE AQUÍ.
+      // El correo con el ticket se debe enviar en la notificación webhook del pago aprobado.
     }
 
     // 🔥 ACTUALIZACIÓN DE CUPOS EN LOTE AUTOMÁTICA
@@ -202,7 +196,7 @@ router.post("/events/:eventId/tickets", protectOptional, async (req, res) => {
       });
     }
 
-    console.log(`✅ [BACKEND] Creados con éxito ${cantidadAComprar} tickets para suscriptor=${esSuscriptorValido} con precio $${precioFinal} en lote: ${idLoteCompra}`);
+    console.log(`✅ [BACKEND] Creados con éxito ${cantidadAComprar} tickets (Pendientes de pago) para lote: ${idLoteCompra}`);
 
     return res.status(201).json({ tickets: ticketsCreados });
 

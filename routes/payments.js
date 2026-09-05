@@ -26,7 +26,7 @@ router.post("/payments/create/:ticketId", async (req, res) => {
       .populate("user");
 
     if (!ticketMaestro) {
-      console.error(`❌ [NUEVO FLUJO] Ticket de referencia ${ticketId} no encontrado en la base de datos.`);
+      console.error(`❌ [NUEVO FLUJO] Ticket de referencia ${ticketId} no encontrado en BD.`);
       return res.status(404).json({ message: "Ticket no encontrado" });
     }
 
@@ -35,7 +35,7 @@ router.post("/payments/create/:ticketId", async (req, res) => {
       return res.status(409).json({ message: "Ticket ya pagado" });
     }
 
-    // 🎯 IDENTIFICAR GRUPO: Ahora buscamos todos los tickets asociados al mismo carrito/lote (cartId)
+    // 🎯 IDENTIFICAR GRUPO: Buscamos tickets del mismo lote (cartId)
     const ticketsDelGrupo = await EventTicket.find({
       event: ticketMaestro.event?._id,
       cartId: ticketMaestro.cartId
@@ -44,18 +44,18 @@ router.post("/payments/create/:ticketId", async (req, res) => {
     const cantidadEntradas = ticketsDelGrupo.length || 1;
     console.log(`📦 Se detectó un grupo de ${cantidadEntradas} ticket(s) asociados a esta transacción.`);
 
-    // 🎯 Obtenemos el precio real asignado individualmente al ticket desde la base de datos
+    // 🎯 Obtenemos el precio real asignado
     const precioAsignado = ticketMaestro.payment?.amount ?? ticketMaestro.event?.price;
     const isGratis = precioAsignado === 0 || precioAsignado === "0" || !precioAsignado || Number(precioAsignado) <= 0;
 
-    // 🌟 VALIDACIÓN PARA EVENTOS GRATUITOS (PROCESAMIENTO EN LOTE)
+    // 🌟 VALIDACIÓN PARA EVENTOS GRATUITOS
     if (isGratis) {
       console.log(`🎁 [NUEVO FLUJO - GRATIS] Validado como GRATUITO. Procesando ${cantidadEntradas} entrada(s).`);
 
       const transactionIdComun = `FREE-${Date.now()}`;
 
-      // Recorremos cada ticket del lote para activarlo y enviar su correo
       for (const t of ticketsDelGrupo) {
+        // 1. Actualizar estado
         t.payment = {
           status: "paid",
           amount: 0,
@@ -64,10 +64,18 @@ router.post("/payments/create/:ticketId", async (req, res) => {
         };
         await t.save();
 
+        // 2. Resolver nombre del comprador correctamente
+        let userName = "Invitado";
+        if (t.guestName) {
+          userName = t.guestName;
+        } else if (t.user) {
+          userName = `${t.user.firstName || ''} ${t.user.lastName || ''}`.trim() || t.user.username || "Usuario Registrado";
+        }
+
         const recipientEmail = t.guestEmail || t.user?.email;
-        const userName = t.user?.name || t.guestName || "Invitado";
         const eventData = t.event || { name: "Evento Meet & Go", date: "Ver en la App", department: "Uruguay" };
 
+        // 3. Enviar correo post-guardado
         if (recipientEmail) {
           try {
             await sendTicketMail({
@@ -92,23 +100,29 @@ router.post("/payments/create/:ticketId", async (req, res) => {
     // 🔥 FLUJO EXCLUSIVO PARA EVENTOS DE PAGO
     console.log(`💰 [NUEVO FLUJO - DE PAGO] Precio unitario aplicado: ${precioAsignado}. Multiplicando x ${cantidadEntradas}...`);
 
+    let nombreComprador = "Usuario Meet&Go";
+    if (ticketMaestro.guestName) {
+      nombreComprador = ticketMaestro.guestName;
+    } else if (ticketMaestro.user) {
+      nombreComprador = `${ticketMaestro.user.firstName || ''} ${ticketMaestro.user.lastName || ''}`.trim() || ticketMaestro.user.username;
+    }
+
     const payerData = ticketMaestro.guestEmail ? {
-      name: ticketMaestro.guestName || "Invitado",
+      name: nombreComprador,
       email: ticketMaestro.guestEmail,
       id: "guest"
     } : {
-      name: ticketMaestro.user?.name || "Usuario Meet&Go",
+      name: nombreComprador,
       email: ticketMaestro.user?.email,
       id: ticketMaestro.user?._id
     };
 
-    // Pasamos la cantidad total encontrada y enviamos el precio asignado al generador de preferencias
     const preference = await createPaymentPreference({
       event: ticketMaestro.event,
       user: payerData,
       ticketId: ticketMaestro._id,
       quantity: cantidadEntradas,
-      overridePrice: precioAsignado // 👈 ENVIAMOS EL PRECIO REAL (Puede ser price o altPrice)
+      overridePrice: precioAsignado
     });
 
     return res.json({ 
@@ -160,7 +174,7 @@ router.post("/payments/webhook", async (req, res) => {
         return res.sendStatus(200);
       }
 
-      // 🎯 Traemos todos los tickets que pertenecen al lote usando cartId
+      // 🎯 Obtenemos todos los tickets del grupo
       const ticketsDelGrupo = await EventTicket.find({
         event: ticketMaestro.event,
         cartId: ticketMaestro.cartId
@@ -168,12 +182,31 @@ router.post("/payments/webhook", async (req, res) => {
 
       const cantidadEntradas = ticketsDelGrupo.length || 1;
 
-      // Procesamos cada ticket aprobado del lote para guardar estados y enviar emails individuales
       for (const t of ticketsDelGrupo) {
+        // 1. Preservar y calcular monto cobrado
+        const precioTicketEfectivo = t.payment?.amount > 0 ? t.payment.amount : (t.event?.price || 0);
+
+        // 2. Actualizar estado y GUARDAR EN BD PRIMERO
+        t.payment = {
+          status: "paid",
+          amount: precioTicketEfectivo, 
+          transactionId: payment.id,
+          paidAt: new Date()
+        };
+        await t.save();
+
+        // 3. Resolver nombre del destinatario
+        let userName = "Invitado";
+        if (t.guestName) {
+          userName = t.guestName;
+        } else if (t.user) {
+          userName = `${t.user.firstName || ''} ${t.user.lastName || ''}`.trim() || t.user.username || "Usuario Registrado";
+        }
+
         const recipientEmail = t.guestEmail || t.user?.email;
-        const userName = t.user?.name || t.guestName || "Invitado";
         const eventData = t.event || { name: "Evento Meet & Go", date: "Ver en la App", department: "Uruguay" };
 
+        // 4. Enviar correo post-confirmación en BD
         if (recipientEmail) {
           try {
             await sendTicketMail({
@@ -186,17 +219,6 @@ router.post("/payments/webhook", async (req, res) => {
             console.error("❌ [WEBHOOK MP] Error enviando correo por Resend:", mailError);
           }
         }
-
-        // 🎯 En lugar de reescribir con t.event.price de forma estática, respetamos el amount dinámico que ya poseía el ticket
-        const precioTicketEfectivo = t.payment?.amount > 0 ? t.payment.amount : (t.event?.price || 0);
-
-        t.payment = {
-          status: "paid",
-          amount: precioTicketEfectivo, 
-          transactionId: payment.id,
-          paidAt: new Date()
-        };
-        await t.save();
       }
 
       console.log(`🎟 [WEBHOOK MP] Se actualizaron ${cantidadEntradas} tickets a estado 'paid' exitosamente.`);
@@ -211,7 +233,7 @@ router.post("/payments/webhook", async (req, res) => {
 });
 
 // ========================================================
-// 🎟️ 🔥 ENDPOINT INTEGRADO: OBTENER TICKETS DEL USUARIO
+// 🎟️ OBTENER TICKETS DEL USUARIO (PASE ACEPTADO)
 // ========================================================
 router.get("/my-tickets", protect, async (req, res) => {
   try {

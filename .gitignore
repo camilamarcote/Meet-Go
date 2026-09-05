@@ -7,9 +7,13 @@ backend/node_modules/
 backend/.env
 backend/uploads/
 
-# credenciales de google (¡MUY IMPORTANTE!)
+# credenciales de google y firebase
 google-credentials.json
 backend/google-credentials.json
+firebase-service-account.json
+backend/firebase-service-account.json
+config/firebase-service-account.json
+*.json
 *.json.secret
 
 # logs
