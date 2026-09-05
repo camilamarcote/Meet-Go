@@ -1,14 +1,12 @@
 import express from "express";
+import crypto from "crypto";
 import Event from "../models/event.js";
 import EventTicket from "../models/eventTicket.js";
-import User from "../models/User.js"; 
+import User from "../models/user.js"; 
 import { protect } from "../middlewares/auth.js";
-import crypto from "crypto";
 import { generateTicketQR } from "../utils/subscriptionQr.js"; 
 import { appendTicketsToSheet } from "../services/googleSheetsService.js";
 import { syncContactToHubSpot } from "../services/hubspotService.js";
-// 💡 Nota: Puedes conservar o quitar la importación de sendTicketMail si no la usas en este archivo.
-import { sendTicketMail } from "../utils/mailer.js"; 
 
 const router = express.Router();
 
@@ -33,16 +31,13 @@ router.get("/status/:ticketId", async (req, res) => {
       return res.status(404).json({ error: "Ticket no encontrado" });
     }
 
-    // 1. Resolver el objeto del evento
     const eventObj = ticket.event || {};
     const eventName = eventObj.name || eventObj.title || ticket.eventName || "Evento Meet & Go";
     
-    // Formatear la fecha
     const eventDate = eventObj.date 
       ? new Date(eventObj.date).toLocaleDateString("es-UY", { day: 'numeric', month: 'long', year: 'numeric' })
       : "Fecha no especificada";
 
-    // 2. Comprobar beneficiario
     let holderName = "Titular de la cuenta";
     if (ticket.guestName && ticket.guestName.trim() !== "") {
       holderName = ticket.guestName;
@@ -90,7 +85,11 @@ router.post("/events/:eventId/tickets", protectOptional, async (req, res) => {
     let usuarioEnDb = null;
     if (req.user && req.user._id) {
       usuarioEnDb = await User.findById(req.user._id);
-      esSuscriptorValido = usuarioEnDb && (usuarioEnDb.isSubscriber === true || usuarioEnDb.subscription?.isActive === true || usuarioEnDb.roles?.includes("admin"));
+      esSuscriptorValido = usuarioEnDb && (
+        usuarioEnDb.isSubscriber === true || 
+        usuarioEnDb.subscription?.isActive === true || 
+        usuarioEnDb.roles?.includes("admin")
+      );
     }
 
     // 🎯 ASIGNACIÓN DEFINITIVA DEL PRECIO
@@ -107,9 +106,8 @@ router.post("/events/:eventId/tickets", protectOptional, async (req, res) => {
 
     const nombreDelEvento = evento.name || evento.title || "Evento Meet & Go";
 
-    // 🔄 BUCLE: Creación de pases individuales con QRs distintos
+    // 🔄 BUCLE: Creación de pases individuales
     for (let i = 0; i < cantidadAComprar; i++) {
-      
       const qrUnicoIndividual = crypto.randomBytes(16).toString("hex");
 
       const ticketData = {
@@ -142,20 +140,18 @@ router.post("/events/:eventId/tickets", protectOptional, async (req, res) => {
         compradorTelefono = usuarioEnDb?.phone || "";
       }
 
-      // 1. Instanciamos el documento para obtener su `_id` definitivo
+      // 1. Instanciar ticket para obtener ID
       const nuevoTicket = new EventTicket(ticketData);
 
-      // 2. Generamos el QR utilizando la función modular subscriptionQr.js
+      // 2. Generar la imagen DataURL del QR
       const { qrImage } = await generateTicketQR(nuevoTicket._id);
-
-      // 3. Asignamos la imagen DataURL resultante al ticket
       nuevoTicket.qrImage = qrImage;
 
-      // 4. Guardamos en la Base de Datos
+      // 3. Guardar ticket en Base de Datos
       await nuevoTicket.save();
       ticketsCreados.push(nuevoTicket);
 
-      // 🟢 Armar la fila correspondiente para Google Sheets
+      // 🟢 Armar la fila para Google Sheets
       filasParaSheets.push([
         new Date().toISOString().split("T")[0],
         nuevoTicket._id.toString(),
@@ -165,12 +161,9 @@ router.post("/events/:eventId/tickets", protectOptional, async (req, res) => {
         precioFinal,
         "Pendiente de Pago"
       ]);
-
-      // 🚫 SE REMOVIÓ EL ENVÍO DE EMAIL DESDE AQUÍ.
-      // El correo con el ticket se debe enviar en la notificación webhook del pago aprobado.
     }
 
-    // 🔥 ACTUALIZACIÓN DE CUPOS EN LOTE AUTOMÁTICA
+    // 🔥 ACTUALIZACIÓN DE CUPOS
     await Event.findByIdAndUpdate(eventId, {
       $inc: { ticketsSold: cantidadAComprar }
     });
@@ -180,7 +173,7 @@ router.post("/events/:eventId/tickets", protectOptional, async (req, res) => {
       appendTicketsToSheet(filasParaSheets, nombreDelEvento);
     }
 
-    // 🎯 ENVIAR A HUBSPOT
+    // 🎯 SINCRONIZAR CON HUBSPOT
     if (compradorEmail) {
       const partesNombre = compradorNombre.trim().split(" ");
       const primerNombre = partesNombre[0] || compradorNombre;
@@ -216,7 +209,7 @@ router.get("/tickets", protect, async (req, res) => {
     }
 
     const tickets = await EventTicket.find()
-      .populate("event", "name title date location price") 
+      .populate("event", "name title price altPrice date time department neighborhood") 
       .populate("user", "firstName lastName username email phone")
       .sort({ createdAt: -1 });
 
@@ -246,7 +239,7 @@ router.get("/my", protect, async (req, res) => {
     }
 
     const tickets = await EventTicket.find(query)
-      .populate("event", "name title date location price image") 
+      .populate("event", "name title price date time department neighborhood image") 
       .populate("user", "firstName lastName username email")
       .sort({ createdAt: -1 });
 
