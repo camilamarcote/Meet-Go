@@ -77,7 +77,15 @@ export async function sendSubscriptionMail({ user, qrImage, whatsappLink }) {
 // 🎟️ ENVIAR TICKET DE EVENTO AUTOMÁTICO
 // ==========================================
 export async function sendTicketMail({ to, userName, event, ticket }) {
-  console.log(`🚀 [Resend - Utils] Preparando envío de ticket para: ${to}`);
+  // 🛡️ CANDADO DE SEGURIDAD: Solo enviar si el pago está en estado "paid"
+  if (ticket?.payment?.status !== "paid") {
+    console.warn(
+      `⚠️ [Resend - Canceled] Bloqueado envío de ticket ${ticket?._id || ''}. El pago aún no figura como 'paid' (Estado actual: ${ticket?.payment?.status || 'desconocido'}).`
+    );
+    return;
+  }
+
+  console.log(`🚀 [Resend - Utils] Preparando envío de ticket verificado para: ${to}`);
 
   const attachments = [];
 
@@ -91,7 +99,7 @@ export async function sendTicketMail({ to, userName, event, ticket }) {
   }
 
   // Estructuramos de forma segura las variables mapeadas según tu EventSchema
-  const eventName = event?.name || "Evento Meet & Go";
+  const eventName = event?.name || event?.title || "Evento Meet & Go";
   const eventDate = event?.date || "Por confirmar";
   const eventTime = event?.time || "Por confirmar";
   const eventPlace = event?.department || "Uruguay";
