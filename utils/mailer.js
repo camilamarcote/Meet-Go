@@ -6,7 +6,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 // ✨ MAIL DE BIENVENIDA / SUSCRIPCIÓN
 // ==========================================
 export async function sendSubscriptionMail({ user, qrImage, whatsappLink }) {
-  console.log("📧 Enviando mail de suscripción a:", user.email);
+  console.log("📧 [MAILER] Enviando mail de suscripción a:", user.email);
 
   const attachments = [];
 
@@ -27,9 +27,10 @@ export async function sendSubscriptionMail({ user, qrImage, whatsappLink }) {
         <p>
           Tu <strong>suscripción</strong> ya está activa 🎉<br>  
           Desde ahora sos parte de la comunidad Meet&Go.
-          Para ingresar a nuestra comunidad de Whatsapp ve al siguiente enlace: 
+          Para ingresar a nuestra comunidad de Whatsapp ve al siguiente enlace:
           https://chat.whatsapp.com/FzTLq6Yw84U3d6utoTaEFH
         </p>
+
         ${
           attachments.length
             ? `
@@ -37,10 +38,13 @@ export async function sendSubscriptionMail({ user, qrImage, whatsappLink }) {
           <p style="text-align:center">
             <img src="cid:subscriptionqr" width="220" />
           </p>
-          <p style="text-align:center; font-weight:bold">Este es tu QR personal de acceso</p>
+          <p style="text-align:center; font-weight:bold">
+            Este es tu QR personal de acceso
+          </p>
         `
             : ""
         }
+
         ${
           whatsappLink
             ? `
@@ -59,10 +63,15 @@ export async function sendSubscriptionMail({ user, qrImage, whatsappLink }) {
         `
             : ""
         }
-        <p style="font-size:12px; color:#777; text-align:center">QR personal e intransferible · Meet&Go</p>
+
+        <p style="font-size:12px; color:#777; text-align:center">
+          QR personal e intransferible · Meet&Go
+        </p>
       </div>
     </div>
   `;
+
+  console.log("📧 [MAILER] Ejecutando envío de suscripción...");
 
   await resend.emails.send({
     from: "Meet&Go <no-reply@meetandgouy.com>",
@@ -71,63 +80,165 @@ export async function sendSubscriptionMail({ user, qrImage, whatsappLink }) {
     html,
     attachments
   });
+
+  console.log("✅ [MAILER] Mail de suscripción enviado a:", user.email);
 }
 
 // ==========================================
 // 🎟️ ENVIAR TICKET DE EVENTO AUTOMÁTICO
 // ==========================================
 export async function sendTicketMail({ to, userName, event, ticket }) {
-  // 🛡️ CANDADO DE SEGURIDAD: Solo enviar si el pago está en estado "paid"
+
+  // =========================================================
+  // 🔥 DEBUG PROFUNDO
+  // =========================================================
+  console.log("");
+  console.log("=========================================================");
+  console.log("🔥🔥🔥 [MAILER DEBUG] ENTRÓ A sendTicketMail()");
+  console.log("=========================================================");
+
+  console.log("📧 Destinatario:", to);
+  console.log("👤 Usuario:", userName);
+
+  console.log("🎟️ Ticket ID:", ticket?._id);
+  console.log("🎟️ Ticket payment:", ticket?.payment);
+  console.log("💰 Payment status:", ticket?.payment?.status);
+  console.log("💰 Payment amount:", ticket?.payment?.amount);
+  console.log("💳 Transaction ID:", ticket?.payment?.transactionId);
+  console.log("📅 Paid at:", ticket?.payment?.paidAt);
+
+  console.log("🎫 Evento ID:", event?._id);
+  console.log("🎫 Evento nombre:", event?.name || event?.title);
+
+  console.log("=========================================================");
+  console.log("🔥 [MAILER DEBUG] STACK TRACE - QUIÉN LLAMÓ A sendTicketMail");
+  console.log("=========================================================");
+
+  // Esto es MUY importante.
+  // Render debería mostrar desde qué archivo/ruta se llamó esta función.
+  console.trace("📍 [MAILER TRACE] sendTicketMail fue llamado desde:");
+
+  console.log("=========================================================");
+  console.log("");
+
+  // =========================================================
+  // 🛡️ CANDADO DE SEGURIDAD
+  // =========================================================
   if (ticket?.payment?.status !== "paid") {
-    console.warn(
-      `⚠️ [Resend - Canceled] Bloqueado envío de ticket ${ticket?._id || ''}. El pago aún no figura como 'paid' (Estado actual: ${ticket?.payment?.status || 'desconocido'}).`
-    );
+
+    console.warn("");
+    console.warn("🚨🚨🚨 [MAILER BLOQUEADO] 🚨🚨🚨");
+    console.warn("El mail NO será enviado porque el ticket NO está pagado.");
+    console.warn("Ticket:", ticket?._id);
+    console.warn("Estado actual:", ticket?.payment?.status);
+    console.warn("Destinatario:", to);
+    console.warn("");
+
     return;
   }
 
-  console.log(`🚀 [Resend - Utils] Preparando envío de ticket verificado para: ${to}`);
+  // =========================================================
+  // ✅ EL TICKET ESTÁ PAGADO
+  // =========================================================
+  console.log("");
+  console.log("✅ [MAILER] Ticket confirmado como PAID.");
+  console.log("🚀 [MAILER] Preparando envío de ticket verificado para:", to);
+  console.log("");
 
   const attachments = [];
 
   if (ticket.qrImage && ticket.qrImage.includes("base64,")) {
+    console.log("📎 [MAILER] QR encontrado. Preparando attachment...");
+
     attachments.push({
       filename: `ticket-${ticket._id}.png`,
       content: ticket.qrImage.split("base64,")[1],
       encoding: "base64",
-      cid: "ticketqr" 
+      cid: "ticketqr"
     });
+  } else {
+    console.warn("⚠️ [MAILER] El ticket NO tiene QR base64.");
   }
 
-  // Estructuramos de forma segura las variables mapeadas según tu EventSchema
+  // =========================================================
+  // 📋 DATOS DEL EVENTO
+  // =========================================================
   const eventName = event?.name || event?.title || "Evento Meet & Go";
   const eventDate = event?.date || "Por confirmar";
   const eventTime = event?.time || "Por confirmar";
   const eventPlace = event?.department || "Uruguay";
   const eventWhatsApp = event?.whatsappLink || null;
 
+  console.log("📋 [MAILER] Datos del evento:");
+  console.log("   Nombre:", eventName);
+  console.log("   Fecha:", eventDate);
+  console.log("   Hora:", eventTime);
+  console.log("   Lugar:", eventPlace);
+  console.log("   WhatsApp:", eventWhatsApp ? "Sí" : "No");
+
   const html = `
     <div style="font-family: Arial, sans-serif; background:#f4f4f4; padding:20px;">
       <div style="max-width:600px; margin:auto; background:#ffffff; padding:24px; border-radius:8px; border: 1px solid #dee2e6;">
-        <h2 style="color: #0d6efd; text-align:center; margin-bottom: 5px;">🎉 ¡Entrada Confirmada!</h2>
-        <p style="text-align:center; color: #6c757d; margin-top: 0;">Meet&Go Uruguay</p>
-        
+
+        <h2 style="color: #0d6efd; text-align:center; margin-bottom: 5px;">
+          🎉 ¡Entrada Confirmada!
+        </h2>
+
+        <p style="text-align:center; color: #6c757d; margin-top: 0;">
+          Meet&Go Uruguay
+        </p>
+
         <p>Hola <strong>${userName}</strong>,</p>
-        <p>Tu acceso para el evento ya está confirmado de manera exitosa. Aquí tienes todos los detalles:</p>
-        
-        <!-- Detalles extraídos directamente de tu esquema de Evento -->
-        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #0d6efd;">
-          <h3 style="margin-top: 0; color: #212529; font-size: 18px;">${eventName}</h3>
-          <p style="margin: 5px 0;"><strong>📅 Fecha:</strong> ${eventDate}</p>
-          <p style="margin: 5px 0;"><strong>⏰ Hora:</strong> ${eventTime}</p>
-          <p style="margin: 5px 0;"><strong>📍 Lugar/Departamento:</strong> ${eventPlace}</p>
+
+        <p>
+          Tu acceso para el evento ya está confirmado de manera exitosa.
+          Aquí tienes todos los detalles:
+        </p>
+
+        <div style="
+          background-color: #f8f9fa;
+          padding: 15px;
+          border-radius: 6px;
+          margin: 20px 0;
+          border-left: 4px solid #0d6efd;
+        ">
+
+          <h3 style="
+            margin-top: 0;
+            color: #212529;
+            font-size: 18px;
+          ">
+            ${eventName}
+          </h3>
+
+          <p style="margin: 5px 0;">
+            <strong>📅 Fecha:</strong> ${eventDate}
+          </p>
+
+          <p style="margin: 5px 0;">
+            <strong>⏰ Hora:</strong> ${eventTime}
+          </p>
+
+          <p style="margin: 5px 0;">
+            <strong>📍 Lugar/Departamento:</strong> ${eventPlace}
+          </p>
+
         </div>
 
-        <!-- 🔗 Botón Dinámico para unirse al grupo de WhatsApp del evento -->
         ${
           eventWhatsApp
             ? `
           <div style="text-align:center; margin: 25px 0;">
-            <p style="margin-bottom: 10px; font-size: 14px; color: #495057;">¡Sumate al grupo de WhatsApp exclusivo de este evento para coordinar con el resto!</p>
+
+            <p style="
+              margin-bottom: 10px;
+              font-size: 14px;
+              color: #495057;
+            ">
+              ¡Sumate al grupo de WhatsApp exclusivo de este evento
+              para coordinar con el resto!
+            </p>
+
             <a href="${eventWhatsApp}" target="_blank" style="
               display:inline-block;
               padding:12px 20px;
@@ -136,11 +247,19 @@ export async function sendTicketMail({ to, userName, event, ticket }) {
               border-radius:8px;
               text-decoration:none;
               font-weight:bold;
-              font-size: 15px;
-              box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            ">💬 Unirme al grupo del Evento</a>
+              font-size:15px;
+              box-shadow:0 2px 4px rgba(0,0,0,0.1);
+            ">
+              💬 Unirme al grupo del Evento
+            </a>
+
           </div>
-          <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
+
+          <hr style="
+            border:0;
+            border-top:1px solid #eee;
+            margin:20px 0;
+          ">
         `
             : ""
         }
@@ -149,29 +268,93 @@ export async function sendTicketMail({ to, userName, event, ticket }) {
           attachments.length
             ? `
           <p style="text-align:center;">
-            <img src="cid:ticketqr" width="220" style="display:block; margin:auto;" />
+            <img
+              src="cid:ticketqr"
+              width="220"
+              style="display:block; margin:auto;"
+            />
           </p>
-          <p style="text-align:center; font-weight:bold; color:#212529; margin-top:10px;">
+
+          <p style="
+            text-align:center;
+            font-weight:bold;
+            color:#212529;
+            margin-top:10px;
+          ">
             Presentá este código QR en la entrada 📱
           </p>
-          <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
+
+          <hr style="
+            border:0;
+            border-top:1px solid #eee;
+            margin:20px 0;
+          ">
         `
             : ""
         }
-        
-        <p style="font-size:13px; color:#495057;">
-          <strong>💡 Tip de Meet&Go:</strong> También podés ver esta entrada desde la pestaña <strong>"Mis Tickets"</strong> en nuestra app móvil usando tu correo: <em>${to}</em>.
+
+        <p style="
+          font-size:13px;
+          color:#495057;
+        ">
+          <strong>💡 Tip de Meet&Go:</strong>
+          También podés ver esta entrada desde la pestaña
+          <strong>"Mis Tickets"</strong> en nuestra app móvil usando tu
+          correo: <em>${to}</em>.
         </p>
-        <p style="font-size:11px; color:#777; text-align:center; margin-top:30px;">Meet&Go · Conectando experiencias.</p>
+
+        <p style="
+          font-size:11px;
+          color:#777;
+          text-align:center;
+          margin-top:30px;
+        ">
+          Meet&Go · Conectando experiencias.
+        </p>
+
       </div>
     </div>
   `;
 
-  await resend.emails.send({
-    from: "Meet&Go <no-reply@meetandgouy.com>",
-    to: to,
-    subject: `🎟️ Ticket Confirmado – ${eventName}`,
-    html,
-    attachments
-  });
+  // =========================================================
+  // 🚀 ENVÍO REAL A RESEND
+  // =========================================================
+  console.log("");
+  console.log("🚨🚨🚨 [MAILER] ESTÁ A PUNTO DE ENVIAR EL EMAIL 🚨🚨🚨");
+  console.log("📧 To:", to);
+  console.log("🎟️ Ticket:", ticket?._id);
+  console.log("💰 Estado:", ticket?.payment?.status);
+  console.log("=========================================================");
+  console.log("");
+
+  try {
+
+    const result = await resend.emails.send({
+      from: "Meet&Go <no-reply@meetandgouy.com>",
+      to: to,
+      subject: `🎟️ Ticket Confirmado – ${eventName}`,
+      html,
+      attachments
+    });
+
+    console.log("");
+    console.log("✅✅✅ [MAILER] EMAIL ENVIADO CORRECTAMENTE A RESEND");
+    console.log("📧 Destinatario:", to);
+    console.log("🎟️ Ticket:", ticket?._id);
+    console.log("📨 Resend response:", result);
+    console.log("");
+
+    return result;
+
+  } catch (error) {
+
+    console.error("");
+    console.error("❌❌❌ [MAILER] ERROR ENVIANDO EMAIL A RESEND");
+    console.error("Ticket:", ticket?._id);
+    console.error("Destinatario:", to);
+    console.error("Error:", error);
+    console.error("");
+
+    throw error;
+  }
 }
