@@ -10,7 +10,7 @@ import { generateToken } from "../utils/jwt.js";
 import { sendVerificationEmail } from "../utils/sendverificationemail.js";
 import { sendResetPasswordEmail } from "../utils/sendResetPasswordEmail.js";
 import cloudinary from "../config/cloudinary.js";
-import { verifyFirebaseToken } from "../services/firebaseService.js";
+
 
 const router = express.Router();
 
@@ -157,42 +157,6 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
   } catch (error) {
     console.error("❌ Register error:", error);
     res.status(500).json({ message: "Error en registro: " + error.message });
-  }
-});
-
-/* =============================
-   🔥 VERIFICACIÓN DE TELÉFONO (FIREBASE)
-============================= */
-router.post("/verify-phone-firebase", protect, async (req, res) => {
-  try {
-    const { idToken } = req.body;
-
-    if (!idToken) {
-      return res.status(400).json({ message: "Token de Firebase no proporcionado" });
-    }
-
-    // Valida el idToken enviado desde el Frontend con Firebase Admin
-    const decodedToken = await verifyFirebaseToken(idToken);
-    const phoneNumber = decodedToken.phone_number;
-
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ message: "Usuario no encontrado" });
-    }
-
-    // Actualiza el número y lo marca como verificado
-    user.phone = phoneNumber;
-    user.isPhoneVerified = true;
-    await user.save();
-
-    res.json({
-      message: "Teléfono verificado correctamente con Firebase",
-      phone: phoneNumber,
-      isPhoneVerified: true
-    });
-  } catch (error) {
-    console.error("❌ Error en verificación de Firebase:", error);
-    res.status(401).json({ message: "Token inválido o expirado" });
   }
 });
 
