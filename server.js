@@ -97,7 +97,5 @@ mongoose
 /* ========================================================
    Servidor
    ======================================================== */
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Servidor corriendo de forma global en el puerto ${PORT}`);
-});
-console.log("🔥🔥🔥 SERVER MEET&GO VERSION DEBUG 2026-09-06");
+server.listen(PORT, "0.0.0.0", () => { console.log(`🚀 Servidor corriendo de forma global en el puerto ${PORT}`); 
+console.log("🔥🔥🔥 SERVER MEET&GO VERSION DEBUG 2026-09-06"); });
