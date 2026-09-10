@@ -11,7 +11,6 @@ import { sendVerificationEmail } from "../utils/sendverificationemail.js";
 import { sendResetPasswordEmail } from "../utils/sendResetPasswordEmail.js";
 import cloudinary from "../config/cloudinary.js";
 
-
 const router = express.Router();
 
 /* =============================
@@ -78,7 +77,6 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
     }
 
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
-
     if (!passwordRegex.test(password)) {
       return res.status(400).json({
         message: "La contraseña debe tener mínimo 8 caracteres, mayúscula, minúscula, número y carácter especial"
@@ -133,7 +131,7 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       style: "",
       bio: "",
       profileImage: profileImageUrl,
-      isVerified: false,
+      isVerified: true,
       roles: ["user"],
       subscription: { isActive: false },
       experienceProfile: {
@@ -145,14 +143,21 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
     });
 
     const token = generateToken(user);
-    user.verificationToken = token;
-    await user.save();
-
-    await sendVerificationEmail(user.email, token);
 
     res.status(201).json({
-      message: "Usuario creado exitosamente. Revisá tu email para verificar la cuenta",
-      userId: user._id
+      message: "Usuario creado exitosamente",
+      token,
+      user: {
+        _id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        username: user.username,
+        email: user.email,
+        phone: user.phone,
+        profileImage: user.profileImage,
+        roles: user.roles,
+        subscription: user.subscription
+      }
     });
   } catch (error) {
     console.error("❌ Register error:", error);
@@ -182,10 +187,6 @@ router.post("/login", async (req, res) => {
     const isMatch = await bcrypt.compare(password, foundUser.password);
     if (!isMatch) {
       return res.status(401).json({ message: "Credenciales inválidas" });
-    }
-
-    if (!foundUser.isVerified) {
-      return res.status(403).json({ message: "Cuenta no verificada" });
     }
 
     const token = generateToken(foundUser);
