@@ -101,7 +101,42 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.error("❌ Error cargando perfil:", error);
     alert("Error al cargar los datos de tu perfil. Por favor, reintenta.");
   }
+/* ========================================================
+     🗑️ ELIMINAR CUENTA (DELETE)
+     ======================================================== */
+  const deleteBtn = document.getElementById("deleteAccountBtn");
 
+  if (deleteBtn) {
+    deleteBtn.addEventListener("click", async () => {
+      const confirmed = confirm(
+        "⚠️ ¿Estás seguro de que deseas eliminar tu cuenta?\nEsta acción es irreversible y se borrarán todos tus datos."
+      );
+
+      if (!confirmed) return;
+
+      try {
+        const res = await fetch(`${API_URL}/api/users/me`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "No se pudo eliminar la cuenta");
+
+        alert("Tu cuenta ha sido eliminada correctamente.");
+        
+        // Limpiamos la sesión local y redirigimos
+        localStorage.removeItem("currentUser");
+        window.location.href = "welcome.html";
+
+      } catch (error) {
+        console.error("❌ Error al eliminar la cuenta:", error);
+        alert(error.message || "Error de conexión al eliminar la cuenta.");
+      }
+    });
+  }
   /* ========================================================
       ✏️ GUARDAR CAMBIOS (PUT) - Sincronizado a la Raíz
      ======================================================== */

@@ -57,6 +57,24 @@ router.get("/me", protect, async (req, res) => {
 });
 
 /* =============================
+   🗑️ ELIMINAR CUENTA (DELETE)
+============================= */
+router.delete("/me", protect, async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    res.json({ message: "Cuenta eliminada correctamente" });
+  } catch (error) {
+    console.error("❌ Delete user error:", error);
+    res.status(500).json({ message: "Error al eliminar la cuenta" });
+  }
+});
+
+/* =============================
    📝 REGISTER
 ============================= */
 router.post("/register", upload.single("profileImage"), async (req, res) => {
