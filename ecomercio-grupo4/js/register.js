@@ -12,6 +12,15 @@ document.addEventListener("DOMContentLoaded", () => {
     e.preventDefault(); // Evita que la página se limpie/recargue al fallar
 
     /* ============================
+        ⚖️ VALIDACIÓN TÉRMINOS Y PRIVACIDAD
+       ============================ */
+    const termsCheckbox = form.querySelector("input[name='terms']") || document.getElementById("termsCheckbox");
+    if (termsCheckbox && !termsCheckbox.checked) {
+      alert("❌ Debes aceptar los Términos y Condiciones y la Política de Privacidad para registrarte.");
+      return;
+    }
+
+    /* ============================
         🔐 VALIDACIÓN PASSWORD
        ============================ */
     const passwordInput = form.querySelector("input[name='password']");
@@ -37,11 +46,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const age = parseInt(form.querySelector("input[name='age']").value);
     const phone = form.querySelector("input[name='phone']").value;
 
-    // 🎯 NUEVO: Captura opcional (con ?.value) para evitar que la pantalla quede en blanco si falla el selector
     const usernameInput = form.querySelector("input[name='username']");
-    const username = usernameInput ? usernameInput.value.trim() : email.split('@')[0]; // Si no hay username usa el inicio del mail
-// ✅ Código corregido
-const nationality = form.querySelector("[name='nationality']")?.value || "";
+    const username = usernameInput ? usernameInput.value.trim() : email.split('@')[0];
+
+    const nationality = form.querySelector("[name='nationality']")?.value || "";
     const department = form.querySelector("[name='department']")?.value || "";
     const personality = form.querySelector("[name='personality']")?.value || "";
     const bio = form.querySelector("textarea[name='bio']")?.value || "";
@@ -53,7 +61,6 @@ const nationality = form.querySelector("[name='nationality']")?.value || "";
       document.querySelectorAll("input[name='interests']:checked")
     ).map(i => i.value);
 
-    // Validar que al menos haya un interés seleccionado
     if (interests.length === 0) {
       alert("Por favor, selecciona al menos un interés");
       return;
@@ -87,11 +94,11 @@ const nationality = form.querySelector("[name='nationality']")?.value || "";
       nationality: nationality,
       department: department,
       personality: personality,
-      bio: bio
+      bio: bio,
+      acceptedTerms: true // 👈 Se envía la confirmación de aceptación al servidor
     };
 
     console.log("📤 Enviando datos de registro a:", `${API_URL}/api/users/register`);
-    console.log("📦 Datos:", userData);
 
     try {
       /* ============================
@@ -105,13 +112,9 @@ const nationality = form.querySelector("[name='nationality']")?.value || "";
         body: JSON.stringify(userData)
       });
 
-      console.log("📥 Status code:", response.status);
-      
       const data = await response.json();
-      console.log("📥 Respuesta del servidor:", data);
 
       if (!response.ok) {
-        // Manejar errores específicos idéntico a tu versión vieja estable
         if (data.message) {
           if (data.message.includes("email") || data.message.includes("Email")) {
             alert("❌ Este email ya está registrado. Por favor, usa otro email o inicia sesión.");
@@ -130,12 +133,11 @@ const nationality = form.querySelector("[name='nationality']")?.value || "";
       localStorage.removeItem("token");
       localStorage.removeItem("currentUser");
 
-      alert("🎉 ¡Registro exitoso! Revisá tu email para verificar la cuenta antes de iniciar sesión.");
+      alert("🎉 ¡Registro exitoso!");
       
-      // Redirigir al login después de 2 segundos
       setTimeout(() => {
         window.location.href = "login.html?registered=true";
-      }, 2000);
+      }, 1500);
 
     } catch (error) {
       console.error("❌ Error de conexión:", error);
